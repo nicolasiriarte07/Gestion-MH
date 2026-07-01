@@ -26,10 +26,10 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b border-slate-200 bg-white">
+      <header className="border-b-2 border-brand bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-8">
-            <span className="text-sm font-semibold tracking-tight text-slate-900">
+            <span className="text-sm font-bold tracking-tight text-brand">
               MUNDO HOGAR
             </span>
             <nav className="flex gap-1">
@@ -37,7 +37,7 @@ export default async function AppLayout({
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  className="rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-brand-light hover:text-brand"
                 >
                   {link.label}
                 </Link>

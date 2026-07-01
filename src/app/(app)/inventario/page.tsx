@@ -56,7 +56,7 @@ export default async function InventarioPage({
         </div>
         <Link
           href="/inventario/import"
-          className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+          className="rounded-md border border-brand px-3 py-1.5 text-sm font-medium text-brand hover:bg-brand-light"
         >
           Importar Excel maestro
         </Link>

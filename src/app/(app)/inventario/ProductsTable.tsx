@@ -175,7 +175,7 @@ export default function ProductsTable({
         <span className="text-sm font-medium text-slate-700">Productos</span>
         <button
           onClick={addDraftRow}
-          className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700"
+          className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-dark"
         >
           + Nuevo producto
         </button>
@@ -212,7 +212,7 @@ export default function ProductsTable({
               >
                 <td className="px-3 py-1.5">
                   <input
-                    className="w-28 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-slate-500 focus:outline-none"
+                    className="w-28 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                     defaultValue={row.sku}
                     onBlur={(e) => {
                       const value = e.target.value.trim();
@@ -223,7 +223,7 @@ export default function ProductsTable({
                 </td>
                 <td className="px-3 py-1.5">
                   <input
-                    className="w-64 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-slate-500 focus:outline-none"
+                    className="w-64 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                     defaultValue={row.description}
                     onBlur={(e) => {
                       const value = e.target.value.trim();
@@ -234,7 +234,7 @@ export default function ProductsTable({
                 </td>
                 <td className="px-3 py-1.5">
                   <select
-                    className="rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-slate-500 focus:outline-none"
+                    className="rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                     value={row.business_unit_id}
                     onChange={(e) => {
                       applyChange(row, draft, {
@@ -251,7 +251,7 @@ export default function ProductsTable({
                 </td>
                 <td className="px-3 py-1.5">
                   <select
-                    className="rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-slate-500 focus:outline-none"
+                    className="rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                     value={row.category_id ?? ""}
                     onChange={(e) => {
                       applyChange(row, draft, {
@@ -270,7 +270,7 @@ export default function ProductsTable({
                 </td>
                 <td className="px-3 py-1.5">
                   <select
-                    className="rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-slate-500 focus:outline-none"
+                    className="rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                     value={row.subcategory_id ?? ""}
                     disabled={!row.category_id}
                     onChange={(e) => {
@@ -291,7 +291,7 @@ export default function ProductsTable({
                   <input
                     type="number"
                     step="0.01"
-                    className="w-24 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-slate-500 focus:outline-none"
+                    className="w-24 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                     defaultValue={row.cost}
                     onBlur={(e) => {
                       const value = Number(e.target.value) || 0;
@@ -304,7 +304,7 @@ export default function ProductsTable({
                   <input
                     type="number"
                     step="0.01"
-                    className="w-24 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-slate-500 focus:outline-none"
+                    className="w-24 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                     defaultValue={row.sale_price}
                     onBlur={(e) => {
                       const value = Number(e.target.value) || 0;
@@ -316,7 +316,7 @@ export default function ProductsTable({
                 <td className="px-3 py-1.5">
                   <input
                     type="number"
-                    className="w-20 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-slate-500 focus:outline-none"
+                    className="w-20 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                     defaultValue={row.stock}
                     onBlur={(e) => {
                       const value = Number(e.target.value) || 0;
@@ -328,6 +328,7 @@ export default function ProductsTable({
                 <td className="px-3 py-1.5 text-center">
                   <input
                     type="checkbox"
+                    className="accent-brand"
                     checked={row.is_web}
                     onChange={(e) => {
                       applyChange(row, draft, { is_web: e.target.checked });
@@ -340,7 +341,7 @@ export default function ProductsTable({
                       <button
                         onClick={() => saveDraft(row as DraftProduct)}
                         disabled={saving}
-                        className="rounded bg-slate-900 px-2 py-1 text-xs font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+                        className="rounded bg-brand px-2 py-1 text-xs font-medium text-white hover:bg-brand-dark disabled:opacity-50"
                       >
                         {saving ? "..." : "Guardar"}
                       </button>

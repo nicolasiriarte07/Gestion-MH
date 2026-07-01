@@ -35,13 +35,13 @@ export default function FilterBar({
         placeholder="Buscar por código o descripción..."
         defaultValue={searchParams.get("q") ?? ""}
         onChange={(e) => setParam("q", e.target.value)}
-        className="min-w-[220px] flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-slate-500 focus:outline-none"
+        className="min-w-[220px] flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
       />
 
       <select
         defaultValue={searchParams.get("bu") ?? ""}
         onChange={(e) => setParam("bu", e.target.value)}
-        className="rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+        className="rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
       >
         <option value="">Unidad de negocio: todas</option>
         {businessUnits.map((bu) => (
@@ -54,7 +54,7 @@ export default function FilterBar({
       <select
         defaultValue={searchParams.get("cat") ?? ""}
         onChange={(e) => setParam("cat", e.target.value)}
-        className="rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+        className="rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
       >
         <option value="">Categoría: todas</option>
         {categories.map((cat) => (
@@ -67,7 +67,7 @@ export default function FilterBar({
       <select
         defaultValue={searchParams.get("web") ?? ""}
         onChange={(e) => setParam("web", e.target.value)}
-        className="rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+        className="rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
       >
         <option value="">En web: todos</option>
         <option value="yes">En web: sí</option>

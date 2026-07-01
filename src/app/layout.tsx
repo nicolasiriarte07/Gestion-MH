@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -15,6 +15,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "MUNDO HOGAR | Gestión",
   description: "Plataforma interna de gestión de MUNDO HOGAR",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#ec1e79",
 };
 
 export default function RootLayout({
