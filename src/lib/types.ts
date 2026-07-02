@@ -37,6 +37,7 @@ export type SaleItem = {
   receipt_letter: string | null;
   receipt_number: string | null;
   sale_date: string;
+  weekday_label: string | null;
   customer_code: string | null;
   customer_name: string | null;
   payment_method: string | null;

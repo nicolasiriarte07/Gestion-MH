@@ -14,6 +14,7 @@ export type SalesImportResult = {
   imported?: number;
   autoMatched?: number;
   pending?: number;
+  replaced?: boolean;
   skipped?: { row: number; reason: string }[];
 };
 
@@ -22,6 +23,7 @@ const COLUMN_MAP: Record<string, string> = {
   "nombre pdf": "receipt_number",
   "tipo comprobante": "receipt_letter",
   fecha: "sale_date",
+  dia: "weekday_label",
   cliente: "customer_name",
   "forma pago": "payment_method",
   articulo: "source_article_code",
@@ -138,6 +140,7 @@ export async function importSalesExcel(
     receipt_letter: string | null;
     receipt_number: string | null;
     sale_date: string;
+    weekday_label: string | null;
     customer_code: null;
     customer_name: string | null;
     payment_method: string | null;
@@ -230,6 +233,7 @@ export async function importSalesExcel(
       receipt_letter: record.receipt_letter?.trim() || null,
       receipt_number: record.receipt_number?.trim() || null,
       sale_date: saleDate,
+      weekday_label: record.weekday_label?.trim().toLowerCase() || null,
       customer_code: null,
       customer_name: record.customer_name?.trim() || null,
       payment_method: record.payment_method?.trim() || null,
@@ -257,6 +261,27 @@ export async function importSalesExcel(
       pending: 0,
       skipped,
     };
+  }
+
+  // "Reemplazar ventas existentes" borra todo sale_items antes de insertar
+  // el archivo nuevo. Es la forma de resubir el mismo histórico (por
+  // ejemplo para completar una columna que se agregó después, como
+  // amount_usd o weekday_label) sin duplicar filas: no hay detección de
+  // duplicados fila por fila, así que la alternativa sería reemplazo total.
+  const replaceExisting = formData.get("replaceExisting") === "on";
+  if (replaceExisting) {
+    const { error: deleteError } = await supabase
+      .from("sale_items")
+      .delete()
+      .not("id", "is", null);
+    if (deleteError) {
+      return {
+        ok: false,
+        message: `Error al borrar las ventas existentes: ${deleteError.message}`,
+        totalRows,
+        skipped,
+      };
+    }
   }
 
   // Los chunks se insertan en tandas concurrentes (no todos a la vez, para
@@ -298,6 +323,7 @@ export async function importSalesExcel(
     imported: rows.length,
     autoMatched,
     pending: rows.length - autoMatched,
+    replaced: replaceExisting,
     skipped,
   };
 }

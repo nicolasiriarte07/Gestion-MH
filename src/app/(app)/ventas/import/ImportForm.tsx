@@ -28,11 +28,12 @@ export default function ImportForm() {
 
       <p className="text-sm text-slate-600">
         Subí el archivo de facturas, en .xlsx o .csv (columnas
-        Tipo_Comprobante, Fecha, Cliente, Forma_Pago, Articulo, Descripcion,
-        Categoria, Cantidad, IVA_Monto, Monto_con_IVA_ars, Vertical y
-        opcionalmente Nombre_PDF). Las filas con código de artículo que
-        coincide con un producto del inventario se vinculan automáticamente;
-        el resto queda pendiente de revisión manual en{" "}
+        Tipo_Comprobante, Fecha, Dia, Cliente, Forma_Pago, Articulo,
+        Descripcion, Categoria, Cantidad, IVA_Monto, Monto_con_IVA_ars,
+        Monto_con_IVA_usd, Vertical y opcionalmente Nombre_PDF). Las filas con
+        código de artículo que coincide con un producto del inventario se
+        vinculan automáticamente; el resto queda pendiente de revisión manual
+        en{" "}
         <Link href="/ventas/revisar" className="text-brand underline">
           Revisar coincidencias
         </Link>
@@ -40,8 +41,9 @@ export default function ImportForm() {
       </p>
 
       <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
-        Si ya importaste este archivo antes, no lo vuelvas a subir: no hay
-        detección de duplicados todavía y las filas se sumarían de nuevo.
+        Si ya importaste este archivo antes, no lo vuelvas a subir sin marcar
+        &quot;Reemplazar ventas existentes&quot; de abajo: no hay detección de
+        duplicados fila por fila, y las filas se sumarían de nuevo.
       </p>
 
       <form
@@ -55,6 +57,19 @@ export default function ImportForm() {
           required
           className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-brand-dark"
         />
+        <label className="flex items-start gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            name="replaceExisting"
+            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand focus:ring-brand"
+          />
+          <span>
+            Reemplazar ventas existentes: borra todas las ventas ya
+            importadas antes de cargar este archivo. Usalo para volver a
+            subir el mismo histórico completo (por ejemplo, para completar
+            datos de una columna nueva) sin duplicar filas.
+          </span>
+        </label>
         <button
           type="submit"
           disabled={isPending}
@@ -68,6 +83,7 @@ export default function ImportForm() {
         <div className="rounded-md border border-slate-200 bg-white p-4">
           {state.ok ? (
             <p className="text-sm font-medium text-green-700">
+              {state.replaced && "Se borraron las ventas anteriores. "}
               Importación completa: {state.totalRows} filas procesadas,{" "}
               {state.imported} importadas ({state.autoMatched} vinculadas
               automáticamente por código, {state.pending} pendientes de

@@ -50,6 +50,12 @@ type PaymentRow = {
   total_usd: number;
   line_count: number;
 };
+type ProductRow = {
+  product_description: string;
+  total_ars: number;
+  total_usd: number;
+  line_count: number;
+};
 
 export default async function VentasPage({
   searchParams,
@@ -76,6 +82,7 @@ export default async function VentasPage({
     { data: byLetterData },
     { data: byBusinessUnitData },
     { data: byCategoryData },
+    { data: byProductData },
     { data: byPaymentData },
     { data: byWeekdayData },
     { data: timeseriesData },
@@ -87,6 +94,7 @@ export default async function VentasPage({
     supabase.rpc("sales_by_receipt_letter", { from_date: from, to_date: to }),
     supabase.rpc("sales_by_business_unit", { from_date: from, to_date: to }),
     supabase.rpc("sales_by_category", { from_date: from, to_date: to }),
+    supabase.rpc("sales_by_product", { from_date: from, to_date: to }),
     supabase.rpc("sales_by_payment_method", { from_date: from, to_date: to }),
     supabase.rpc("sales_by_weekday", { from_date: from, to_date: to }),
     supabase.rpc("sales_timeseries", {
@@ -142,6 +150,15 @@ export default async function VentasPage({
     line_count: r.line_count,
   }));
 
+  const byProductRows: BreakdownRow[] = (
+    (byProductData ?? []) as ProductRow[]
+  ).map((r) => ({
+    label: r.product_description,
+    total_ars: r.total_ars,
+    total_usd: r.total_usd,
+    line_count: r.line_count,
+  }));
+
   const byPaymentRows: BreakdownRow[] = (
     (byPaymentData ?? []) as PaymentRow[]
   ).map((r) => ({
@@ -166,6 +183,7 @@ export default async function VentasPage({
       byLetterRows={byLetterRows}
       byBusinessUnitRows={byBusinessUnitRows}
       byCategoryRows={byCategoryRows}
+      byProductRows={byProductRows}
       byPaymentRows={byPaymentRows}
       byWeekdayRows={byWeekdayRows}
       timeseries={(timeseriesData ?? []) as TimeSeriesRow[]}

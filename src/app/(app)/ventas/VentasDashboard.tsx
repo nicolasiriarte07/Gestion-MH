@@ -38,6 +38,7 @@ export default function VentasDashboard({
   byLetterRows,
   byBusinessUnitRows,
   byCategoryRows,
+  byProductRows,
   byPaymentRows,
   byWeekdayRows,
   timeseries,
@@ -53,6 +54,7 @@ export default function VentasDashboard({
   byLetterRows: BreakdownRow[];
   byBusinessUnitRows: BreakdownRow[];
   byCategoryRows: BreakdownRow[];
+  byProductRows: BreakdownRow[];
   byPaymentRows: BreakdownRow[];
   byWeekdayRows: WeekdayRow[];
   timeseries: TimeSeriesRow[];
@@ -145,6 +147,13 @@ export default function VentasDashboard({
             <BreakdownCard
               title="Por categoría"
               rows={byCategoryRows}
+              colorMode="sequential"
+              metric={metric}
+              currency={currency}
+            />
+            <BreakdownCard
+              title="Por producto"
+              rows={byProductRows}
               colorMode="sequential"
               metric={metric}
               currency={currency}

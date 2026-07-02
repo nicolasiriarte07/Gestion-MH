@@ -82,7 +82,7 @@ Negocio, Categoría Madre, Subcategoría o Publicado, se usan también:
 ## 5. Importar el histórico de ventas
 
 En **Ventas → Importar ventas**, subí tu archivo de facturas (.xlsx o
-.csv; columnas Tipo_Comprobante, Fecha, Cliente, Forma_Pago, Articulo,
+.csv; columnas Tipo_Comprobante, Fecha, Dia, Cliente, Forma_Pago, Articulo,
 Descripcion, Categoria, Cantidad, IVA_Monto, Monto_con_IVA_ars o
 Subtotal_con_IVA, Monto_con_IVA_usd, Vertical, y opcionalmente
 Nombre_PDF — el orden no importa). Cada fila es una línea de venta:
@@ -94,20 +94,25 @@ Nombre_PDF — el orden no importa). Cada fila es una línea de venta:
   (no fila por fila) y sugiere el producto más parecido del catálogo según
   similitud de texto. Vos confirmás, elegís otro producto del desplegable,
   o marcás "sin coincidencia" — nada se asume solo.
-- **No hay detección de duplicados todavía**: si subís el mismo archivo dos
-  veces, las filas se importan de nuevo.
+- **No hay detección de duplicados fila por fila**: si subís el mismo
+  archivo dos veces con la casilla "Reemplazar ventas existentes"
+  destildada, las filas se importan de nuevo. Para volver a subir el
+  histórico completo (por ejemplo porque agregaste una columna nueva),
+  tildá esa casilla: borra todas las ventas ya importadas antes de cargar
+  el archivo, así no se duplica nada.
 
 La página **Ventas** es un dashboard con control de período (presets como
 "Últimos 30 días", "Este mes", "Este año", o un rango personalizado):
 total vendido, cantidad de ventas (líneas del archivo que caen en el
 período — no depende de que venga cargado Nombre_PDF), ticket promedio,
-unidades vendidas, clientes únicos (por la columna Cliente), evolución en
-el tiempo (gráfico de líneas), ventas por día de la semana (gráfico de
-barras), y desgloses por tipo de comprobante (gráfico de torta; A/B/X — X
-son ventas en negro, se incluyen en los totales pero se ven aparte),
-unidad de negocio, categoría (según la columna Categoria del archivo, no
-depende de que las ventas ya estén vinculadas a un producto) y forma de
-pago.
+unidades vendidas, clientes únicos (cuenta valores distintos de la columna
+Cliente, sin importar cuántas líneas/artículos compró cada uno), evolución
+en el tiempo (gráfico de líneas), ventas por día de la semana (gráfico de
+barras, usando la columna Dia del archivo tal cual viene, no calculado a
+partir de la fecha), y desgloses por tipo de comprobante (gráfico de
+torta; A/B/X — X son ventas en negro, se incluyen en los totales pero se
+ven aparte), unidad de negocio, categoría, producto (columna Descripcion)
+y forma de pago.
 
 Dos selectores controlan qué se grafica: **Ventas / Facturación** (cambia
 entre mostrar cantidad de líneas o montos en $) y, cuando está en
@@ -135,8 +140,9 @@ Ver `supabase/migrations/`. Resumen de tablas:
   confirmación manual, más `business_unit_id` y `source_article_code` para
   el matching por código exacto, `category_raw`/`receipt_number` para el
   dashboard (categoría tal cual viene del archivo, e identificador de
-  comprobante, hoy informativo) y `amount_usd` (columna Monto_con_IVA_usd)
-  para el selector de moneda.
+  comprobante, hoy informativo), `amount_usd` (columna Monto_con_IVA_usd)
+  para el selector de moneda, y `weekday_label` (columna Dia) para el
+  gráfico de ventas por día de la semana.
 
 RLS está habilitado en todas las tablas: solo usuarios autenticados pueden
 leer/escribir, no hay acceso anónimo.
@@ -158,7 +164,10 @@ Implementado:
       personalizado), selector de métrica (Ventas/Facturación) y moneda
       (ARS/USD), KPIs (incluyendo clientes únicos), evolución en gráfico de
       líneas, ventas por día de la semana, y desgloses por tipo de
-      comprobante (torta), unidad de negocio, categoría y forma de pago
+      comprobante (torta), unidad de negocio, categoría, producto y forma
+      de pago
+- [x] Opción de reemplazar todas las ventas existentes al reimportar (para
+      recargar el histórico completo sin duplicar filas)
 
 Pendiente (próximos pasos):
 
