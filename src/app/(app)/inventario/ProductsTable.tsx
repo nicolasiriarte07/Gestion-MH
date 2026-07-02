@@ -339,12 +339,17 @@ export default function ProductsTable({
     const avg = (values: number[]) =>
       values.length ? values.reduce((s, n) => s + n, 0) / values.length : 0;
 
-    const markups = products
-      .map((p) => markupRatio(p.cost, p.price_web))
-      .filter((v): v is number => v !== null);
-    const cogsValues = products
-      .map((p) => cogsRatio(p.cost, p.price_web))
-      .filter((v): v is number => v !== null);
+    // Markup y COGS se calculan sobre los mismos productos: los que
+    // tienen Costo y P. Web cargados (> 0). Si a un producto le falta
+    // alguno de los dos, no tiene esa métrica completa y no cuenta para
+    // ninguno de los dos promedios (ni siquiera como 0%).
+    const withCompleteMetrics = products.filter(
+      (p) => p.cost > 0 && p.price_web > 0
+    );
+    const markups = withCompleteMetrics.map(
+      (p) => (p.price_web - p.cost) / p.cost
+    );
+    const cogsValues = withCompleteMetrics.map((p) => p.cost / p.price_web);
 
     return {
       count: products.length,
