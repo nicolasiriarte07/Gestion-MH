@@ -21,6 +21,19 @@ function isDraft(row: Row): row is DraftProduct {
   return "isDraft" in row;
 }
 
+// Markup = cuánto se suma sobre el costo para llegar al precio web.
+// COGS % = qué porción del precio web representa el costo. Son valores
+// calculados, no se guardan en la base.
+function formatMarkup(cost: number, priceWeb: number): string {
+  if (!cost) return "—";
+  return `${(((priceWeb - cost) / cost) * 100).toFixed(0)}%`;
+}
+
+function formatCogs(cost: number, priceWeb: number): string {
+  if (!priceWeb) return "—";
+  return `${((cost / priceWeb) * 100).toFixed(0)}%`;
+}
+
 function emptyDraft(): DraftProduct {
   return {
     id: `draft-${crypto.randomUUID()}`,
@@ -194,6 +207,8 @@ export default function ProductsTable({
             <th className="px-3 py-2 font-medium">Costo</th>
             <th className="px-3 py-2 font-medium">P. Contado</th>
             <th className="px-3 py-2 font-medium">P. Web</th>
+            <th className="px-3 py-2 font-medium">Markup</th>
+            <th className="px-3 py-2 font-medium">COGS</th>
             <th className="px-3 py-2 font-medium">Stock</th>
             <th className="px-3 py-2 font-medium">Web</th>
             <th className="px-3 py-2 font-medium"></th>
@@ -215,7 +230,7 @@ export default function ProductsTable({
               >
                 <td className="px-3 py-1.5">
                   <input
-                    className="w-28 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
+                    className="w-20 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                     defaultValue={row.sku}
                     onBlur={(e) => {
                       const value = e.target.value.trim();
@@ -226,7 +241,7 @@ export default function ProductsTable({
                 </td>
                 <td className="px-3 py-1.5">
                   <input
-                    className="w-64 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
+                    className="w-48 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                     defaultValue={row.description}
                     onBlur={(e) => {
                       const value = e.target.value.trim();
@@ -237,7 +252,7 @@ export default function ProductsTable({
                 </td>
                 <td className="px-3 py-1.5">
                   <select
-                    className="rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
+                    className="w-28 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                     value={row.business_unit_id ?? ""}
                     onChange={(e) => {
                       applyChange(row, draft, {
@@ -255,7 +270,7 @@ export default function ProductsTable({
                 </td>
                 <td className="px-3 py-1.5">
                   <select
-                    className="rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
+                    className="w-28 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                     value={row.category_id ?? ""}
                     onChange={(e) => {
                       applyChange(row, draft, {
@@ -274,7 +289,7 @@ export default function ProductsTable({
                 </td>
                 <td className="px-3 py-1.5">
                   <select
-                    className="rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
+                    className="w-32 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                     value={row.subcategory_id ?? ""}
                     disabled={!row.category_id}
                     onChange={(e) => {
@@ -295,7 +310,7 @@ export default function ProductsTable({
                   <input
                     type="number"
                     step="0.01"
-                    className="w-24 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
+                    className="w-20 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                     defaultValue={row.cost}
                     onBlur={(e) => {
                       const value = Number(e.target.value) || 0;
@@ -308,7 +323,7 @@ export default function ProductsTable({
                   <input
                     type="number"
                     step="0.01"
-                    className="w-24 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
+                    className="w-20 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                     defaultValue={row.price_cash}
                     onBlur={(e) => {
                       const value = Number(e.target.value) || 0;
@@ -321,7 +336,7 @@ export default function ProductsTable({
                   <input
                     type="number"
                     step="0.01"
-                    className="w-24 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
+                    className="w-20 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                     defaultValue={row.price_web}
                     onBlur={(e) => {
                       const value = Number(e.target.value) || 0;
@@ -330,10 +345,16 @@ export default function ProductsTable({
                     }}
                   />
                 </td>
+                <td className="px-3 py-1.5 whitespace-nowrap text-slate-600">
+                  {formatMarkup(row.cost, row.price_web)}
+                </td>
+                <td className="px-3 py-1.5 whitespace-nowrap text-slate-600">
+                  {formatCogs(row.cost, row.price_web)}
+                </td>
                 <td className="px-3 py-1.5">
                   <input
                     type="number"
-                    className="w-20 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
+                    className="w-16 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                     defaultValue={row.stock}
                     onBlur={(e) => {
                       const value = Number(e.target.value) || 0;
@@ -383,7 +404,7 @@ export default function ProductsTable({
           {rows.length === 0 && (
             <tr>
               <td
-                colSpan={11}
+                colSpan={13}
                 className="px-3 py-8 text-center text-slate-400"
               >
                 No hay productos que coincidan con los filtros.

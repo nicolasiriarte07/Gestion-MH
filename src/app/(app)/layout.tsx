@@ -26,10 +26,10 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b-2 border-brand bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+      <header className="bg-brand shadow-sm">
+        <div className="mx-auto flex max-w-[1800px] items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-8">
-            <span className="text-sm font-bold tracking-tight text-brand">
+            <span className="font-heading text-base font-bold tracking-tight text-white">
               MUNDO HOGAR
             </span>
             <nav className="flex gap-1">
@@ -37,7 +37,7 @@ export default async function AppLayout({
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-brand-light hover:text-brand"
+                  className="rounded-md px-3 py-1.5 text-sm font-medium text-white/90 hover:bg-white/15 hover:text-white"
                 >
                   {link.label}
                 </Link>
@@ -45,12 +45,12 @@ export default async function AppLayout({
             </nav>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-400">{user.email}</span>
+            <span className="text-xs text-white/80">{user.email}</span>
             <LogoutButton />
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
+      <main className="mx-auto w-full max-w-[1800px] flex-1 px-4 py-6 sm:px-6">
         {children}
       </main>
     </div>
