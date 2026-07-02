@@ -345,16 +345,29 @@ export async function importMasterExcel(
   const created = validRows.filter((r) => !existingBySku.has(r.sku)).length;
   const updated = validRows.length - created;
 
+  // Los chunks se insertan en tandas concurrentes (no todos a la vez, para
+  // no saturar el pool de conexiones de Supabase) para que catálogos de
+  // varios miles de filas terminen antes del límite de tiempo de la
+  // función serverless.
   const CHUNK_SIZE = 500;
+  const chunks: (typeof validRows)[] = [];
   for (let i = 0; i < validRows.length; i += CHUNK_SIZE) {
-    const chunk = validRows.slice(i, i + CHUNK_SIZE);
-    const { error } = await supabase
-      .from("products")
-      .upsert(chunk, { onConflict: "sku" });
-    if (error) {
+    chunks.push(validRows.slice(i, i + CHUNK_SIZE));
+  }
+
+  const UPSERT_CONCURRENCY = 5;
+  for (let i = 0; i < chunks.length; i += UPSERT_CONCURRENCY) {
+    const batch = chunks.slice(i, i + UPSERT_CONCURRENCY);
+    const results = await Promise.all(
+      batch.map((chunk) =>
+        supabase.from("products").upsert(chunk, { onConflict: "sku" })
+      )
+    );
+    const failed = results.find((r) => r.error);
+    if (failed?.error) {
       return {
         ok: false,
-        message: `Error al guardar productos: ${error.message}`,
+        message: `Error al guardar productos: ${failed.error.message}`,
         totalRows,
         created,
         updated,

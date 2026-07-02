@@ -253,20 +253,35 @@ export async function importSalesExcel(
     };
   }
 
+  // Los chunks se insertan en tandas concurrentes (no todos a la vez, para
+  // no saturar el pool de conexiones de Supabase) para que archivos de
+  // varios miles de filas terminen antes del límite de tiempo de la
+  // función serverless.
+  const chunks: (typeof rows)[] = [];
   for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
-    const chunk = rows.slice(i, i + CHUNK_SIZE);
-    const { error } = await supabase.from("sale_items").insert(chunk);
-    if (error) {
+    chunks.push(rows.slice(i, i + CHUNK_SIZE));
+  }
+
+  const INSERT_CONCURRENCY = 5;
+  let insertedCount = 0;
+  for (let i = 0; i < chunks.length; i += INSERT_CONCURRENCY) {
+    const batch = chunks.slice(i, i + INSERT_CONCURRENCY);
+    const results = await Promise.all(
+      batch.map((chunk) => supabase.from("sale_items").insert(chunk))
+    );
+    const failed = results.find((r) => r.error);
+    if (failed?.error) {
       return {
         ok: false,
-        message: `Error al guardar ventas (se importaron ${i} de ${rows.length}): ${error.message}`,
+        message: `Error al guardar ventas (se importaron ${insertedCount} de ${rows.length}): ${failed.error.message}`,
         totalRows,
-        imported: i,
+        imported: insertedCount,
         autoMatched,
-        pending: i - autoMatched,
+        pending: insertedCount - autoMatched,
         skipped,
       };
     }
+    insertedCount += batch.reduce((sum, chunk) => sum + chunk.length, 0);
   }
 
   revalidatePath("/ventas");
