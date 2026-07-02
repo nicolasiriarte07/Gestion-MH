@@ -55,8 +55,9 @@ Abrí [http://localhost:3000](http://localhost:3000). Te va a redirigir a
 
 Una vez logueado, andá a **Inventario → Importar Excel de productos** y
 subí tu planilla de stock/productos. Solo son obligatorias las columnas
-**Código** y **Descripción**; si además trae Stock, Costo, P. Venta, Unidad
-de Negocio, Categoría Madre, Subcategoría o En Web, se usan también:
+**Código**, **Descripción** y **P. Venta** (filas sin alguna de estas tres
+se omiten); si además trae Stock, Costo, Unidad de Negocio, Categoría
+Madre, Subcategoría o En Web, se usan también:
 
 `Código, Descripción, Stock, Costo, P. Venta, Unidad de Negocio, Categoría Madre, Subcategoría, En Web`
 
@@ -65,8 +66,8 @@ de Negocio, Categoría Madre, Subcategoría o En Web, se usan también:
 - Si el archivo no trae columna de Unidad de Negocio (o la deja vacía en
   alguna fila), se usa la que elijas en el selector "Unidad de negocio por
   defecto" del formulario de importación.
-- Las columnas que falten (ej. Costo) quedan en 0/vacías: se completan
-  después a mano desde la tabla editable de Inventario.
+- Las columnas opcionales que falten (ej. Costo) quedan en 0/vacías: se
+  completan después a mano desde la tabla editable de Inventario.
 - **Categoría Madre** y **Subcategoría** se crean automáticamente si no
   existen.
 - Al terminar, la pantalla muestra cuántas filas se crearon, actualizaron u

@@ -32,11 +32,12 @@ export default function ImportForm({
       </div>
 
       <p className="text-sm text-slate-600">
-        Subí un Excel con al menos las columnas <strong>Código</strong> y{" "}
-        <strong>Descripción</strong>. Si además trae Stock, Costo, P. Venta,
-        Unidad de Negocio, Categoría Madre, Subcategoría o En Web, se usan
-        también. Los productos se identifican por Código: si ya existe se
-        actualiza, si no existe se crea. Las categorías y subcategorías
+        Subí un Excel con al menos las columnas <strong>Código</strong>,{" "}
+        <strong>Descripción</strong> y <strong>P. Venta</strong> (filas sin
+        alguna de estas tres se omiten). Si además trae Stock, Costo, Unidad
+        de Negocio, Categoría Madre, Subcategoría o En Web, se usan también.
+        Los productos se identifican por Código: si ya existe se actualiza,
+        si no existe se crea. Las categorías y subcategorías
         nuevas se crean automáticamente.
       </p>
 

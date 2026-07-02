@@ -80,11 +80,15 @@ export async function importMasterExcel(
   });
 
   const fields = new Set(columnByIndex.values());
-  if (!fields.has("sku") || !fields.has("description")) {
+  if (
+    !fields.has("sku") ||
+    !fields.has("description") ||
+    !fields.has("sale_price")
+  ) {
     return {
       ok: false,
       message:
-        "Faltan columnas obligatorias en el Excel: Código y/o Descripción.",
+        "Faltan columnas obligatorias en el Excel: Código, Descripción y/o P. Venta.",
     };
   }
 
@@ -159,6 +163,10 @@ export async function importMasterExcel(
     subcategory_id: string | null;
   };
 
+  // Mapa inverso field -> columna, calculado una sola vez.
+  const columnOf = new Map<string, number>();
+  columnByIndex.forEach((field, colNumber) => columnOf.set(field, colNumber));
+
   const validRows: UpsertRow[] = [];
   const skipped: { row: number; sku: string; reason: string }[] = [];
   let totalRows = 0;
@@ -186,6 +194,10 @@ export async function importMasterExcel(
     }
     if (!description) {
       skipped.push({ row: row.number, sku, reason: "Descripción vacía" });
+      continue;
+    }
+    if (!record.sale_price?.trim()) {
+      skipped.push({ row: row.number, sku, reason: "P. Venta vacío" });
       continue;
     }
 
@@ -228,25 +240,14 @@ export async function importMasterExcel(
         }
       }
 
-      const stockCell = row.getCell(
-        [...columnByIndex.entries()].find(([, f]) => f === "stock")?.[0] ?? -1
-      );
-      const costCell = row.getCell(
-        [...columnByIndex.entries()].find(([, f]) => f === "cost")?.[0] ?? -1
-      );
-      const salePriceCell = row.getCell(
-        [...columnByIndex.entries()].find(([, f]) => f === "sale_price")?.[0] ??
-          -1
-      );
-
       const webText = record.is_web?.trim().toLowerCase() ?? "";
 
       validRows.push({
         sku,
         description,
-        cost: cellNumber(costCell),
-        sale_price: cellNumber(salePriceCell),
-        stock: Math.round(cellNumber(stockCell)),
+        cost: cellNumber(row.getCell(columnOf.get("cost") ?? -1)),
+        sale_price: cellNumber(row.getCell(columnOf.get("sale_price") ?? -1)),
+        stock: Math.round(cellNumber(row.getCell(columnOf.get("stock") ?? -1))),
         is_web: TRUTHY_WEB_VALUES.has(webText),
         business_unit_id: businessUnitId,
         category_id: categoryId,
