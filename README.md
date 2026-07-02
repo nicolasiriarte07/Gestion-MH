@@ -63,11 +63,12 @@ Madre, Subcategoría o En Web, se usan también:
 
 - Los productos se identifican por **Código**: si ya existe se actualiza,
   si no existe se crea.
-- Si el archivo no trae columna de Unidad de Negocio (o la deja vacía en
-  alguna fila), se usa la que elijas en el selector "Unidad de negocio por
-  defecto" del formulario de importación.
-- Las columnas opcionales que falten (ej. Costo) quedan en 0/vacías: se
-  completan después a mano desde la tabla editable de Inventario.
+- Las columnas opcionales que falten (Stock, Costo, Unidad de Negocio,
+  Categoría Madre, Subcategoría, En Web) quedan vacías/en 0/sin asignar: se
+  completan después a mano desde la tabla editable de Inventario. Si el
+  archivo sí trae Unidad de Negocio pero con un valor que no coincide con
+  `MUNDO HOGAR` o `EQUIPAMIENTOS MH`, esa fila se omite (para no asignar
+  una unidad equivocada).
 - **Categoría Madre** y **Subcategoría** se crean automáticamente si no
   existen.
 - Al terminar, la pantalla muestra cuántas filas se crearon, actualizaron u

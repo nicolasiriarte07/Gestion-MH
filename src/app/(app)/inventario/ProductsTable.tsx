@@ -21,7 +21,7 @@ function isDraft(row: Row): row is DraftProduct {
   return "isDraft" in row;
 }
 
-function emptyDraft(defaultBusinessUnitId: string): DraftProduct {
+function emptyDraft(): DraftProduct {
   return {
     id: `draft-${crypto.randomUUID()}`,
     isDraft: true,
@@ -31,7 +31,7 @@ function emptyDraft(defaultBusinessUnitId: string): DraftProduct {
     sale_price: 0,
     stock: 0,
     is_web: false,
-    business_unit_id: defaultBusinessUnitId,
+    business_unit_id: null,
     category_id: null,
     subcategory_id: null,
   };
@@ -166,7 +166,7 @@ export default function ProductsTable({
   }
 
   function addDraftRow() {
-    setRows((prev) => [emptyDraft(businessUnits[0]?.id ?? ""), ...prev]);
+    setRows((prev) => [emptyDraft(), ...prev]);
   }
 
   return (
@@ -235,13 +235,14 @@ export default function ProductsTable({
                 <td className="px-3 py-1.5">
                   <select
                     className="rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
-                    value={row.business_unit_id}
+                    value={row.business_unit_id ?? ""}
                     onChange={(e) => {
                       applyChange(row, draft, {
-                        business_unit_id: e.target.value,
+                        business_unit_id: e.target.value || null,
                       });
                     }}
                   >
+                    <option value="">Sin asignar</option>
                     {businessUnits.map((bu) => (
                       <option key={bu.id} value={bu.id}>
                         {bu.name}

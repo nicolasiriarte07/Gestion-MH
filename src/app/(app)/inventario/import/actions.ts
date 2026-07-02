@@ -45,13 +45,9 @@ export async function importMasterExcel(
   formData: FormData
 ): Promise<ImportResult> {
   const file = formData.get("file");
-  const defaultBusinessUnitId = formData.get("defaultBusinessUnit");
 
   if (!(file instanceof File) || file.size === 0) {
     return { ok: false, message: "Seleccioná un archivo .xlsx primero." };
-  }
-  if (typeof defaultBusinessUnitId !== "string" || !defaultBusinessUnitId) {
-    return { ok: false, message: "Elegí la unidad de negocio por defecto." };
   }
 
   const buffer = await file.arrayBuffer();
@@ -158,7 +154,7 @@ export async function importMasterExcel(
     sale_price: number;
     stock: number;
     is_web: boolean;
-    business_unit_id: string;
+    business_unit_id: string | null;
     category_id: string | null;
     subcategory_id: string | null;
   };
@@ -201,14 +197,16 @@ export async function importMasterExcel(
       continue;
     }
 
+    // La unidad de negocio es opcional: si el archivo no trae la columna,
+    // o la fila la deja vacía, el producto se importa sin asignar y se
+    // completa después a mano. Si viene un valor que no se reconoce, sí se
+    // omite la fila (para no asignar una unidad equivocada).
     const businessUnitName = record.business_unit?.trim();
-    let businessUnitId: string | undefined;
+    let businessUnitId: string | null = null;
 
     if (businessUnitName) {
-      businessUnitId = resolveBusinessUnitId(
-        businessUnitName,
-        businessUnitByName
-      );
+      businessUnitId =
+        resolveBusinessUnitId(businessUnitName, businessUnitByName) ?? null;
       if (!businessUnitId) {
         skipped.push({
           row: row.number,
@@ -217,10 +215,6 @@ export async function importMasterExcel(
         });
         continue;
       }
-    } else {
-      // El archivo no trae la columna (o la fila la tiene vacía): usamos
-      // la unidad de negocio por defecto elegida en el formulario.
-      businessUnitId = defaultBusinessUnitId;
     }
 
     try {

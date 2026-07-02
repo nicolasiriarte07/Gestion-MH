@@ -36,7 +36,7 @@ export default function MatchReview({
   }, [businessUnits]);
 
   const productsByUnit = useMemo(() => {
-    const map = new Map<string, typeof products>();
+    const map = new Map<string | null, typeof products>();
     for (const p of products) {
       const key = p.business_unit_id;
       const list = map.get(key) ?? [];

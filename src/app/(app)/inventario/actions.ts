@@ -10,7 +10,7 @@ export type ProductInput = {
   sale_price: number;
   stock: number;
   is_web: boolean;
-  business_unit_id: string;
+  business_unit_id: string | null;
   category_id: string | null;
   subcategory_id: string | null;
 };
