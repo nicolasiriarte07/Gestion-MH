@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type {
   BusinessUnit,
   Category,
   Subcategory,
   Product,
 } from "@/lib/types";
+import { formatCurrency } from "@/lib/currency";
+import { parseFlexibleNumber } from "@/lib/excel";
 import {
   createProduct,
   deleteProduct,
@@ -24,14 +26,16 @@ function isDraft(row: Row): row is DraftProduct {
 // Markup = cuánto se suma sobre el costo para llegar al precio web.
 // COGS % = qué porción del precio web representa el costo. Son valores
 // calculados, no se guardan en la base.
-function formatMarkup(cost: number, priceWeb: number): string {
-  if (!cost) return "—";
-  return `${(((priceWeb - cost) / cost) * 100).toFixed(0)}%`;
+function markupRatio(cost: number, priceWeb: number): number | null {
+  return cost > 0 ? (priceWeb - cost) / cost : null;
 }
 
-function formatCogs(cost: number, priceWeb: number): string {
-  if (!priceWeb) return "—";
-  return `${((cost / priceWeb) * 100).toFixed(0)}%`;
+function cogsRatio(cost: number, priceWeb: number): number | null {
+  return priceWeb > 0 ? cost / priceWeb : null;
+}
+
+function formatPercent(ratio: number | null): string {
+  return ratio === null ? "—" : `${(ratio * 100).toFixed(0)}%`;
 }
 
 function emptyDraft(): DraftProduct {
@@ -51,6 +55,48 @@ function emptyDraft(): DraftProduct {
   };
 }
 
+type ColumnKey =
+  | "sku"
+  | "description"
+  | "business_unit"
+  | "category"
+  | "subcategory"
+  | "cost"
+  | "price_cash"
+  | "price_web"
+  | "markup"
+  | "cogs"
+  | "stock"
+  | "is_web"
+  | "actions";
+
+const COLUMNS: { key: ColumnKey; label: string; width: number; sortable: boolean }[] = [
+  { key: "sku", label: "Código", width: 100, sortable: true },
+  { key: "description", label: "Descripción", width: 260, sortable: true },
+  { key: "business_unit", label: "Unidad de negocio", width: 150, sortable: true },
+  { key: "category", label: "Categoría", width: 140, sortable: true },
+  { key: "subcategory", label: "Subcategoría", width: 140, sortable: true },
+  { key: "cost", label: "Costo", width: 110, sortable: true },
+  { key: "price_cash", label: "P. Contado", width: 110, sortable: true },
+  { key: "price_web", label: "P. Web", width: 110, sortable: true },
+  { key: "markup", label: "Markup", width: 90, sortable: true },
+  { key: "cogs", label: "COGS", width: 90, sortable: true },
+  { key: "stock", label: "Stock", width: 80, sortable: true },
+  { key: "is_web", label: "Web", width: 70, sortable: true },
+  { key: "actions", label: "", width: 140, sortable: false },
+];
+
+const MIN_COLUMN_WIDTH = 50;
+
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-slate-200 bg-white p-4">
+      <p className="text-2xl font-semibold text-slate-900">{value}</p>
+      <p className="text-sm font-medium text-slate-700">{label}</p>
+    </div>
+  );
+}
+
 export default function ProductsTable({
   initialProducts,
   businessUnits,
@@ -65,6 +111,16 @@ export default function ProductsTable({
   const [rows, setRows] = useState<Row[]>(initialProducts);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
+  const [widths, setWidths] = useState<Record<ColumnKey, number>>(() =>
+    Object.fromEntries(COLUMNS.map((c) => [c.key, c.width])) as Record<
+      ColumnKey,
+      number
+    >
+  );
+  const [sort, setSort] = useState<{ key: ColumnKey; dir: "asc" | "desc" } | null>(
+    null
+  );
+  const resizeState = useRef<{ key: ColumnKey; startX: number } | null>(null);
 
   const subcategoriesByCategory = useMemo(() => {
     const map = new Map<string, Subcategory[]>();
@@ -74,6 +130,21 @@ export default function ProductsTable({
       map.set(sub.category_id, list);
     }
     return map;
+  }, [subcategories]);
+
+  const businessUnitName = useMemo(() => {
+    const map = new Map(businessUnits.map((bu) => [bu.id, bu.name]));
+    return (id: string | null) => (id ? (map.get(id) ?? "") : "");
+  }, [businessUnits]);
+
+  const categoryName = useMemo(() => {
+    const map = new Map(categories.map((c) => [c.id, c.name]));
+    return (id: string | null) => (id ? (map.get(id) ?? "") : "");
+  }, [categories]);
+
+  const subcategoryName = useMemo(() => {
+    const map = new Map(subcategories.map((s) => [s.id, s.name]));
+    return (id: string | null) => (id ? (map.get(id) ?? "") : "");
   }, [subcategories]);
 
   function patchRow(id: string, patch: Partial<Row>) {
@@ -184,235 +255,385 @@ export default function ProductsTable({
     setRows((prev) => [emptyDraft(), ...prev]);
   }
 
+  function handleResizeStart(key: ColumnKey, e: React.MouseEvent) {
+    e.preventDefault();
+    resizeState.current = { key, startX: e.clientX };
+
+    function handleMouseMove(ev: MouseEvent) {
+      if (!resizeState.current) return;
+      const delta = ev.clientX - resizeState.current.startX;
+      resizeState.current.startX = ev.clientX;
+      setWidths((prev) => ({
+        ...prev,
+        [resizeState.current!.key]: Math.max(
+          MIN_COLUMN_WIDTH,
+          prev[resizeState.current!.key] + delta
+        ),
+      }));
+    }
+    function handleMouseUp() {
+      resizeState.current = null;
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    }
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  }
+
+  function toggleSort(key: ColumnKey) {
+    setSort((prev) => {
+      if (!prev || prev.key !== key) return { key, dir: "asc" };
+      if (prev.dir === "asc") return { key, dir: "desc" };
+      return null;
+    });
+  }
+
+  const sortedRows = useMemo(() => {
+    function sortValue(row: Product, key: ColumnKey): string | number {
+      switch (key) {
+        case "sku":
+          return row.sku.toLowerCase();
+        case "description":
+          return row.description.toLowerCase();
+        case "business_unit":
+          return businessUnitName(row.business_unit_id).toLowerCase();
+        case "category":
+          return categoryName(row.category_id).toLowerCase();
+        case "subcategory":
+          return subcategoryName(row.subcategory_id).toLowerCase();
+        case "cost":
+          return row.cost;
+        case "price_cash":
+          return row.price_cash;
+        case "price_web":
+          return row.price_web;
+        case "markup":
+          return markupRatio(row.cost, row.price_web) ?? -Infinity;
+        case "cogs":
+          return cogsRatio(row.cost, row.price_web) ?? -Infinity;
+        case "stock":
+          return row.stock;
+        case "is_web":
+          return row.is_web ? 1 : 0;
+        default:
+          return "";
+      }
+    }
+
+    const draftRows = rows.filter(isDraft);
+    const productRows = rows.filter((r): r is Product => !isDraft(r));
+    if (!sort) return [...draftRows, ...productRows];
+
+    const sortedProducts = [...productRows].sort((a, b) => {
+      const va = sortValue(a, sort.key);
+      const vb = sortValue(b, sort.key);
+      if (va < vb) return sort.dir === "asc" ? -1 : 1;
+      if (va > vb) return sort.dir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return [...draftRows, ...sortedProducts];
+  }, [rows, sort, businessUnitName, categoryName, subcategoryName]);
+
+  const metrics = useMemo(() => {
+    const products = rows.filter((r): r is Product => !isDraft(r));
+    const avg = (values: number[]) =>
+      values.length ? values.reduce((s, n) => s + n, 0) / values.length : 0;
+
+    const markups = products
+      .map((p) => markupRatio(p.cost, p.price_web))
+      .filter((v): v is number => v !== null);
+    const cogsValues = products
+      .map((p) => cogsRatio(p.cost, p.price_web))
+      .filter((v): v is number => v !== null);
+
+    return {
+      count: products.length,
+      avgPrice: avg(products.map((p) => p.price_web)),
+      avgMarkup: avg(markups) * 100,
+      avgCogs: avg(cogsValues) * 100,
+    };
+  }, [rows]);
+
+  const totalWidth = COLUMNS.reduce((sum, c) => sum + widths[c.key], 0);
+
+  function parseCurrencyInput(
+    e: React.FocusEvent<HTMLInputElement>,
+    current: number
+  ): number | null {
+    const value = parseFlexibleNumber(e.target.value);
+    e.target.value = formatCurrency(value);
+    return value === current ? null : value;
+  }
+
   return (
-    <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
-      <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
-        <span className="text-sm font-medium text-slate-700">Productos</span>
-        <button
-          onClick={addDraftRow}
-          className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-dark"
-        >
-          + Nuevo producto
-        </button>
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard label="Cantidad de SKUs" value={String(metrics.count)} />
+        <StatCard
+          label="Precio promedio"
+          value={formatCurrency(metrics.avgPrice)}
+        />
+        <StatCard
+          label="Markup promedio"
+          value={`${metrics.avgMarkup.toFixed(0)}%`}
+        />
+        <StatCard
+          label="COGS promedio"
+          value={`${metrics.avgCogs.toFixed(0)}%`}
+        />
       </div>
 
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-            <th className="px-3 py-2 font-medium">Código</th>
-            <th className="px-3 py-2 font-medium">Descripción</th>
-            <th className="px-3 py-2 font-medium">Unidad de negocio</th>
-            <th className="px-3 py-2 font-medium">Categoría</th>
-            <th className="px-3 py-2 font-medium">Subcategoría</th>
-            <th className="px-3 py-2 font-medium">Costo</th>
-            <th className="px-3 py-2 font-medium">P. Contado</th>
-            <th className="px-3 py-2 font-medium">P. Web</th>
-            <th className="px-3 py-2 font-medium">Markup</th>
-            <th className="px-3 py-2 font-medium">COGS</th>
-            <th className="px-3 py-2 font-medium">Stock</th>
-            <th className="px-3 py-2 font-medium">Web</th>
-            <th className="px-3 py-2 font-medium"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => {
-            const draft = isDraft(row);
-            const rowSubcategories = row.category_id
-              ? (subcategoriesByCategory.get(row.category_id) ?? [])
-              : [];
-            const saving = savingIds.has(row.id);
-            const error = errors[row.id];
+      <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
+        <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
+          <span className="text-sm font-medium text-slate-700">
+            Productos
+          </span>
+          <button
+            onClick={addDraftRow}
+            className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-dark"
+          >
+            + Nuevo producto
+          </button>
+        </div>
 
-            return (
-              <tr
-                key={row.id}
-                className="border-b border-slate-100 align-top last:border-0 hover:bg-slate-50"
-              >
-                <td className="px-3 py-1.5">
-                  <input
-                    className="w-20 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
-                    defaultValue={row.sku}
-                    onBlur={(e) => {
-                      const value = e.target.value.trim();
-                      if (value === row.sku) return;
-                      applyChange(row, draft, { sku: value });
-                    }}
-                  />
-                </td>
-                <td className="px-3 py-1.5">
-                  <input
-                    className="w-48 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
-                    defaultValue={row.description}
-                    onBlur={(e) => {
-                      const value = e.target.value.trim();
-                      if (value === row.description) return;
-                      applyChange(row, draft, { description: value });
-                    }}
-                  />
-                </td>
-                <td className="px-3 py-1.5">
-                  <select
-                    className="w-28 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
-                    value={row.business_unit_id ?? ""}
-                    onChange={(e) => {
-                      applyChange(row, draft, {
-                        business_unit_id: e.target.value || null,
-                      });
-                    }}
-                  >
-                    <option value="">Sin asignar</option>
-                    {businessUnits.map((bu) => (
-                      <option key={bu.id} value={bu.id}>
-                        {bu.name}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td className="px-3 py-1.5">
-                  <select
-                    className="w-28 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
-                    value={row.category_id ?? ""}
-                    onChange={(e) => {
-                      applyChange(row, draft, {
-                        category_id: e.target.value || null,
-                        subcategory_id: null,
-                      });
-                    }}
-                  >
-                    <option value="">Sin categoría</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td className="px-3 py-1.5">
-                  <select
-                    className="w-32 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
-                    value={row.subcategory_id ?? ""}
-                    disabled={!row.category_id}
-                    onChange={(e) => {
-                      applyChange(row, draft, {
-                        subcategory_id: e.target.value || null,
-                      });
-                    }}
-                  >
-                    <option value="">Sin subcategoría</option>
-                    {rowSubcategories.map((sub) => (
-                      <option key={sub.id} value={sub.id}>
-                        {sub.name}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td className="px-3 py-1.5">
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="w-20 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
-                    defaultValue={row.cost}
-                    onBlur={(e) => {
-                      const value = Number(e.target.value) || 0;
-                      if (value === row.cost) return;
-                      applyChange(row, draft, { cost: value });
-                    }}
-                  />
-                </td>
-                <td className="px-3 py-1.5">
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="w-20 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
-                    defaultValue={row.price_cash}
-                    onBlur={(e) => {
-                      const value = Number(e.target.value) || 0;
-                      if (value === row.price_cash) return;
-                      applyChange(row, draft, { price_cash: value });
-                    }}
-                  />
-                </td>
-                <td className="px-3 py-1.5">
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="w-20 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
-                    defaultValue={row.price_web}
-                    onBlur={(e) => {
-                      const value = Number(e.target.value) || 0;
-                      if (value === row.price_web) return;
-                      applyChange(row, draft, { price_web: value });
-                    }}
-                  />
-                </td>
-                <td className="px-3 py-1.5 whitespace-nowrap text-slate-600">
-                  {formatMarkup(row.cost, row.price_web)}
-                </td>
-                <td className="px-3 py-1.5 whitespace-nowrap text-slate-600">
-                  {formatCogs(row.cost, row.price_web)}
-                </td>
-                <td className="px-3 py-1.5">
-                  <input
-                    type="number"
-                    className="w-16 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
-                    defaultValue={row.stock}
-                    onBlur={(e) => {
-                      const value = Number(e.target.value) || 0;
-                      if (value === row.stock) return;
-                      applyChange(row, draft, { stock: value });
-                    }}
-                  />
-                </td>
-                <td className="px-3 py-1.5 text-center">
-                  <input
-                    type="checkbox"
-                    className="accent-brand"
-                    checked={row.is_web}
-                    onChange={(e) => {
-                      applyChange(row, draft, { is_web: e.target.checked });
-                    }}
-                  />
-                </td>
-                <td className="px-3 py-1.5">
-                  <div className="flex items-center gap-2">
-                    {draft && (
-                      <button
-                        onClick={() => saveDraft(row as DraftProduct)}
-                        disabled={saving}
-                        className="rounded bg-brand px-2 py-1 text-xs font-medium text-white hover:bg-brand-dark disabled:opacity-50"
-                      >
-                        {saving ? "..." : "Guardar"}
-                      </button>
-                    )}
+        <table
+          className="text-sm"
+          style={{ tableLayout: "fixed", width: totalWidth }}
+        >
+          <colgroup>
+            {COLUMNS.map((col) => (
+              <col key={col.key} style={{ width: widths[col.key] }} />
+            ))}
+          </colgroup>
+          <thead>
+            <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+              {COLUMNS.map((col) => (
+                <th
+                  key={col.key}
+                  className="relative px-3 py-2 font-medium select-none"
+                >
+                  {col.sortable ? (
                     <button
-                      onClick={() => handleDelete(row)}
-                      disabled={saving}
-                      className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
+                      onClick={() => toggleSort(col.key)}
+                      className="flex items-center gap-1 hover:text-slate-800"
                     >
-                      Eliminar
+                      {col.label}
+                      {sort?.key === col.key && (
+                        <span>{sort.dir === "asc" ? "▲" : "▼"}</span>
+                      )}
                     </button>
-                  </div>
-                  {error && (
-                    <p className="mt-1 max-w-[160px] text-xs text-red-600">
-                      {error}
-                    </p>
+                  ) : (
+                    col.label
                   )}
+                  <div
+                    onMouseDown={(e) => handleResizeStart(col.key, e)}
+                    className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize hover:bg-brand/40"
+                  />
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {sortedRows.map((row) => {
+              const draft = isDraft(row);
+              const rowSubcategories = row.category_id
+                ? (subcategoriesByCategory.get(row.category_id) ?? [])
+                : [];
+              const saving = savingIds.has(row.id);
+              const error = errors[row.id];
+
+              return (
+                <tr
+                  key={row.id}
+                  className="border-b border-slate-100 align-top last:border-0 hover:bg-slate-50"
+                >
+                  <td className="overflow-hidden px-3 py-1.5">
+                    <input
+                      className="w-full rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
+                      defaultValue={row.sku}
+                      onBlur={(e) => {
+                        const value = e.target.value.trim();
+                        if (value === row.sku) return;
+                        applyChange(row, draft, { sku: value });
+                      }}
+                    />
+                  </td>
+                  <td className="overflow-hidden px-3 py-1.5">
+                    <input
+                      className="w-full rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
+                      defaultValue={row.description}
+                      onBlur={(e) => {
+                        const value = e.target.value.trim();
+                        if (value === row.description) return;
+                        applyChange(row, draft, { description: value });
+                      }}
+                    />
+                  </td>
+                  <td className="overflow-hidden px-3 py-1.5">
+                    <select
+                      className="w-full rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
+                      value={row.business_unit_id ?? ""}
+                      onChange={(e) => {
+                        applyChange(row, draft, {
+                          business_unit_id: e.target.value || null,
+                        });
+                      }}
+                    >
+                      <option value="">Sin asignar</option>
+                      {businessUnits.map((bu) => (
+                        <option key={bu.id} value={bu.id}>
+                          {bu.name}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="overflow-hidden px-3 py-1.5">
+                    <select
+                      className="w-full rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
+                      value={row.category_id ?? ""}
+                      onChange={(e) => {
+                        applyChange(row, draft, {
+                          category_id: e.target.value || null,
+                          subcategory_id: null,
+                        });
+                      }}
+                    >
+                      <option value="">Sin categoría</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="overflow-hidden px-3 py-1.5">
+                    <select
+                      className="w-full rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
+                      value={row.subcategory_id ?? ""}
+                      disabled={!row.category_id}
+                      onChange={(e) => {
+                        applyChange(row, draft, {
+                          subcategory_id: e.target.value || null,
+                        });
+                      }}
+                    >
+                      <option value="">Sin subcategoría</option>
+                      {rowSubcategories.map((sub) => (
+                        <option key={sub.id} value={sub.id}>
+                          {sub.name}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="overflow-hidden px-3 py-1.5">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      className="w-full rounded border border-transparent px-1.5 py-1 text-right hover:border-slate-300 focus:border-brand focus:outline-none"
+                      defaultValue={formatCurrency(row.cost)}
+                      onFocus={(e) => e.target.select()}
+                      onBlur={(e) => {
+                        const value = parseCurrencyInput(e, row.cost);
+                        if (value !== null)
+                          applyChange(row, draft, { cost: value });
+                      }}
+                    />
+                  </td>
+                  <td className="overflow-hidden px-3 py-1.5">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      className="w-full rounded border border-transparent px-1.5 py-1 text-right hover:border-slate-300 focus:border-brand focus:outline-none"
+                      defaultValue={formatCurrency(row.price_cash)}
+                      onFocus={(e) => e.target.select()}
+                      onBlur={(e) => {
+                        const value = parseCurrencyInput(e, row.price_cash);
+                        if (value !== null)
+                          applyChange(row, draft, { price_cash: value });
+                      }}
+                    />
+                  </td>
+                  <td className="overflow-hidden px-3 py-1.5">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      className="w-full rounded border border-transparent px-1.5 py-1 text-right hover:border-slate-300 focus:border-brand focus:outline-none"
+                      defaultValue={formatCurrency(row.price_web)}
+                      onFocus={(e) => e.target.select()}
+                      onBlur={(e) => {
+                        const value = parseCurrencyInput(e, row.price_web);
+                        if (value !== null)
+                          applyChange(row, draft, { price_web: value });
+                      }}
+                    />
+                  </td>
+                  <td className="overflow-hidden px-3 py-1.5 whitespace-nowrap text-slate-600">
+                    {formatPercent(markupRatio(row.cost, row.price_web))}
+                  </td>
+                  <td className="overflow-hidden px-3 py-1.5 whitespace-nowrap text-slate-600">
+                    {formatPercent(cogsRatio(row.cost, row.price_web))}
+                  </td>
+                  <td className="overflow-hidden px-3 py-1.5">
+                    <input
+                      type="number"
+                      className="w-full rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
+                      defaultValue={row.stock}
+                      onBlur={(e) => {
+                        const value = Number(e.target.value) || 0;
+                        if (value === row.stock) return;
+                        applyChange(row, draft, { stock: value });
+                      }}
+                    />
+                  </td>
+                  <td className="overflow-hidden px-3 py-1.5 text-center">
+                    <input
+                      type="checkbox"
+                      className="accent-brand"
+                      checked={row.is_web}
+                      onChange={(e) => {
+                        applyChange(row, draft, { is_web: e.target.checked });
+                      }}
+                    />
+                  </td>
+                  <td className="overflow-hidden px-3 py-1.5">
+                    <div className="flex items-center gap-2">
+                      {draft && (
+                        <button
+                          onClick={() => saveDraft(row as DraftProduct)}
+                          disabled={saving}
+                          className="rounded bg-brand px-2 py-1 text-xs font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+                        >
+                          {saving ? "..." : "Guardar"}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDelete(row)}
+                        disabled={saving}
+                        className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                    {error && (
+                      <p className="mt-1 text-xs text-red-600">{error}</p>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+            {sortedRows.length === 0 && (
+              <tr>
+                <td
+                  colSpan={COLUMNS.length}
+                  className="px-3 py-8 text-center text-slate-400"
+                >
+                  No hay productos que coincidan con los filtros.
                 </td>
               </tr>
-            );
-          })}
-          {rows.length === 0 && (
-            <tr>
-              <td
-                colSpan={13}
-                className="px-3 py-8 text-center text-slate-400"
-              >
-                No hay productos que coincidan con los filtros.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

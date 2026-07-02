@@ -44,8 +44,7 @@ export function cellText(cell: ExcelJS.Cell | undefined): string {
 // se descarta). Si aparece un solo tipo de separador y el grupo final
 // tiene exactamente 3 dígitos, se asume separador de miles (precios en
 // pesos casi nunca tienen 3 decimales) en vez de decimal.
-export function cellNumber(cell: ExcelJS.Cell | undefined): number {
-  const raw = cellText(cell);
+export function parseFlexibleNumber(raw: string): number {
   if (!raw) return 0;
 
   const cleaned = raw.replace(/[^0-9.,-]/g, "");
@@ -71,6 +70,10 @@ export function cellNumber(cell: ExcelJS.Cell | undefined): number {
 
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export function cellNumber(cell: ExcelJS.Cell | undefined): number {
+  return parseFlexibleNumber(cellText(cell));
 }
 
 // Convierte la fecha de una celda a "yyyy-mm-dd" para la columna `date` de
