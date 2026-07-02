@@ -1,111 +1,136 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import type { MatchStatus } from "@/lib/types";
+import type { BusinessUnit } from "@/lib/types";
+import type { BreakdownRow } from "./BreakdownCard";
+import VentasDashboard, { type Bucket, type SalesSummary } from "./VentasDashboard";
 
-async function countByStatus(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  status: MatchStatus
-) {
-  const { count } = await supabase
-    .from("sale_items")
-    .select("id", { count: "exact", head: true })
-    .eq("match_status", status);
-  return count ?? 0;
+function defaultRange(): { from: string; to: string } {
+  return { from: "2000-01-01", to: new Date().toISOString().slice(0, 10) };
 }
 
-export default async function VentasPage() {
+function pickBucket(from: string, to: string): Bucket {
+  const days =
+    (new Date(`${to}T00:00:00`).getTime() -
+      new Date(`${from}T00:00:00`).getTime()) /
+    86_400_000;
+  if (days <= 31) return "day";
+  if (days <= 180) return "week";
+  return "month";
+}
+
+const RECEIPT_LETTER_LABELS: Record<string, string> = {
+  A: "A (sin IVA)",
+  B: "B (consumidor final)",
+  X: "X (en negro)",
+};
+
+type LetterRow = { receipt_letter: string; total_ars: number; line_count: number };
+type BusinessUnitRow = {
+  business_unit_id: string | null;
+  total_ars: number;
+  line_count: number;
+};
+type CategoryRow = { category_raw: string; total_ars: number; line_count: number };
+type PaymentRow = { payment_method: string; total_ars: number; line_count: number };
+
+export default async function VentasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string; to?: string }>;
+}) {
+  const params = await searchParams;
+  const def = defaultRange();
+  const from = params.from || def.from;
+  const to = params.to || def.to;
+  const bucket = pickBucket(from, to);
+
   const supabase = await createClient();
 
-  const [{ count: total }, pending, confirmed, rejected, noMatch] =
-    await Promise.all([
-      supabase.from("sale_items").select("id", { count: "exact", head: true }),
-      countByStatus(supabase, "pending"),
-      countByStatus(supabase, "confirmed"),
-      countByStatus(supabase, "rejected"),
-      countByStatus(supabase, "no_match"),
-    ]);
+  const [
+    { data: summaryData },
+    { data: byLetterData },
+    { data: byBusinessUnitData },
+    { data: byCategoryData },
+    { data: byPaymentData },
+    { data: timeseriesData },
+    { data: businessUnits },
+    { count: totalLines },
+    { count: pendingCount },
+  ] = await Promise.all([
+    supabase.rpc("sales_summary", { from_date: from, to_date: to }),
+    supabase.rpc("sales_by_receipt_letter", { from_date: from, to_date: to }),
+    supabase.rpc("sales_by_business_unit", { from_date: from, to_date: to }),
+    supabase.rpc("sales_by_category", { from_date: from, to_date: to }),
+    supabase.rpc("sales_by_payment_method", { from_date: from, to_date: to }),
+    supabase.rpc("sales_timeseries", {
+      from_date: from,
+      to_date: to,
+      bucket,
+    }),
+    supabase.from("business_units").select("id, name"),
+    supabase.from("sale_items").select("id", { count: "exact", head: true }),
+    supabase
+      .from("sale_items")
+      .select("id", { count: "exact", head: true })
+      .eq("match_status", "pending"),
+  ]);
 
-  const totalRows = total ?? 0;
+  const summary: SalesSummary = summaryData?.[0] ?? {
+    total_ars: 0,
+    receipt_count: 0,
+    unit_count: 0,
+    line_count: 0,
+  };
 
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900">Ventas</h1>
-          <p className="text-sm text-slate-500">
-            {totalRows} línea(s) de venta importadas
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href="/ventas/revisar"
-            className="rounded-md border border-brand px-3 py-1.5 text-sm font-medium text-brand hover:bg-brand-light"
-          >
-            Revisar coincidencias
-          </Link>
-          <Link
-            href="/ventas/import"
-            className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
-          >
-            Importar Excel
-          </Link>
-        </div>
-      </div>
-
-      {totalRows === 0 ? (
-        <div className="rounded-md border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-          Todavía no importaste ningún histórico de ventas.{" "}
-          <Link href="/ventas/import" className="text-brand underline">
-            Importar ahora
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard
-            label="Vinculadas"
-            value={confirmed}
-            hint="Producto identificado (por código o confirmado a mano)"
-          />
-          <StatCard
-            label="Pendientes de revisión"
-            value={pending}
-            hint="Necesitan que confirmes el producto"
-            highlight
-          />
-          <StatCard
-            label="Sin coincidencia"
-            value={noMatch}
-            hint="Marcadas manualmente como sin producto en el catálogo"
-          />
-          <StatCard
-            label="Rechazadas"
-            value={rejected}
-            hint="Sugerencia descartada a mano"
-          />
-        </div>
-      )}
-    </div>
+  const byLetterRows: BreakdownRow[] = ((byLetterData ?? []) as LetterRow[]).map(
+    (r) => ({
+      label: RECEIPT_LETTER_LABELS[r.receipt_letter] ?? r.receipt_letter,
+      total_ars: r.total_ars,
+      line_count: r.line_count,
+    })
   );
-}
 
-function StatCard({
-  label,
-  value,
-  hint,
-  highlight,
-}: {
-  label: string;
-  value: number;
-  hint: string;
-  highlight?: boolean;
-}) {
+  const businessUnitName = new Map(
+    ((businessUnits ?? []) as BusinessUnit[]).map((bu) => [bu.id, bu.name])
+  );
+  const byBusinessUnitRows: BreakdownRow[] = (
+    (byBusinessUnitData ?? []) as BusinessUnitRow[]
+  ).map((r) => ({
+    label: r.business_unit_id
+      ? (businessUnitName.get(r.business_unit_id) ?? "Desconocida")
+      : "Sin asignar",
+    total_ars: r.total_ars,
+    line_count: r.line_count,
+  }));
+
+  const byCategoryRows: BreakdownRow[] = (
+    (byCategoryData ?? []) as CategoryRow[]
+  ).map((r) => ({
+    label: r.category_raw,
+    total_ars: r.total_ars,
+    line_count: r.line_count,
+  }));
+
+  const byPaymentRows: BreakdownRow[] = (
+    (byPaymentData ?? []) as PaymentRow[]
+  ).map((r) => ({
+    label: r.payment_method,
+    total_ars: r.total_ars,
+    line_count: r.line_count,
+  }));
+
   return (
-    <div
-      className={`rounded-md border p-4 ${highlight && value > 0 ? "border-brand bg-brand-light" : "border-slate-200 bg-white"}`}
-    >
-      <p className="text-2xl font-semibold text-slate-900">{value}</p>
-      <p className="text-sm font-medium text-slate-700">{label}</p>
-      <p className="mt-1 text-xs text-slate-500">{hint}</p>
-    </div>
+    <VentasDashboard
+      totalLines={totalLines ?? 0}
+      pendingCount={pendingCount ?? 0}
+      from={from}
+      to={to}
+      bucket={bucket}
+      summary={summary}
+      byLetterRows={byLetterRows}
+      byBusinessUnitRows={byBusinessUnitRows}
+      byCategoryRows={byCategoryRows}
+      byPaymentRows={byPaymentRows}
+      timeseries={timeseriesData ?? []}
+    />
   );
 }

@@ -16,7 +16,7 @@ export default function VentasImportPage() {
     <div className="max-w-2xl space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-slate-900">
-          Importar histórico de ventas
+          Importar ventas (.xlsx o .csv)
         </h1>
         <Link
           href="/ventas"
@@ -27,9 +27,10 @@ export default function VentasImportPage() {
       </div>
 
       <p className="text-sm text-slate-600">
-        Subí el Excel de facturas (columnas Tipo_Comprobante, Fecha, Cliente,
-        Forma_Pago, Articulo, Descripcion, Cantidad, IVA_Monto,
-        Monto_con_IVA_ars, Vertical). Las filas con código de artículo que
+        Subí el archivo de facturas, en .xlsx o .csv (columnas
+        Tipo_Comprobante, Fecha, Cliente, Forma_Pago, Articulo, Descripcion,
+        Categoria, Cantidad, IVA_Monto, Monto_con_IVA_ars, Vertical y
+        opcionalmente Nombre_PDF). Las filas con código de artículo que
         coincide con un producto del inventario se vinculan automáticamente;
         el resto queda pendiente de revisión manual en{" "}
         <Link href="/ventas/revisar" className="text-brand underline">
@@ -50,7 +51,7 @@ export default function VentasImportPage() {
         <input
           type="file"
           name="file"
-          accept=".xlsx"
+          accept=".xlsx,.csv"
           required
           className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-brand-dark"
         />

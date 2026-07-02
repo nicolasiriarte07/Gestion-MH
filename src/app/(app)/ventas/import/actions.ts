@@ -1,6 +1,7 @@
 "use server";
 
 import ExcelJS from "exceljs";
+import { Readable } from "node:stream";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { resolveBusinessUnitId } from "@/lib/business-unit";
@@ -16,15 +17,16 @@ export type SalesImportResult = {
   skipped?: { row: number; reason: string }[];
 };
 
-// Encabezados tal como aparecen en FACTURAS_MH___EXC_NC.xlsx (columna
-// "Nombre_PDF", "Categoria", "Items" y "Monto_con_IVA_usd" no se usan).
+// Encabezados tal como aparecen en FACTURAS_MH___EXC_NC (.xlsx o .csv).
 const COLUMN_MAP: Record<string, string> = {
+  "nombre pdf": "receipt_number",
   "tipo comprobante": "receipt_letter",
   fecha: "sale_date",
   cliente: "customer_name",
   "forma pago": "payment_method",
   articulo: "source_article_code",
   descripcion: "description",
+  categoria: "category_raw",
   cantidad: "quantity",
   "iva monto": "iva",
   "subtotal con iva": "subtotal_with_iva_text",
@@ -41,36 +43,51 @@ export async function importSalesExcel(
   const file = formData.get("file");
 
   if (!(file instanceof File) || file.size === 0) {
-    return { ok: false, message: "Seleccioná un archivo .xlsx primero." };
-  }
-
-  const buffer = await file.arrayBuffer();
-  const workbook = new ExcelJS.Workbook();
-
-  try {
-    await workbook.xlsx.load(buffer);
-  } catch {
     return {
       ok: false,
-      message: "No se pudo leer el archivo. ¿Es un .xlsx válido?",
+      message: "Seleccioná un archivo .xlsx o .csv primero.",
     };
   }
 
-  // El archivo puede traer una hoja "DATA" con el detalle y otra auxiliar
-  // (ej. "USD" con la cotización); usamos la que tenga más columnas
-  // reconocidas del mapeo.
-  let worksheet = workbook.worksheets[0];
-  let bestMatchCount = -1;
-  for (const ws of workbook.worksheets) {
-    const headerRow = ws.getRow(1);
-    let count = 0;
-    headerRow.eachCell({ includeEmpty: false }, (cell) => {
-      if (COLUMN_MAP[normalizeHeader(cellText(cell))]) count += 1;
-    });
-    if (count > bestMatchCount) {
-      bestMatchCount = count;
-      worksheet = ws;
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const isCsv = file.name.toLowerCase().endsWith(".csv");
+  const workbook = new ExcelJS.Workbook();
+  let worksheet: ExcelJS.Worksheet | undefined;
+
+  try {
+    if (isCsv) {
+      // Readable.from(buffer) iteraría el Buffer byte a byte; envolverlo
+      // en un array lo pasa como un único chunk, que es lo que espera el
+      // parser de CSV.
+      worksheet = await workbook.csv.read(Readable.from([buffer]));
+    } else {
+      // exceljs tipa `load` contra un `Buffer` de una versión de
+      // @types/node distinta a la nuestra (la trae fast-csv, dependencia
+      // transitiva); en tiempo de ejecución es un Buffer válido igual.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await workbook.xlsx.load(buffer as any);
+
+      // El archivo puede traer una hoja "DATA" con el detalle y otra
+      // auxiliar (ej. "USD" con la cotización); usamos la que tenga más
+      // columnas reconocidas del mapeo.
+      let bestMatchCount = -1;
+      for (const ws of workbook.worksheets) {
+        const headerRow = ws.getRow(1);
+        let count = 0;
+        headerRow.eachCell({ includeEmpty: false }, (cell) => {
+          if (COLUMN_MAP[normalizeHeader(cellText(cell))]) count += 1;
+        });
+        if (count > bestMatchCount) {
+          bestMatchCount = count;
+          worksheet = ws;
+        }
+      }
     }
+  } catch {
+    return {
+      ok: false,
+      message: "No se pudo leer el archivo. ¿Es un .xlsx o .csv válido?",
+    };
   }
 
   if (!worksheet) {
@@ -89,7 +106,7 @@ export async function importSalesExcel(
     return {
       ok: false,
       message:
-        "Faltan columnas obligatorias en el Excel: Fecha y/o Descripcion.",
+        "Faltan columnas obligatorias en el archivo: Fecha y/o Descripcion.",
     };
   }
   const hasAmount =
@@ -98,7 +115,7 @@ export async function importSalesExcel(
     return {
       ok: false,
       message:
-        "Faltan columnas obligatorias en el Excel: Monto_con_IVA_ars o Subtotal_con_IVA.",
+        "Faltan columnas obligatorias en el archivo: Monto_con_IVA_ars o Subtotal_con_IVA.",
     };
   }
 
@@ -118,11 +135,13 @@ export async function importSalesExcel(
 
   type InsertRow = {
     receipt_letter: string | null;
+    receipt_number: string | null;
     sale_date: string;
     customer_code: null;
     customer_name: string | null;
     payment_method: string | null;
     product_description_raw: string;
+    category_raw: string | null;
     quantity: number;
     iva: number | null;
     subtotal_with_iva: number;
@@ -204,11 +223,13 @@ export async function importSalesExcel(
 
     rows.push({
       receipt_letter: record.receipt_letter?.trim() || null,
+      receipt_number: record.receipt_number?.trim() || null,
       sale_date: saleDate,
       customer_code: null,
       customer_name: record.customer_name?.trim() || null,
       payment_method: record.payment_method?.trim() || null,
       product_description_raw: description,
+      category_raw: record.category_raw?.trim() || null,
       quantity,
       iva,
       subtotal_with_iva: subtotalWithIva,

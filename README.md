@@ -81,10 +81,11 @@ Negocio, Categoría Madre, Subcategoría o Publicado, se usan también:
 
 ## 5. Importar el histórico de ventas
 
-En **Ventas → Importar Excel**, subí tu planilla de facturas (columnas
-Tipo_Comprobante, Fecha, Cliente, Forma_Pago, Articulo, Descripcion,
-Cantidad, IVA_Monto, Monto_con_IVA_ars o Subtotal_con_IVA, Vertical — el
-orden no importa). Cada fila es una línea de venta:
+En **Ventas → Importar ventas**, subí tu archivo de facturas (.xlsx o
+.csv; columnas Tipo_Comprobante, Fecha, Cliente, Forma_Pago, Articulo,
+Descripcion, Categoria, Cantidad, IVA_Monto, Monto_con_IVA_ars o
+Subtotal_con_IVA, Vertical, y opcionalmente Nombre_PDF — el orden no
+importa). Cada fila es una línea de venta:
 
 - Si la fila trae **Articulo** (código de producto) y ese código existe en
   el inventario, se vincula automáticamente (confianza 100%).
@@ -95,6 +96,15 @@ orden no importa). Cada fila es una línea de venta:
   o marcás "sin coincidencia" — nada se asume solo.
 - **No hay detección de duplicados todavía**: si subís el mismo archivo dos
   veces, las filas se importan de nuevo.
+
+La página **Ventas** es un dashboard con control de período (presets como
+"Últimos 30 días", "Este mes", "Este año", o un rango personalizado):
+total vendido, cantidad de comprobantes, ticket promedio, unidades
+vendidas, evolución en el tiempo, y desgloses por tipo de comprobante
+(A/B/X — X son ventas en negro, se incluyen en los totales pero se ven
+aparte), unidad de negocio, categoría (según la columna Categoria del
+archivo, no depende de que las ventas ya estén vinculadas a un producto)
+y forma de pago.
 
 ## 6. Deploy en Vercel
 
@@ -116,7 +126,9 @@ Ver `supabase/migrations/`. Resumen de tablas:
 - **Ventas**: `sale_items`, con `product_id` nullable y `match_status`
   (`pending` / `confirmed` / `rejected` / `no_match`) para el flujo de
   confirmación manual, más `business_unit_id` y `source_article_code` para
-  el matching por código exacto.
+  el matching por código exacto, y `category_raw`/`receipt_number` para
+  el dashboard (categoría tal cual viene del archivo, y el identificador
+  de comprobante para contar ventas en vez de líneas).
 
 RLS está habilitado en todas las tablas: solo usuarios autenticados pueden
 leer/escribir, no hay acceso anónimo.
@@ -131,13 +143,17 @@ Implementado:
       en web, búsqueda), alta, baja y edición inline
 - [x] Importación del Excel de productos/stock (columnas flexibles, con
       unidad de negocio por defecto)
-- [x] Importación del histórico de ventas, con matching automático por
-      código y pantalla de revisión de coincidencias por descripción
+- [x] Importación del histórico de ventas (.xlsx/.csv), con matching
+      automático por código y pantalla de revisión de coincidencias por
+      descripción
+- [x] Dashboard de ventas con control de período (presets + rango
+      personalizado), KPIs y desgloses por tipo de comprobante, unidad de
+      negocio, categoría y forma de pago
 
 Pendiente (próximos pasos):
 
 - [ ] Proveedores: contactos y registro de compras
 - [ ] Marketing: calendario de publicaciones y pauta publicitaria
 - [ ] Detección de duplicados al reimportar el histórico de ventas
-- [ ] Reportes de ventas (por producto, categoría, unidad de negocio, con
-      tratamiento de notas de crédito/comprobantes tipo X)
+- [ ] Reportes de ventas por producto (requiere que la mayoría de las
+      líneas estén vinculadas vía Revisar coincidencias)

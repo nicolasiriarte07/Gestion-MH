@@ -35,11 +35,13 @@ export type MatchStatus = "pending" | "confirmed" | "rejected" | "no_match";
 export type SaleItem = {
   id: string;
   receipt_letter: string | null;
+  receipt_number: string | null;
   sale_date: string;
   customer_code: string | null;
   customer_name: string | null;
   payment_method: string | null;
   product_description_raw: string;
+  category_raw: string | null;
   quantity: number;
   iva: number | null;
   subtotal_with_iva: number;
