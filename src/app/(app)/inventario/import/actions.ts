@@ -5,7 +5,7 @@ import { Readable } from "node:stream";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { resolveBusinessUnitId } from "@/lib/business-unit";
-import { normalizeHeader, cellText, cellNumber } from "@/lib/excel";
+import { normalizeHeader, cellText, parseFlexibleNumber } from "@/lib/excel";
 
 export type ImportResult = {
   ok: boolean;
@@ -45,6 +45,13 @@ const TRUTHY_WEB_VALUES = new Set([
   "yes",
   "y",
 ]);
+
+type CandidateRow = {
+  rowNumber: number;
+  sku: string;
+  description: string;
+  record: Record<string, string>;
+};
 
 export async function importMasterExcel(
   _prevState: ImportResult | null,
@@ -171,24 +178,13 @@ export async function importMasterExcel(
     return data.id;
   }
 
-  type UpsertRow = {
-    sku: string;
-    description: string;
-    cost: number;
-    price_cash: number;
-    price_web: number;
-    stock: number;
-    is_web: boolean;
-    business_unit_id: string | null;
-    category_id: string | null;
-    subcategory_id: string | null;
-  };
-
-  // Mapa inverso field -> columna, calculado una sola vez.
-  const columnOf = new Map<string, number>();
-  columnByIndex.forEach((field, colNumber) => columnOf.set(field, colNumber));
-
-  const validRows: UpsertRow[] = [];
+  // ---------------------------------------------------------------------
+  // Paso 1: leer y validar todas las filas (Código, Descripción y P.
+  // Contado son obligatorios). Todavía no resolvemos unidad de
+  // negocio/categoría acá porque eso depende de lo que ya haya guardado
+  // en la base para cada código (ver paso 2).
+  // ---------------------------------------------------------------------
+  const candidates: CandidateRow[] = [];
   const skipped: { row: number; sku: string; reason: string }[] = [];
   let totalRows = 0;
 
@@ -222,52 +218,105 @@ export async function importMasterExcel(
       continue;
     }
 
-    // La unidad de negocio es opcional: si el archivo no trae la columna,
-    // o la fila la deja vacía, el producto se importa sin asignar y se
-    // completa después a mano. Si viene un valor que no se reconoce, sí se
-    // omite la fila (para no asignar una unidad equivocada).
+    candidates.push({ rowNumber: row.number, sku, description, record });
+  }
+
+  if (candidates.length === 0) {
+    return {
+      ok: false,
+      message: "No se importó ningún producto.",
+      totalRows,
+      created: 0,
+      updated: 0,
+      skipped,
+    };
+  }
+
+  // ---------------------------------------------------------------------
+  // Paso 2: traer los productos que ya existen por Código, para poder
+  // reimportar el mismo archivo (o una versión más nueva) sin perder
+  // datos que el archivo no trae. Costo, Unidad de Negocio, Categoría y
+  // Subcategoría se preservan si la fila del archivo no especifica un
+  // valor; Descripción, P. Contado, P. Web, Publicado y Stock siempre se
+  // actualizan con lo que traiga el archivo.
+  // ---------------------------------------------------------------------
+  const skus = candidates.map((c) => c.sku);
+  const { data: existingProducts } = await supabase
+    .from("products")
+    .select("sku, cost, business_unit_id, category_id, subcategory_id")
+    .in("sku", skus);
+  const existingBySku = new Map(
+    (existingProducts ?? []).map((p) => [p.sku, p])
+  );
+
+  type UpsertRow = {
+    sku: string;
+    description: string;
+    cost: number;
+    price_cash: number;
+    price_web: number;
+    stock: number;
+    is_web: boolean;
+    business_unit_id: string | null;
+    category_id: string | null;
+    subcategory_id: string | null;
+  };
+
+  const validRows: UpsertRow[] = [];
+
+  for (const { rowNumber, sku, description, record } of candidates) {
+    const existing = existingBySku.get(sku);
+
+    // La unidad de negocio es opcional: si el archivo no trae la columna
+    // (o la fila la deja vacía), se preserva la que ya tenía el producto
+    // (o queda sin asignar si es nuevo). Si viene un valor que no se
+    // reconoce, sí se omite la fila (para no asignar una unidad
+    // equivocada, ni pisar la que ya estaba).
     const businessUnitName = record.business_unit?.trim();
-    let businessUnitId: string | null = null;
+    let businessUnitId: string | null = existing?.business_unit_id ?? null;
 
     if (businessUnitName) {
-      businessUnitId =
+      const resolved =
         resolveBusinessUnitId(businessUnitName, businessUnitByName) ?? null;
-      if (!businessUnitId) {
+      if (!resolved) {
         skipped.push({
-          row: row.number,
+          row: rowNumber,
           sku,
           reason: `Unidad de negocio "${businessUnitName}" no reconocida`,
         });
         continue;
       }
+      businessUnitId = resolved;
     }
 
     try {
-      let categoryId: string | null = null;
-      let subcategoryId: string | null = null;
+      let categoryId: string | null = existing?.category_id ?? null;
+      let subcategoryId: string | null = existing?.subcategory_id ?? null;
 
       const categoryName = record.category?.trim();
       if (categoryName) {
         categoryId = await getOrCreateCategory(categoryName);
 
         const subcategoryName = record.subcategory?.trim();
-        if (subcategoryName) {
-          subcategoryId = await getOrCreateSubcategory(
-            categoryId,
-            subcategoryName
-          );
-        }
+        subcategoryId = subcategoryName
+          ? await getOrCreateSubcategory(categoryId, subcategoryName)
+          : null;
       }
+
+      const costText = record.cost?.trim();
+      const cost = costText
+        ? parseFlexibleNumber(costText)
+        : (existing?.cost ?? 0);
 
       const webText = record.is_web?.trim().toLowerCase() ?? "";
 
       validRows.push({
         sku,
         description,
-        cost: cellNumber(row.getCell(columnOf.get("cost") ?? -1)),
-        price_cash: cellNumber(row.getCell(columnOf.get("price_cash") ?? -1)),
-        price_web: cellNumber(row.getCell(columnOf.get("price_web") ?? -1)),
-        stock: Math.round(cellNumber(row.getCell(columnOf.get("stock") ?? -1))),
+        cost,
+        price_cash: parseFlexibleNumber(record.price_cash),
+        price_web: parseFlexibleNumber(record.price_web ?? ""),
+        stock: Math.round(parseFlexibleNumber(record.stock ?? "")),
         is_web: TRUTHY_WEB_VALUES.has(webText),
         business_unit_id: businessUnitId,
         category_id: categoryId,
@@ -275,7 +324,7 @@ export async function importMasterExcel(
       });
     } catch (err) {
       skipped.push({
-        row: row.number,
+        row: rowNumber,
         sku,
         reason: err instanceof Error ? err.message : "Error desconocido",
       });
@@ -293,14 +342,7 @@ export async function importMasterExcel(
     };
   }
 
-  const skus = validRows.map((r) => r.sku);
-  const { data: existingProducts } = await supabase
-    .from("products")
-    .select("sku")
-    .in("sku", skus);
-  const existingSkuSet = new Set((existingProducts ?? []).map((p) => p.sku));
-
-  const created = validRows.filter((r) => !existingSkuSet.has(r.sku)).length;
+  const created = validRows.filter((r) => !existingBySku.has(r.sku)).length;
   const updated = validRows.length - created;
 
   const CHUNK_SIZE = 500;
