@@ -31,6 +31,7 @@ const COLUMN_MAP: Record<string, string> = {
   "iva monto": "iva",
   "subtotal con iva": "subtotal_with_iva_text",
   "monto con iva ars": "subtotal_with_iva",
+  "monto con iva usd": "amount_usd",
   vertical: "business_unit",
 };
 
@@ -145,6 +146,7 @@ export async function importSalesExcel(
     quantity: number;
     iva: number | null;
     subtotal_with_iva: number;
+    amount_usd: number | null;
     product_id: string | null;
     business_unit_id: string | null;
     source_article_code: string | null;
@@ -209,6 +211,9 @@ export async function importSalesExcel(
     const ivaCell = row.getCell(columnOf.get("iva") ?? -1);
     const iva = cellText(ivaCell) ? cellNumber(ivaCell) : null;
 
+    const usdCell = row.getCell(columnOf.get("amount_usd") ?? -1);
+    const amountUsd = cellText(usdCell) ? cellNumber(usdCell) : null;
+
     const businessUnitName = record.business_unit?.trim();
     const businessUnitId = businessUnitName
       ? (resolveBusinessUnitId(businessUnitName, businessUnitByName) ?? null)
@@ -233,6 +238,7 @@ export async function importSalesExcel(
       quantity,
       iva,
       subtotal_with_iva: subtotalWithIva,
+      amount_usd: amountUsd,
       product_id: matchedProductId,
       business_unit_id: businessUnitId,
       source_article_code: sourceArticleCode,

@@ -1,16 +1,20 @@
 import Link from "next/link";
 import { formatCurrency } from "@/lib/currency";
 import PeriodFilter from "./PeriodFilter";
+import MetricControls, { type Metric, type Currency } from "./MetricControls";
 import { BreakdownCard, type BreakdownRow } from "./BreakdownCard";
-import { TimeSeriesChart } from "./TimeSeriesChart";
+import { PieChart } from "./PieChart";
+import { WeekdayChart, type WeekdayRow } from "./WeekdayChart";
+import { TimeSeriesChart, type TimeSeriesRow } from "./TimeSeriesChart";
 
 export type Bucket = "day" | "week" | "month";
 
 export type SalesSummary = {
   total_ars: number;
-  receipt_count: number;
-  unit_count: number;
+  total_usd: number;
   line_count: number;
+  unit_count: number;
+  unique_customers: number;
 };
 
 function StatTile({ label, value }: { label: string; value: string }) {
@@ -28,11 +32,14 @@ export default function VentasDashboard({
   from,
   to,
   bucket,
+  metric,
+  currency,
   summary,
   byLetterRows,
   byBusinessUnitRows,
   byCategoryRows,
   byPaymentRows,
+  byWeekdayRows,
   timeseries,
 }: {
   totalLines: number;
@@ -40,15 +47,18 @@ export default function VentasDashboard({
   from: string;
   to: string;
   bucket: Bucket;
+  metric: Metric;
+  currency: Currency;
   summary: SalesSummary;
   byLetterRows: BreakdownRow[];
   byBusinessUnitRows: BreakdownRow[];
   byCategoryRows: BreakdownRow[];
   byPaymentRows: BreakdownRow[];
-  timeseries: { bucket_start: string; total_ars: number }[];
+  byWeekdayRows: WeekdayRow[];
+  timeseries: TimeSeriesRow[];
 }) {
-  const avgTicket =
-    summary.receipt_count > 0 ? summary.total_ars / summary.receipt_count : 0;
+  const total = currency === "usd" ? summary.total_usd : summary.total_ars;
+  const avgTicket = summary.line_count > 0 ? total / summary.line_count : 0;
 
   return (
     <div className="space-y-4">
@@ -85,48 +95,66 @@ export default function VentasDashboard({
       ) : (
         <>
           <PeriodFilter from={from} to={to} />
+          <MetricControls metric={metric} currency={currency} />
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <StatTile
               label="Total vendido"
-              value={formatCurrency(summary.total_ars)}
+              value={formatCurrency(total, currency)}
             />
             <StatTile
-              label="Cantidad de comprobantes"
-              value={String(summary.receipt_count)}
+              label="Cantidad de ventas"
+              value={String(summary.line_count)}
             />
             <StatTile
               label="Ticket promedio"
-              value={formatCurrency(avgTicket)}
+              value={formatCurrency(avgTicket, currency)}
             />
             <StatTile
               label="Unidades vendidas"
               value={String(Math.round(summary.unit_count))}
             />
+            <StatTile
+              label="Clientes únicos"
+              value={String(summary.unique_customers)}
+            />
           </div>
 
-          <TimeSeriesChart rows={timeseries} bucket={bucket} />
+          <TimeSeriesChart
+            rows={timeseries}
+            bucket={bucket}
+            metric={metric}
+            currency={currency}
+          />
 
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-            <BreakdownCard
+            <PieChart
               title="Por tipo de comprobante"
               rows={byLetterRows}
-              colorMode="categorical"
+              metric={metric}
+              currency={currency}
             />
+            <WeekdayChart rows={byWeekdayRows} metric={metric} currency={currency} />
             <BreakdownCard
               title="Por unidad de negocio"
               rows={byBusinessUnitRows}
               colorMode="categorical"
+              metric={metric}
+              currency={currency}
             />
             <BreakdownCard
               title="Por categoría"
               rows={byCategoryRows}
               colorMode="sequential"
+              metric={metric}
+              currency={currency}
             />
             <BreakdownCard
               title="Por forma de pago"
               rows={byPaymentRows}
               colorMode="categorical"
+              metric={metric}
+              currency={currency}
             />
           </div>
 

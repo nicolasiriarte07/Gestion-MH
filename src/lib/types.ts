@@ -45,6 +45,7 @@ export type SaleItem = {
   quantity: number;
   iva: number | null;
   subtotal_with_iva: number;
+  amount_usd: number | null;
   product_id: string | null;
   business_unit_id: string | null;
   source_article_code: string | null;

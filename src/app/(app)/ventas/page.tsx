@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import type { BusinessUnit } from "@/lib/types";
 import type { BreakdownRow } from "./BreakdownCard";
+import type { Metric, Currency } from "./MetricControls";
+import type { WeekdayRow } from "./WeekdayChart";
+import type { TimeSeriesRow } from "./TimeSeriesChart";
 import VentasDashboard, { type Bucket, type SalesSummary } from "./VentasDashboard";
 
 function defaultRange(): { from: string; to: string } {
@@ -23,25 +26,48 @@ const RECEIPT_LETTER_LABELS: Record<string, string> = {
   X: "X (en negro)",
 };
 
-type LetterRow = { receipt_letter: string; total_ars: number; line_count: number };
+type LetterRow = {
+  receipt_letter: string;
+  total_ars: number;
+  total_usd: number;
+  line_count: number;
+};
 type BusinessUnitRow = {
   business_unit_id: string | null;
   total_ars: number;
+  total_usd: number;
   line_count: number;
 };
-type CategoryRow = { category_raw: string; total_ars: number; line_count: number };
-type PaymentRow = { payment_method: string; total_ars: number; line_count: number };
+type CategoryRow = {
+  category_raw: string;
+  total_ars: number;
+  total_usd: number;
+  line_count: number;
+};
+type PaymentRow = {
+  payment_method: string;
+  total_ars: number;
+  total_usd: number;
+  line_count: number;
+};
 
 export default async function VentasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string; to?: string }>;
+  searchParams: Promise<{
+    from?: string;
+    to?: string;
+    metric?: string;
+    currency?: string;
+  }>;
 }) {
   const params = await searchParams;
   const def = defaultRange();
   const from = params.from || def.from;
   const to = params.to || def.to;
   const bucket = pickBucket(from, to);
+  const metric: Metric = params.metric === "ventas" ? "ventas" : "facturacion";
+  const currency: Currency = params.currency === "usd" ? "usd" : "ars";
 
   const supabase = await createClient();
 
@@ -51,6 +77,7 @@ export default async function VentasPage({
     { data: byBusinessUnitData },
     { data: byCategoryData },
     { data: byPaymentData },
+    { data: byWeekdayData },
     { data: timeseriesData },
     { data: businessUnits },
     { count: totalLines },
@@ -61,6 +88,7 @@ export default async function VentasPage({
     supabase.rpc("sales_by_business_unit", { from_date: from, to_date: to }),
     supabase.rpc("sales_by_category", { from_date: from, to_date: to }),
     supabase.rpc("sales_by_payment_method", { from_date: from, to_date: to }),
+    supabase.rpc("sales_by_weekday", { from_date: from, to_date: to }),
     supabase.rpc("sales_timeseries", {
       from_date: from,
       to_date: to,
@@ -76,15 +104,17 @@ export default async function VentasPage({
 
   const summary: SalesSummary = summaryData?.[0] ?? {
     total_ars: 0,
-    receipt_count: 0,
-    unit_count: 0,
+    total_usd: 0,
     line_count: 0,
+    unit_count: 0,
+    unique_customers: 0,
   };
 
   const byLetterRows: BreakdownRow[] = ((byLetterData ?? []) as LetterRow[]).map(
     (r) => ({
       label: RECEIPT_LETTER_LABELS[r.receipt_letter] ?? r.receipt_letter,
       total_ars: r.total_ars,
+      total_usd: r.total_usd,
       line_count: r.line_count,
     })
   );
@@ -99,6 +129,7 @@ export default async function VentasPage({
       ? (businessUnitName.get(r.business_unit_id) ?? "Desconocida")
       : "Sin asignar",
     total_ars: r.total_ars,
+    total_usd: r.total_usd,
     line_count: r.line_count,
   }));
 
@@ -107,6 +138,7 @@ export default async function VentasPage({
   ).map((r) => ({
     label: r.category_raw,
     total_ars: r.total_ars,
+    total_usd: r.total_usd,
     line_count: r.line_count,
   }));
 
@@ -115,8 +147,11 @@ export default async function VentasPage({
   ).map((r) => ({
     label: r.payment_method,
     total_ars: r.total_ars,
+    total_usd: r.total_usd,
     line_count: r.line_count,
   }));
+
+  const byWeekdayRows: WeekdayRow[] = (byWeekdayData ?? []) as WeekdayRow[];
 
   return (
     <VentasDashboard
@@ -125,12 +160,15 @@ export default async function VentasPage({
       from={from}
       to={to}
       bucket={bucket}
+      metric={metric}
+      currency={currency}
       summary={summary}
       byLetterRows={byLetterRows}
       byBusinessUnitRows={byBusinessUnitRows}
       byCategoryRows={byCategoryRows}
       byPaymentRows={byPaymentRows}
-      timeseries={timeseriesData ?? []}
+      byWeekdayRows={byWeekdayRows}
+      timeseries={(timeseriesData ?? []) as TimeSeriesRow[]}
     />
   );
 }

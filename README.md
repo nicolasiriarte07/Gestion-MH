@@ -84,8 +84,8 @@ Negocio, Categoría Madre, Subcategoría o Publicado, se usan también:
 En **Ventas → Importar ventas**, subí tu archivo de facturas (.xlsx o
 .csv; columnas Tipo_Comprobante, Fecha, Cliente, Forma_Pago, Articulo,
 Descripcion, Categoria, Cantidad, IVA_Monto, Monto_con_IVA_ars o
-Subtotal_con_IVA, Vertical, y opcionalmente Nombre_PDF — el orden no
-importa). Cada fila es una línea de venta:
+Subtotal_con_IVA, Monto_con_IVA_usd, Vertical, y opcionalmente
+Nombre_PDF — el orden no importa). Cada fila es una línea de venta:
 
 - Si la fila trae **Articulo** (código de producto) y ese código existe en
   el inventario, se vincula automáticamente (confianza 100%).
@@ -99,12 +99,19 @@ importa). Cada fila es una línea de venta:
 
 La página **Ventas** es un dashboard con control de período (presets como
 "Últimos 30 días", "Este mes", "Este año", o un rango personalizado):
-total vendido, cantidad de comprobantes, ticket promedio, unidades
-vendidas, evolución en el tiempo, y desgloses por tipo de comprobante
-(A/B/X — X son ventas en negro, se incluyen en los totales pero se ven
-aparte), unidad de negocio, categoría (según la columna Categoria del
-archivo, no depende de que las ventas ya estén vinculadas a un producto)
-y forma de pago.
+total vendido, cantidad de ventas (líneas del archivo que caen en el
+período — no depende de que venga cargado Nombre_PDF), ticket promedio,
+unidades vendidas, clientes únicos (por la columna Cliente), evolución en
+el tiempo (gráfico de líneas), ventas por día de la semana (gráfico de
+barras), y desgloses por tipo de comprobante (gráfico de torta; A/B/X — X
+son ventas en negro, se incluyen en los totales pero se ven aparte),
+unidad de negocio, categoría (según la columna Categoria del archivo, no
+depende de que las ventas ya estén vinculadas a un producto) y forma de
+pago.
+
+Dos selectores controlan qué se grafica: **Ventas / Facturación** (cambia
+entre mostrar cantidad de líneas o montos en $) y, cuando está en
+Facturación, **ARS / USD** (usa Monto_con_IVA_ars o Monto_con_IVA_usd).
 
 ## 6. Deploy en Vercel
 
@@ -126,9 +133,10 @@ Ver `supabase/migrations/`. Resumen de tablas:
 - **Ventas**: `sale_items`, con `product_id` nullable y `match_status`
   (`pending` / `confirmed` / `rejected` / `no_match`) para el flujo de
   confirmación manual, más `business_unit_id` y `source_article_code` para
-  el matching por código exacto, y `category_raw`/`receipt_number` para
-  el dashboard (categoría tal cual viene del archivo, y el identificador
-  de comprobante para contar ventas en vez de líneas).
+  el matching por código exacto, `category_raw`/`receipt_number` para el
+  dashboard (categoría tal cual viene del archivo, e identificador de
+  comprobante, hoy informativo) y `amount_usd` (columna Monto_con_IVA_usd)
+  para el selector de moneda.
 
 RLS está habilitado en todas las tablas: solo usuarios autenticados pueden
 leer/escribir, no hay acceso anónimo.
@@ -147,8 +155,10 @@ Implementado:
       automático por código y pantalla de revisión de coincidencias por
       descripción
 - [x] Dashboard de ventas con control de período (presets + rango
-      personalizado), KPIs y desgloses por tipo de comprobante, unidad de
-      negocio, categoría y forma de pago
+      personalizado), selector de métrica (Ventas/Facturación) y moneda
+      (ARS/USD), KPIs (incluyendo clientes únicos), evolución en gráfico de
+      líneas, ventas por día de la semana, y desgloses por tipo de
+      comprobante (torta), unidad de negocio, categoría y forma de pago
 
 Pendiente (próximos pasos):
 

@@ -1,6 +1,27 @@
 import { formatCurrency } from "@/lib/currency";
+import type { Metric, Currency } from "./MetricControls";
 
-const MAX_BAR_HEIGHT = 140;
+const CHART_HEIGHT = 140;
+const TOP_PADDING = 10;
+const POINT_SPACING = 56;
+const MIN_WIDTH = 300;
+
+export type TimeSeriesRow = {
+  bucket_start: string;
+  total_ars: number;
+  total_usd: number;
+  line_count: number;
+};
+
+function rowValue(row: TimeSeriesRow, metric: Metric, currency: Currency): number {
+  if (metric === "ventas") return row.line_count;
+  return currency === "usd" ? row.total_usd : row.total_ars;
+}
+
+function formatValue(value: number, metric: Metric, currency: Currency): string {
+  if (metric === "ventas") return String(Math.round(value));
+  return formatCurrency(value, currency);
+}
 
 function formatLabel(dateStr: string, bucket: "day" | "week" | "month"): string {
   const date = new Date(`${dateStr}T00:00:00`);
@@ -13,11 +34,31 @@ function formatLabel(dateStr: string, bucket: "day" | "week" | "month"): string 
 export function TimeSeriesChart({
   rows,
   bucket,
+  metric,
+  currency,
 }: {
-  rows: { bucket_start: string; total_ars: number }[];
+  rows: TimeSeriesRow[];
   bucket: "day" | "week" | "month";
+  metric: Metric;
+  currency: Currency;
 }) {
-  const max = Math.max(...rows.map((r) => r.total_ars), 1);
+  const max = Math.max(...rows.map((r) => rowValue(r, metric, currency)), 1);
+  const width = Math.max(rows.length * POINT_SPACING, MIN_WIDTH);
+  const svgHeight = CHART_HEIGHT + TOP_PADDING;
+
+  const points = rows.map((row, i) => {
+    const value = rowValue(row, metric, currency);
+    const x =
+      rows.length > 1
+        ? (i / (rows.length - 1)) * (width - POINT_SPACING) + POINT_SPACING / 2
+        : width / 2;
+    const y = svgHeight - (value / max) * CHART_HEIGHT;
+    return { x, y, value, row };
+  });
+
+  const linePath = points
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+    .join(" ");
 
   return (
     <div className="rounded-md border border-slate-200 bg-white p-4">
@@ -27,29 +68,26 @@ export function TimeSeriesChart({
       {rows.length === 0 ? (
         <p className="text-sm text-slate-400">Sin datos en este período.</p>
       ) : (
-        <div
-          className="flex items-end gap-1 overflow-x-auto"
-          style={{ height: MAX_BAR_HEIGHT + 24 }}
-        >
-          {rows.map((r) => {
-            const height = Math.max((r.total_ars / max) * MAX_BAR_HEIGHT, 3);
-            return (
-              <div
-                key={r.bucket_start}
-                className="flex min-w-[28px] flex-1 flex-col items-center justify-end gap-1"
-                style={{ height: MAX_BAR_HEIGHT + 24 }}
-                title={`${formatLabel(r.bucket_start, bucket)}: ${formatCurrency(r.total_ars)}`}
-              >
-                <div
-                  className="w-full rounded-t bg-brand"
-                  style={{ height }}
-                />
-                <span className="whitespace-nowrap text-[10px] text-slate-400">
-                  {formatLabel(r.bucket_start, bucket)}
-                </span>
-              </div>
-            );
-          })}
+        <div className="overflow-x-auto">
+          <svg width={width} height={svgHeight + 20} viewBox={`0 0 ${width} ${svgHeight + 20}`}>
+            <path d={linePath} fill="none" stroke="#2a78d6" strokeWidth={2} />
+            {points.map((p) => (
+              <g key={p.row.bucket_start}>
+                <circle cx={p.x} cy={p.y} r={3.5} fill="#2a78d6">
+                  <title>{`${formatLabel(p.row.bucket_start, bucket)}: ${formatValue(p.value, metric, currency)}`}</title>
+                </circle>
+                <text
+                  x={p.x}
+                  y={svgHeight + 14}
+                  textAnchor="middle"
+                  fontSize={10}
+                  fill="#94a3b8"
+                >
+                  {formatLabel(p.row.bucket_start, bucket)}
+                </text>
+              </g>
+            ))}
+          </svg>
         </div>
       )}
     </div>

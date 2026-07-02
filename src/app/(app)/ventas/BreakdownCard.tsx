@@ -1,4 +1,5 @@
 import { formatCurrency } from "@/lib/currency";
+import type { Metric, Currency } from "./MetricControls";
 
 // Paleta categórica validada (ver skill de dataviz): orden fijo, nunca
 // ciclada arbitrariamente por fila.
@@ -17,38 +18,56 @@ const SEQUENTIAL_COLOR = "#2a78d6";
 export type BreakdownRow = {
   label: string;
   total_ars: number;
+  total_usd: number;
   line_count: number;
 };
+
+function rowValue(row: BreakdownRow, metric: Metric, currency: Currency): number {
+  if (metric === "ventas") return row.line_count;
+  return currency === "usd" ? row.total_usd : row.total_ars;
+}
+
+function formatValue(value: number, metric: Metric, currency: Currency): string {
+  if (metric === "ventas") return String(Math.round(value));
+  return formatCurrency(value, currency);
+}
 
 export function BreakdownCard({
   title,
   rows,
   colorMode,
+  metric,
+  currency,
   maxRows = 8,
 }: {
   title: string;
   rows: BreakdownRow[];
   colorMode: "categorical" | "sequential";
+  metric: Metric;
+  currency: Currency;
   maxRows?: number;
 }) {
-  const sorted = [...rows].sort((a, b) => b.total_ars - a.total_ars);
+  const sorted = [...rows].sort(
+    (a, b) => rowValue(b, metric, currency) - rowValue(a, metric, currency)
+  );
   const visible = sorted.slice(0, maxRows);
   const rest = sorted.slice(maxRows);
-  const restTotal = rest.reduce((s, r) => s + r.total_ars, 0);
   const finalRows =
     rest.length > 0
       ? [
           ...visible,
           {
             label: `Otras (${rest.length})`,
-            total_ars: restTotal,
+            total_ars: rest.reduce((s, r) => s + r.total_ars, 0),
+            total_usd: rest.reduce((s, r) => s + r.total_usd, 0),
             line_count: rest.reduce((s, r) => s + r.line_count, 0),
           },
         ]
       : visible;
 
-  const total = finalRows.reduce((s, r) => s + r.total_ars, 0);
-  const max = Math.max(...finalRows.map((r) => r.total_ars), 1);
+  const values = finalRows.map((r) => rowValue(r, metric, currency));
+  const total = values.reduce((s, v) => s + v, 0);
+  const max = Math.max(...values, 1);
 
   return (
     <div className="rounded-md border border-slate-200 bg-white p-4">
@@ -58,8 +77,9 @@ export function BreakdownCard({
       ) : (
         <div className="space-y-2">
           {finalRows.map((row, i) => {
-            const pct = total > 0 ? (row.total_ars / total) * 100 : 0;
-            const widthPct = (row.total_ars / max) * 100;
+            const value = rowValue(row, metric, currency);
+            const pct = total > 0 ? (value / total) * 100 : 0;
+            const widthPct = (value / max) * 100;
             const color =
               colorMode === "categorical"
                 ? CATEGORICAL_COLORS[i % CATEGORICAL_COLORS.length]
@@ -68,14 +88,14 @@ export function BreakdownCard({
             return (
               <div
                 key={row.label}
-                title={`${row.label}: ${formatCurrency(row.total_ars)} · ${row.line_count} línea(s)`}
+                title={`${row.label}: ${formatValue(value, metric, currency)} · ${row.line_count} línea(s)`}
               >
                 <div className="mb-0.5 flex items-center justify-between gap-2 text-xs">
                   <span className="truncate font-medium text-slate-700">
                     {row.label}
                   </span>
                   <span className="whitespace-nowrap text-slate-500">
-                    {formatCurrency(row.total_ars)} · {pct.toFixed(0)}%
+                    {formatValue(value, metric, currency)} · {pct.toFixed(0)}%
                   </span>
                 </div>
                 <div className="h-2 rounded-full bg-slate-100">
