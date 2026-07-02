@@ -1,6 +1,7 @@
 "use server";
 
 import ExcelJS from "exceljs";
+import { Readable } from "node:stream";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { resolveBusinessUnitId } from "@/lib/business-unit";
@@ -23,10 +24,15 @@ const COLUMN_MAP: Record<string, string> = {
   descricpion: "description",
   stock: "stock",
   costo: "cost",
-  "p venta": "sale_price",
+  "p contado": "price_cash",
+  "p web": "price_web",
+  // "P. Venta" es el nombre viejo (de antes de separar contado/web); lo
+  // seguimos aceptando como alias de price_cash.
+  "p venta": "price_cash",
   "unidad de negocio": "business_unit",
   "categoria madre": "category",
   subcategoria: "subcategory",
+  publicado: "is_web",
   "en web": "is_web",
 };
 
@@ -47,22 +53,40 @@ export async function importMasterExcel(
   const file = formData.get("file");
 
   if (!(file instanceof File) || file.size === 0) {
-    return { ok: false, message: "Seleccioná un archivo .xlsx primero." };
-  }
-
-  const buffer = await file.arrayBuffer();
-  const workbook = new ExcelJS.Workbook();
-
-  try {
-    await workbook.xlsx.load(buffer);
-  } catch {
     return {
       ok: false,
-      message: "No se pudo leer el archivo. ¿Es un .xlsx válido?",
+      message: "Seleccioná un archivo .xlsx o .csv primero.",
     };
   }
 
-  const worksheet = workbook.worksheets[0];
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const isCsv = file.name.toLowerCase().endsWith(".csv");
+  const workbook = new ExcelJS.Workbook();
+  let worksheet: ExcelJS.Worksheet | undefined;
+
+  try {
+    if (isCsv) {
+      // Readable.from(buffer) iteraría el Buffer byte a byte (es un
+      // Uint8Array iterable); envolverlo en un array lo pasa como un
+      // único chunk, que es lo que espera el parser de CSV.
+      worksheet = await workbook.csv.read(Readable.from([buffer]));
+    } else {
+      // exceljs tipa `load` contra un `Buffer` de una versión de
+      // @types/node distinta a la nuestra (la trae fast-csv, dependencia
+      // transitiva) y ninguno de los dos alias "Buffer" visibles calza
+      // estructuralmente con el otro; en tiempo de ejecución es un
+      // Buffer válido igual.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await workbook.xlsx.load(buffer as any);
+      worksheet = workbook.worksheets[0];
+    }
+  } catch {
+    return {
+      ok: false,
+      message: "No se pudo leer el archivo. ¿Es un .xlsx o .csv válido?",
+    };
+  }
+
   if (!worksheet) {
     return { ok: false, message: "El archivo no tiene hojas." };
   }
@@ -79,12 +103,12 @@ export async function importMasterExcel(
   if (
     !fields.has("sku") ||
     !fields.has("description") ||
-    !fields.has("sale_price")
+    !fields.has("price_cash")
   ) {
     return {
       ok: false,
       message:
-        "Faltan columnas obligatorias en el Excel: Código, Descripción y/o P. Venta.",
+        "Faltan columnas obligatorias en el archivo: Código, Descripción y/o P. Contado.",
     };
   }
 
@@ -151,7 +175,8 @@ export async function importMasterExcel(
     sku: string;
     description: string;
     cost: number;
-    sale_price: number;
+    price_cash: number;
+    price_web: number;
     stock: number;
     is_web: boolean;
     business_unit_id: string | null;
@@ -192,8 +217,8 @@ export async function importMasterExcel(
       skipped.push({ row: row.number, sku, reason: "Descripción vacía" });
       continue;
     }
-    if (!record.sale_price?.trim()) {
-      skipped.push({ row: row.number, sku, reason: "P. Venta vacío" });
+    if (!record.price_cash?.trim()) {
+      skipped.push({ row: row.number, sku, reason: "P. Contado vacío" });
       continue;
     }
 
@@ -240,7 +265,8 @@ export async function importMasterExcel(
         sku,
         description,
         cost: cellNumber(row.getCell(columnOf.get("cost") ?? -1)),
-        sale_price: cellNumber(row.getCell(columnOf.get("sale_price") ?? -1)),
+        price_cash: cellNumber(row.getCell(columnOf.get("price_cash") ?? -1)),
+        price_web: cellNumber(row.getCell(columnOf.get("price_web") ?? -1)),
         stock: Math.round(cellNumber(row.getCell(columnOf.get("stock") ?? -1))),
         is_web: TRUTHY_WEB_VALUES.has(webText),
         business_unit_id: businessUnitId,

@@ -53,22 +53,27 @@ Abrí [http://localhost:3000](http://localhost:3000). Te va a redirigir a
 
 ## 4. Importar el catálogo inicial
 
-Una vez logueado, andá a **Inventario → Importar Excel de productos** y
-subí tu planilla de stock/productos. Solo son obligatorias las columnas
-**Código**, **Descripción** y **P. Venta** (filas sin alguna de estas tres
-se omiten); si además trae Stock, Costo, Unidad de Negocio, Categoría
-Madre, Subcategoría o En Web, se usan también:
+Una vez logueado, andá a **Inventario → Importar productos** y subí tu
+planilla de stock/productos (**.xlsx o .csv**). Solo son obligatorias las
+columnas **Código**, **Descripción** y **P. Contado** (filas sin alguna de
+estas tres se omiten); si además trae Stock, Costo, P. Web, Unidad de
+Negocio, Categoría Madre, Subcategoría o Publicado, se usan también:
 
-`Código, Descripción, Stock, Costo, P. Venta, Unidad de Negocio, Categoría Madre, Subcategoría, En Web`
+`Código, Descripción, Stock, Costo, P. Contado, P. Web, Unidad de Negocio, Categoría Madre, Subcategoría, Publicado`
 
 - Los productos se identifican por **Código**: si ya existe se actualiza,
   si no existe se crea.
-- Las columnas opcionales que falten (Stock, Costo, Unidad de Negocio,
-  Categoría Madre, Subcategoría, En Web) quedan vacías/en 0/sin asignar: se
-  completan después a mano desde la tabla editable de Inventario. Si el
-  archivo sí trae Unidad de Negocio pero con un valor que no coincide con
-  `MUNDO HOGAR` o `EQUIPAMIENTOS MH`, esa fila se omite (para no asignar
-  una unidad equivocada).
+- **P. Contado** es el precio de venta normal (`price_cash` en la base) y
+  **P. Web** el precio publicado en la web (`price_web`); son dos precios
+  independientes.
+- **Publicado** (o su alias viejo "En Web") acepta `TRUE`/`FALSE`, `Sí/No`,
+  `1/0`, etc.
+- Las columnas opcionales que falten (Stock, Costo, P. Web, Unidad de
+  Negocio, Categoría Madre, Subcategoría, Publicado) quedan vacías/en
+  0/sin asignar: se completan después a mano desde la tabla editable de
+  Inventario. Si el archivo sí trae Unidad de Negocio pero con un valor
+  que no coincide con `MUNDO HOGAR` o `EQUIPAMIENTOS MH`, esa fila se
+  omite (para no asignar una unidad equivocada).
 - **Categoría Madre** y **Subcategoría** se crean automáticamente si no
   existen.
 - Al terminar, la pantalla muestra cuántas filas se crearon, actualizaron u

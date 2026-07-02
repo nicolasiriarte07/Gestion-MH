@@ -38,9 +38,12 @@ export function cellText(cell: ExcelJS.Cell | undefined): string {
   return String(value).trim();
 }
 
-// Parsea números que pueden venir en formato es-AR ("1.234,56") o
-// internacional ("1,234.56"), según cuál separador aparezca último (ese es
-// el decimal; el otro, si aparece, es de miles y se descarta).
+// Parsea números que pueden venir en formato es-AR ("1.234,56" o "$30.330",
+// con punto de miles) o internacional ("1,234.56"), según cuál separador
+// aparezca último (ese es el decimal; el otro, si aparece, es de miles y
+// se descarta). Si aparece un solo tipo de separador y el grupo final
+// tiene exactamente 3 dígitos, se asume separador de miles (precios en
+// pesos casi nunca tienen 3 decimales) en vez de decimal.
 export function cellNumber(cell: ExcelJS.Cell | undefined): number {
   const raw = cellText(cell);
   if (!raw) return 0;
@@ -61,6 +64,9 @@ export function cellNumber(cell: ExcelJS.Cell | undefined): number {
     const decimals = cleaned.length - lastComma - 1;
     normalized =
       decimals === 3 ? cleaned.replace(/,/g, "") : cleaned.replace(",", ".");
+  } else if (lastDot > -1) {
+    const decimals = cleaned.length - lastDot - 1;
+    normalized = decimals === 3 ? cleaned.replace(/\./g, "") : cleaned;
   }
 
   const parsed = Number(normalized);

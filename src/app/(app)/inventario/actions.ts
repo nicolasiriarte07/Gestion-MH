@@ -7,7 +7,8 @@ export type ProductInput = {
   sku: string;
   description: string;
   cost: number;
-  sale_price: number;
+  price_cash: number;
+  price_web: number;
   stock: number;
   is_web: boolean;
   business_unit_id: string | null;

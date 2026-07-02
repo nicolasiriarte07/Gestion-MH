@@ -28,7 +28,8 @@ function emptyDraft(): DraftProduct {
     sku: "",
     description: "",
     cost: 0,
-    sale_price: 0,
+    price_cash: 0,
+    price_web: 0,
     stock: 0,
     is_web: false,
     business_unit_id: null,
@@ -127,7 +128,8 @@ export default function ProductsTable({
       sku: draft.sku,
       description: draft.description,
       cost: draft.cost,
-      sale_price: draft.sale_price,
+      price_cash: draft.price_cash,
+      price_web: draft.price_web,
       stock: draft.stock,
       is_web: draft.is_web,
       business_unit_id: draft.business_unit_id,
@@ -190,7 +192,8 @@ export default function ProductsTable({
             <th className="px-3 py-2 font-medium">Categoría</th>
             <th className="px-3 py-2 font-medium">Subcategoría</th>
             <th className="px-3 py-2 font-medium">Costo</th>
-            <th className="px-3 py-2 font-medium">P. Venta</th>
+            <th className="px-3 py-2 font-medium">P. Contado</th>
+            <th className="px-3 py-2 font-medium">P. Web</th>
             <th className="px-3 py-2 font-medium">Stock</th>
             <th className="px-3 py-2 font-medium">Web</th>
             <th className="px-3 py-2 font-medium"></th>
@@ -306,11 +309,24 @@ export default function ProductsTable({
                     type="number"
                     step="0.01"
                     className="w-24 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
-                    defaultValue={row.sale_price}
+                    defaultValue={row.price_cash}
                     onBlur={(e) => {
                       const value = Number(e.target.value) || 0;
-                      if (value === row.sale_price) return;
-                      applyChange(row, draft, { sale_price: value });
+                      if (value === row.price_cash) return;
+                      applyChange(row, draft, { price_cash: value });
+                    }}
+                  />
+                </td>
+                <td className="px-3 py-1.5">
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="w-24 rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
+                    defaultValue={row.price_web}
+                    onBlur={(e) => {
+                      const value = Number(e.target.value) || 0;
+                      if (value === row.price_web) return;
+                      applyChange(row, draft, { price_web: value });
                     }}
                   />
                 </td>
@@ -367,7 +383,7 @@ export default function ProductsTable({
           {rows.length === 0 && (
             <tr>
               <td
-                colSpan={10}
+                colSpan={11}
                 className="px-3 py-8 text-center text-slate-400"
               >
                 No hay productos que coincidan con los filtros.

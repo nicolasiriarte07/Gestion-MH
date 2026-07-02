@@ -16,7 +16,7 @@ export default function ImportPage() {
     <div className="max-w-2xl space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-slate-900">
-          Importar Excel de productos
+          Importar productos (.xlsx o .csv)
         </h1>
         <Link
           href="/inventario"
@@ -27,10 +27,11 @@ export default function ImportPage() {
       </div>
 
       <p className="text-sm text-slate-600">
-        Subí un Excel con al menos las columnas <strong>Código</strong>,{" "}
-        <strong>Descripción</strong> y <strong>P. Venta</strong> (filas sin
-        alguna de estas tres se omiten). Si además trae Stock, Costo, Unidad
-        de Negocio, Categoría Madre, Subcategoría o En Web, se usan también.
+        Subí un archivo .xlsx o .csv con al menos las columnas{" "}
+        <strong>Código</strong>, <strong>Descripción</strong> y{" "}
+        <strong>P. Contado</strong> (filas sin alguna de estas tres se
+        omiten). Si además trae Stock, Costo, P. Web, Unidad de Negocio,
+        Categoría Madre, Subcategoría o Publicado/En Web, se usan también.
         Todo lo demás que falte (incluida la Unidad de Negocio) queda vacío
         y lo completás después a mano desde la tabla. Los productos se
         identifican por Código: si ya existe se actualiza, si no existe se
@@ -45,7 +46,7 @@ export default function ImportPage() {
         <input
           type="file"
           name="file"
-          accept=".xlsx"
+          accept=".xlsx,.csv"
           required
           className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-brand-dark"
         />
