@@ -3,6 +3,8 @@
 import ExcelJS from "exceljs";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { resolveBusinessUnitId } from "@/lib/business-unit";
+import { normalizeHeader, cellText, cellNumber } from "@/lib/excel";
 
 export type ImportResult = {
   ok: boolean;
@@ -16,6 +18,9 @@ export type ImportResult = {
 const COLUMN_MAP: Record<string, string> = {
   codigo: "sku",
   descripcion: "description",
+  // "Descricpión" es un typo real que aparece en algunas planillas del
+  // negocio; lo mapeamos igual que la ortografía correcta.
+  descricpion: "description",
   stock: "stock",
   costo: "cost",
   "p venta": "sale_price",
@@ -35,45 +40,18 @@ const TRUTHY_WEB_VALUES = new Set([
   "y",
 ]);
 
-function normalizeHeader(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
-function cellText(cell: ExcelJS.Cell | undefined): string {
-  if (!cell || cell.value === null || cell.value === undefined) return "";
-  const value = cell.value;
-  if (typeof value === "object" && "richText" in value) {
-    return (value.richText as { text: string }[])
-      .map((t) => t.text)
-      .join("")
-      .trim();
-  }
-  if (typeof value === "object" && "text" in value) {
-    return String((value as { text: unknown }).text).trim();
-  }
-  return String(value).trim();
-}
-
-function cellNumber(cell: ExcelJS.Cell | undefined): number {
-  const text = cellText(cell).replace(/\./g, "").replace(",", ".");
-  const asIs = cellText(cell);
-  const parsed = Number(asIs) || Number(text) || 0;
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
 export async function importMasterExcel(
   _prevState: ImportResult | null,
   formData: FormData
 ): Promise<ImportResult> {
   const file = formData.get("file");
+  const defaultBusinessUnitId = formData.get("defaultBusinessUnit");
 
   if (!(file instanceof File) || file.size === 0) {
     return { ok: false, message: "Seleccioná un archivo .xlsx primero." };
+  }
+  if (typeof defaultBusinessUnitId !== "string" || !defaultBusinessUnitId) {
+    return { ok: false, message: "Elegí la unidad de negocio por defecto." };
   }
 
   const buffer = await file.arrayBuffer();
@@ -212,17 +190,25 @@ export async function importMasterExcel(
     }
 
     const businessUnitName = record.business_unit?.trim();
-    const businessUnitId = businessUnitName
-      ? businessUnitByName.get(businessUnitName.toLowerCase())
-      : undefined;
+    let businessUnitId: string | undefined;
 
-    if (!businessUnitId) {
-      skipped.push({
-        row: row.number,
-        sku,
-        reason: `Unidad de negocio "${businessUnitName || "(vacía)"}" no reconocida`,
-      });
-      continue;
+    if (businessUnitName) {
+      businessUnitId = resolveBusinessUnitId(
+        businessUnitName,
+        businessUnitByName
+      );
+      if (!businessUnitId) {
+        skipped.push({
+          row: row.number,
+          sku,
+          reason: `Unidad de negocio "${businessUnitName}" no reconocida`,
+        });
+        continue;
+      }
+    } else {
+      // El archivo no trae la columna (o la fila la tiene vacía): usamos
+      // la unidad de negocio por defecto elegida en el formulario.
+      businessUnitId = defaultBusinessUnitId;
     }
 
     try {

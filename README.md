@@ -14,10 +14,13 @@ para un solo usuario, accesible desde cualquier lugar.
 ## 1. Crear el proyecto de Supabase
 
 1. Entrá a [supabase.com](https://supabase.com) y creá un proyecto nuevo.
-2. En **SQL Editor**, pegá y ejecutá el contenido de
-   `supabase/migrations/0001_init.sql`. Esto crea todas las tablas, los
-   índices, las políticas de RLS y las dos unidades de negocio
-   (`MUNDO HOGAR`, `EQUIPAMIENTOS MH`).
+2. En **SQL Editor**, ejecutá en orden los archivos de `supabase/migrations/`
+   (`0001_init.sql`, `0002_sale_items_import_support.sql`,
+   `0003_pending_sale_descriptions.sql`). Crean todas las tablas, índices,
+   políticas de RLS, las dos unidades de negocio (`MUNDO HOGAR`,
+   `EQUIPAMIENTOS MH`) y la función usada por la pantalla de revisión de
+   ventas. Si agregás una migración nueva más adelante, corré solo la que
+   falte.
 3. En **Authentication → Providers**, dejá habilitado Email/Password y
    desactivá "Allow new users to sign up" (Settings → Auth) para que nadie
    más pueda registrarse solo.
@@ -50,23 +53,43 @@ Abrí [http://localhost:3000](http://localhost:3000). Te va a redirigir a
 
 ## 4. Importar el catálogo inicial
 
-Una vez logueado, andá a **Inventario → Importar Excel maestro** y subí
-`MUNDO_HOGAR_maestro_productos.xlsx`. Columnas esperadas (el orden no
-importa, los nombres se detectan sin importar mayúsculas/acentos):
+Una vez logueado, andá a **Inventario → Importar Excel de productos** y
+subí tu planilla de stock/productos. Solo son obligatorias las columnas
+**Código** y **Descripción**; si además trae Stock, Costo, P. Venta, Unidad
+de Negocio, Categoría Madre, Subcategoría o En Web, se usan también:
 
 `Código, Descripción, Stock, Costo, P. Venta, Unidad de Negocio, Categoría Madre, Subcategoría, En Web`
 
 - Los productos se identifican por **Código**: si ya existe se actualiza,
   si no existe se crea.
-- **Unidad de Negocio** debe coincidir (sin importar mayúsculas) con
-  `MUNDO HOGAR` o `EQUIPAMIENTOS MH`; si no coincide, la fila se omite y se
-  lista en el resumen de importación.
+- Si el archivo no trae columna de Unidad de Negocio (o la deja vacía en
+  alguna fila), se usa la que elijas en el selector "Unidad de negocio por
+  defecto" del formulario de importación.
+- Las columnas que falten (ej. Costo) quedan en 0/vacías: se completan
+  después a mano desde la tabla editable de Inventario.
 - **Categoría Madre** y **Subcategoría** se crean automáticamente si no
   existen.
 - Al terminar, la pantalla muestra cuántas filas se crearon, actualizaron u
   omitieron (con el motivo).
 
-## 5. Deploy en Vercel
+## 5. Importar el histórico de ventas
+
+En **Ventas → Importar Excel**, subí tu planilla de facturas (columnas
+Tipo_Comprobante, Fecha, Cliente, Forma_Pago, Articulo, Descripcion,
+Cantidad, IVA_Monto, Monto_con_IVA_ars o Subtotal_con_IVA, Vertical — el
+orden no importa). Cada fila es una línea de venta:
+
+- Si la fila trae **Articulo** (código de producto) y ese código existe en
+  el inventario, se vincula automáticamente (confianza 100%).
+- El resto queda con estado "pendiente" para revisar a mano en
+  **Ventas → Revisar coincidencias**, que agrupa por descripción distinta
+  (no fila por fila) y sugiere el producto más parecido del catálogo según
+  similitud de texto. Vos confirmás, elegís otro producto del desplegable,
+  o marcás "sin coincidencia" — nada se asume solo.
+- **No hay detección de duplicados todavía**: si subís el mismo archivo dos
+  veces, las filas se importan de nuevo.
+
+## 6. Deploy en Vercel
 
 1. Conectá el repo en [vercel.com/new](https://vercel.com/new).
 2. Cargá las mismas variables de entorno (`NEXT_PUBLIC_SUPABASE_URL`,
@@ -77,15 +100,16 @@ importa, los nombres se detectan sin importar mayúsculas/acentos):
 
 ## Esquema de base de datos
 
-Ver `supabase/migrations/0001_init.sql`. Resumen de tablas:
+Ver `supabase/migrations/`. Resumen de tablas:
 
 - **Inventario**: `business_units`, `categories`, `subcategories`,
   `products`
 - **Proveedores**: `suppliers`, `purchases`, `purchase_items`
 - **Marketing**: `marketing_posts`, `ad_campaigns`
-- **Ventas** (para la importación futura de `Dash1nico.xlsx`):
-  `sale_items`, con `product_id` nullable y `match_status` para el flujo de
-  confirmación manual de coincidencias por descripción.
+- **Ventas**: `sale_items`, con `product_id` nullable y `match_status`
+  (`pending` / `confirmed` / `rejected` / `no_match`) para el flujo de
+  confirmación manual, más `business_unit_id` y `source_article_code` para
+  el matching por código exacto.
 
 RLS está habilitado en todas las tablas: solo usuarios autenticados pueden
 leer/escribir, no hay acceso anónimo.
@@ -98,11 +122,15 @@ Implementado:
 - [x] Esquema completo de base de datos (los 4 módulos)
 - [x] Inventario: tabla editable con filtros (unidad de negocio, categoría,
       en web, búsqueda), alta, baja y edición inline
-- [x] Importación del Excel maestro de productos
+- [x] Importación del Excel de productos/stock (columnas flexibles, con
+      unidad de negocio por defecto)
+- [x] Importación del histórico de ventas, con matching automático por
+      código y pantalla de revisión de coincidencias por descripción
 
 Pendiente (próximos pasos):
 
 - [ ] Proveedores: contactos y registro de compras
 - [ ] Marketing: calendario de publicaciones y pauta publicitaria
-- [ ] Ventas: importación de `Dash1nico.xlsx` con matching aproximado por
-      descripción y confirmación manual de casos dudosos
+- [ ] Detección de duplicados al reimportar el histórico de ventas
+- [ ] Reportes de ventas (por producto, categoría, unidad de negocio, con
+      tratamiento de notas de crédito/comprobantes tipo X)
