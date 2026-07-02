@@ -1,5 +1,8 @@
 -- MUNDO HOGAR / EQUIPAMIENTOS MH - Esquema inicial
 -- Ver README.md para el diagrama y las decisiones de diseño.
+--
+-- Todo este archivo es seguro de ejecutar más de una vez: si ya corriste
+-- parte o todo esto antes, correrlo de nuevo no rompe ni duplica nada.
 
 create extension if not exists "pgcrypto";
 
@@ -7,19 +10,19 @@ create extension if not exists "pgcrypto";
 -- Módulo 1: Inventario
 -- ---------------------------------------------------------------------------
 
-create table business_units (
+create table if not exists business_units (
   id         uuid primary key default gen_random_uuid(),
   name       text not null unique,
   created_at timestamptz not null default now()
 );
 
-create table categories (
+create table if not exists categories (
   id         uuid primary key default gen_random_uuid(),
   name       text not null unique,
   created_at timestamptz not null default now()
 );
 
-create table subcategories (
+create table if not exists subcategories (
   id          uuid primary key default gen_random_uuid(),
   category_id uuid not null references categories(id) on delete restrict,
   name        text not null,
@@ -27,7 +30,7 @@ create table subcategories (
   unique (category_id, name)
 );
 
-create table products (
+create table if not exists products (
   id               uuid primary key default gen_random_uuid(),
   sku              text not null unique,
   description      text not null,
@@ -44,13 +47,13 @@ create table products (
 
 create extension if not exists pg_trgm;
 
-create index products_business_unit_idx on products(business_unit_id);
-create index products_category_idx on products(category_id);
-create index products_subcategory_idx on products(subcategory_id);
-create index products_is_web_idx on products(is_web);
-create index products_description_trgm_idx on products using gin (description gin_trgm_ops);
+create index if not exists products_business_unit_idx on products(business_unit_id);
+create index if not exists products_category_idx on products(category_id);
+create index if not exists products_subcategory_idx on products(subcategory_id);
+create index if not exists products_is_web_idx on products(is_web);
+create index if not exists products_description_trgm_idx on products using gin (description gin_trgm_ops);
 
-create function set_updated_at()
+create or replace function set_updated_at()
 returns trigger as $$
 begin
   new.updated_at = now();
@@ -58,7 +61,7 @@ begin
 end;
 $$ language plpgsql;
 
-create trigger products_set_updated_at
+create or replace trigger products_set_updated_at
   before update on products
   for each row execute function set_updated_at();
 
@@ -66,7 +69,7 @@ create trigger products_set_updated_at
 -- Módulo 2: Proveedores
 -- ---------------------------------------------------------------------------
 
-create table suppliers (
+create table if not exists suppliers (
   id         uuid primary key default gen_random_uuid(),
   name       text not null,
   phone      text,
@@ -75,7 +78,7 @@ create table suppliers (
   created_at timestamptz not null default now()
 );
 
-create table purchases (
+create table if not exists purchases (
   id            uuid primary key default gen_random_uuid(),
   supplier_id   uuid not null references suppliers(id),
   purchase_date date not null,
@@ -83,7 +86,7 @@ create table purchases (
   created_at    timestamptz not null default now()
 );
 
-create table purchase_items (
+create table if not exists purchase_items (
   id          uuid primary key default gen_random_uuid(),
   purchase_id uuid not null references purchases(id) on delete cascade,
   product_id  uuid not null references products(id),
@@ -91,14 +94,14 @@ create table purchase_items (
   unit_cost   numeric(12,2) not null
 );
 
-create index purchase_items_purchase_idx on purchase_items(purchase_id);
-create index purchase_items_product_idx on purchase_items(product_id);
+create index if not exists purchase_items_purchase_idx on purchase_items(purchase_id);
+create index if not exists purchase_items_product_idx on purchase_items(product_id);
 
 -- ---------------------------------------------------------------------------
 -- Módulo 3: Marketing
 -- ---------------------------------------------------------------------------
 
-create table marketing_posts (
+create table if not exists marketing_posts (
   id           uuid primary key default gen_random_uuid(),
   publish_date date not null,
   channel      text not null,
@@ -109,7 +112,7 @@ create table marketing_posts (
   created_at   timestamptz not null default now()
 );
 
-create table ad_campaigns (
+create table if not exists ad_campaigns (
   id           uuid primary key default gen_random_uuid(),
   name         text not null,
   platform     text not null,
@@ -124,7 +127,7 @@ create table ad_campaigns (
 -- Módulo 4: Ventas (histórico, para importación futura de Dash1nico.xlsx)
 -- ---------------------------------------------------------------------------
 
-create table sale_items (
+create table if not exists sale_items (
   id                       uuid primary key default gen_random_uuid(),
   receipt_letter           text,
   sale_date                date not null,
@@ -142,8 +145,8 @@ create table sale_items (
   created_at               timestamptz not null default now()
 );
 
-create index sale_items_product_idx on sale_items(product_id);
-create index sale_items_match_status_idx on sale_items(match_status);
+create index if not exists sale_items_product_idx on sale_items(product_id);
+create index if not exists sale_items_match_status_idx on sale_items(match_status);
 
 -- ---------------------------------------------------------------------------
 -- Row Level Security: un solo usuario autenticado, sin acceso anónimo
@@ -160,24 +163,34 @@ alter table marketing_posts enable row level security;
 alter table ad_campaigns enable row level security;
 alter table sale_items enable row level security;
 
+drop policy if exists "authenticated_full_access" on business_units;
 create policy "authenticated_full_access" on business_units
   for all to authenticated using (true) with check (true);
+drop policy if exists "authenticated_full_access" on categories;
 create policy "authenticated_full_access" on categories
   for all to authenticated using (true) with check (true);
+drop policy if exists "authenticated_full_access" on subcategories;
 create policy "authenticated_full_access" on subcategories
   for all to authenticated using (true) with check (true);
+drop policy if exists "authenticated_full_access" on products;
 create policy "authenticated_full_access" on products
   for all to authenticated using (true) with check (true);
+drop policy if exists "authenticated_full_access" on suppliers;
 create policy "authenticated_full_access" on suppliers
   for all to authenticated using (true) with check (true);
+drop policy if exists "authenticated_full_access" on purchases;
 create policy "authenticated_full_access" on purchases
   for all to authenticated using (true) with check (true);
+drop policy if exists "authenticated_full_access" on purchase_items;
 create policy "authenticated_full_access" on purchase_items
   for all to authenticated using (true) with check (true);
+drop policy if exists "authenticated_full_access" on marketing_posts;
 create policy "authenticated_full_access" on marketing_posts
   for all to authenticated using (true) with check (true);
+drop policy if exists "authenticated_full_access" on ad_campaigns;
 create policy "authenticated_full_access" on ad_campaigns
   for all to authenticated using (true) with check (true);
+drop policy if exists "authenticated_full_access" on sale_items;
 create policy "authenticated_full_access" on sale_items
   for all to authenticated using (true) with check (true);
 
@@ -185,4 +198,5 @@ create policy "authenticated_full_access" on sale_items
 -- Datos base: las dos unidades de negocio conocidas
 -- ---------------------------------------------------------------------------
 
-insert into business_units (name) values ('MUNDO HOGAR'), ('EQUIPAMIENTOS MH');
+insert into business_units (name) values ('MUNDO HOGAR'), ('EQUIPAMIENTOS MH')
+  on conflict (name) do nothing;
