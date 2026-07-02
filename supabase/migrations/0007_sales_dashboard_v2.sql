@@ -24,6 +24,10 @@ drop function if exists sales_by_business_unit(date, date);
 drop function if exists sales_by_category(date, date);
 drop function if exists sales_by_payment_method(date, date);
 drop function if exists sales_timeseries(date, date, text);
+-- Se dropea también acá (además de en 0008, que le vuelve a cambiar el
+-- tipo de retorno) para que este archivo sea seguro de re-ejecutar sin
+-- importar si 0008 ya corrió antes o no.
+drop function if exists sales_by_weekday(date, date);
 
 create or replace function sales_summary(from_date date, to_date date)
 returns table (
