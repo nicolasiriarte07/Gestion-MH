@@ -7,6 +7,7 @@ const PRESETS = [
   { key: "today", label: "Hoy" },
   { key: "7d", label: "Últimos 7 días" },
   { key: "30d", label: "Últimos 30 días" },
+  { key: "prev_month", label: "Mes anterior" },
   { key: "month", label: "Este mes" },
   { key: "year", label: "Este año" },
   { key: "all", label: "Todo" },
@@ -30,6 +31,16 @@ function computeRange(key: string): { from: string; to: string } {
       const from = new Date(today);
       from.setDate(from.getDate() - 29);
       return { from: toISO(from), to: toISO(today) };
+    }
+    case "prev_month": {
+      const firstOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const lastOfPrevMonth = new Date(firstOfThisMonth.getTime() - 86_400_000);
+      const firstOfPrevMonth = new Date(
+        lastOfPrevMonth.getFullYear(),
+        lastOfPrevMonth.getMonth(),
+        1
+      );
+      return { from: toISO(firstOfPrevMonth), to: toISO(lastOfPrevMonth) };
     }
     case "month": {
       const from = new Date(today.getFullYear(), today.getMonth(), 1);

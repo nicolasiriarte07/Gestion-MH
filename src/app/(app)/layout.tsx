@@ -19,8 +19,10 @@ export default async function AppLayout({
   return (
     <div className="flex min-h-screen">
       <Sidebar userEmail={user.email ?? ""} />
-      <main className="mx-auto w-full max-w-[1800px] flex-1 px-6 py-6 sm:px-8">
-        {children}
+      <main className="min-w-0 flex-1 overflow-x-hidden">
+        <div className="mx-auto w-full max-w-[1800px] px-6 py-6 sm:px-8">
+          {children}
+        </div>
       </main>
     </div>
   );

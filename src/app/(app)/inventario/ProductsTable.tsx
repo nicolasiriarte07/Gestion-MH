@@ -74,23 +74,24 @@ type ColumnKey =
   | "actions";
 
 const COLUMNS: { key: ColumnKey; label: string; width: number; sortable: boolean }[] = [
-  { key: "sku", label: "Código", width: 100, sortable: true },
-  { key: "description", label: "Descripción", width: 260, sortable: true },
-  { key: "business_unit", label: "Unidad de negocio", width: 150, sortable: true },
-  { key: "category", label: "Categoría", width: 140, sortable: true },
-  { key: "subcategory", label: "Subcategoría", width: 140, sortable: true },
-  { key: "brand", label: "Marca", width: 130, sortable: true },
-  { key: "cost", label: "Costo", width: 110, sortable: true },
-  { key: "price_cash", label: "P. Contado", width: 110, sortable: true },
-  { key: "price_web", label: "P. Web", width: 110, sortable: true },
-  { key: "markup", label: "Markup", width: 90, sortable: true },
-  { key: "cogs", label: "COGS", width: 90, sortable: true },
-  { key: "stock", label: "Stock", width: 80, sortable: true },
-  { key: "is_web", label: "Web", width: 70, sortable: true },
-  { key: "actions", label: "", width: 140, sortable: false },
+  { key: "sku", label: "Código", width: 85, sortable: true },
+  { key: "description", label: "Descripción", width: 190, sortable: true },
+  { key: "business_unit", label: "Unidad de negocio", width: 110, sortable: true },
+  { key: "category", label: "Categoría", width: 100, sortable: true },
+  { key: "subcategory", label: "Subcategoría", width: 100, sortable: true },
+  { key: "brand", label: "Marca", width: 95, sortable: true },
+  { key: "cost", label: "Costo", width: 85, sortable: true },
+  { key: "price_cash", label: "P. Contado", width: 90, sortable: true },
+  { key: "price_web", label: "P. Web", width: 85, sortable: true },
+  { key: "markup", label: "Markup", width: 65, sortable: true },
+  { key: "cogs", label: "COGS", width: 65, sortable: true },
+  { key: "stock", label: "Stock", width: 55, sortable: true },
+  { key: "is_web", label: "Web", width: 50, sortable: true },
+  { key: "actions", label: "", width: 95, sortable: false },
 ];
 
-const MIN_COLUMN_WIDTH = 50;
+const MIN_COLUMN_WIDTH = 45;
+const ROWS_PER_PAGE = 50;
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
@@ -126,6 +127,7 @@ export default function ProductsTable({
   const [sort, setSort] = useState<{ key: ColumnKey; dir: "asc" | "desc" } | null>(
     null
   );
+  const [page, setPage] = useState(1);
   const resizeState = useRef<{ key: ColumnKey; startX: number } | null>(null);
 
   const subcategoriesByCategory = useMemo(() => {
@@ -265,6 +267,7 @@ export default function ProductsTable({
 
   function addDraftRow() {
     setRows((prev) => [emptyDraft(), ...prev]);
+    setPage(1);
   }
 
   function handleResizeStart(key: ColumnKey, e: React.MouseEvent) {
@@ -298,6 +301,7 @@ export default function ProductsTable({
       if (prev.dir === "asc") return { key, dir: "desc" };
       return null;
     });
+    setPage(1);
   }
 
   const sortedRows = useMemo(() => {
@@ -375,6 +379,13 @@ export default function ProductsTable({
 
   const totalWidth = COLUMNS.reduce((sum, c) => sum + widths[c.key], 0);
 
+  const totalPages = Math.max(1, Math.ceil(sortedRows.length / ROWS_PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedRows = sortedRows.slice(
+    (currentPage - 1) * ROWS_PER_PAGE,
+    currentPage * ROWS_PER_PAGE
+  );
+
   function parseCurrencyInput(
     e: React.FocusEvent<HTMLInputElement>,
     current: number
@@ -409,14 +420,14 @@ export default function ProductsTable({
           </span>
           <button
             onClick={addDraftRow}
-            className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-dark"
+            className="rounded-md bg-brand px-2 py-1 text-xs font-medium text-white hover:bg-brand-dark"
           >
             + Nuevo producto
           </button>
         </div>
 
         <table
-          className="text-sm"
+          className="text-xs"
           style={{ tableLayout: "fixed", width: totalWidth }}
         >
           <colgroup>
@@ -453,7 +464,7 @@ export default function ProductsTable({
             </tr>
           </thead>
           <tbody>
-            {sortedRows.map((row) => {
+            {pagedRows.map((row) => {
               const draft = isDraft(row);
               const rowSubcategories = row.category_id
                 ? (subcategoriesByCategory.get(row.category_id) ?? [])
@@ -466,7 +477,7 @@ export default function ProductsTable({
                   key={row.id}
                   className="border-b border-slate-100 align-top last:border-0 hover:bg-slate-50"
                 >
-                  <td className="overflow-hidden px-3 py-1.5">
+                  <td className="overflow-hidden px-2 py-1">
                     <input
                       className="w-full rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                       defaultValue={row.sku}
@@ -477,7 +488,7 @@ export default function ProductsTable({
                       }}
                     />
                   </td>
-                  <td className="overflow-hidden px-3 py-1.5">
+                  <td className="overflow-hidden px-2 py-1">
                     <input
                       className="w-full rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                       defaultValue={row.description}
@@ -488,7 +499,7 @@ export default function ProductsTable({
                       }}
                     />
                   </td>
-                  <td className="overflow-hidden px-3 py-1.5">
+                  <td className="overflow-hidden px-2 py-1">
                     <select
                       className="w-full rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                       value={row.business_unit_id ?? ""}
@@ -506,7 +517,7 @@ export default function ProductsTable({
                       ))}
                     </select>
                   </td>
-                  <td className="overflow-hidden px-3 py-1.5">
+                  <td className="overflow-hidden px-2 py-1">
                     <select
                       className="w-full rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                       value={row.category_id ?? ""}
@@ -525,7 +536,7 @@ export default function ProductsTable({
                       ))}
                     </select>
                   </td>
-                  <td className="overflow-hidden px-3 py-1.5">
+                  <td className="overflow-hidden px-2 py-1">
                     <select
                       className="w-full rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                       value={row.subcategory_id ?? ""}
@@ -544,7 +555,7 @@ export default function ProductsTable({
                       ))}
                     </select>
                   </td>
-                  <td className="overflow-hidden px-3 py-1.5">
+                  <td className="overflow-hidden px-2 py-1">
                     <select
                       className="w-full rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
                       value={row.brand_id ?? ""}
@@ -562,7 +573,7 @@ export default function ProductsTable({
                       ))}
                     </select>
                   </td>
-                  <td className="overflow-hidden px-3 py-1.5">
+                  <td className="overflow-hidden px-2 py-1">
                     <input
                       type="text"
                       inputMode="numeric"
@@ -576,7 +587,7 @@ export default function ProductsTable({
                       }}
                     />
                   </td>
-                  <td className="overflow-hidden px-3 py-1.5">
+                  <td className="overflow-hidden px-2 py-1">
                     <input
                       type="text"
                       inputMode="numeric"
@@ -590,7 +601,7 @@ export default function ProductsTable({
                       }}
                     />
                   </td>
-                  <td className="overflow-hidden px-3 py-1.5">
+                  <td className="overflow-hidden px-2 py-1">
                     <input
                       type="text"
                       inputMode="numeric"
@@ -604,13 +615,13 @@ export default function ProductsTable({
                       }}
                     />
                   </td>
-                  <td className="overflow-hidden px-3 py-1.5 whitespace-nowrap text-slate-600">
+                  <td className="overflow-hidden px-2 py-1 whitespace-nowrap text-slate-600">
                     {formatPercent(markupRatio(row.cost, row.price_web))}
                   </td>
-                  <td className="overflow-hidden px-3 py-1.5 whitespace-nowrap text-slate-600">
+                  <td className="overflow-hidden px-2 py-1 whitespace-nowrap text-slate-600">
                     {formatPercent(cogsRatio(row.cost, row.price_web))}
                   </td>
-                  <td className="overflow-hidden px-3 py-1.5">
+                  <td className="overflow-hidden px-2 py-1">
                     <input
                       type="number"
                       className="w-full rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
@@ -622,7 +633,7 @@ export default function ProductsTable({
                       }}
                     />
                   </td>
-                  <td className="overflow-hidden px-3 py-1.5 text-center">
+                  <td className="overflow-hidden px-2 py-1 text-center">
                     <input
                       type="checkbox"
                       className="accent-brand"
@@ -632,7 +643,7 @@ export default function ProductsTable({
                       }}
                     />
                   </td>
-                  <td className="overflow-hidden px-3 py-1.5">
+                  <td className="overflow-hidden px-2 py-1">
                     <div className="flex items-center gap-2">
                       {draft && (
                         <button
@@ -670,6 +681,35 @@ export default function ProductsTable({
             )}
           </tbody>
         </table>
+
+        {sortedRows.length > 0 && (
+          <div className="flex items-center justify-between border-t border-slate-200 px-3 py-2 text-xs text-slate-500">
+            <span>
+              Mostrando {(currentPage - 1) * ROWS_PER_PAGE + 1}–
+              {Math.min(currentPage * ROWS_PER_PAGE, sortedRows.length)} de{" "}
+              {sortedRows.length} producto(s)
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
+                className="rounded-md border border-slate-300 px-2.5 py-1 font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Anterior
+              </button>
+              <span>
+                Página {currentPage} de {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+                className="rounded-md border border-slate-300 px-2.5 py-1 font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

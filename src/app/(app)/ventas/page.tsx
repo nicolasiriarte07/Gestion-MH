@@ -6,8 +6,18 @@ import type { WeekdayRow } from "./WeekdayChart";
 import type { TimeSeriesRow } from "./TimeSeriesChart";
 import VentasDashboard, { type Bucket, type SalesSummary } from "./VentasDashboard";
 
+// Por defecto, el dashboard arranca mostrando el mes calendario anterior
+// completo (ej. si hoy es cualquier día de julio, muestra junio entero),
+// no todo el histórico.
 function defaultRange(): { from: string; to: string } {
-  return { from: "2000-01-01", to: new Date().toISOString().slice(0, 10) };
+  const now = new Date();
+  const toISO = (d: Date) => d.toISOString().slice(0, 10);
+  const firstOfThisMonth = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1);
+  const lastOfPrevMonth = new Date(firstOfThisMonth - 1);
+  const firstOfPrevMonth = new Date(
+    Date.UTC(lastOfPrevMonth.getUTCFullYear(), lastOfPrevMonth.getUTCMonth(), 1)
+  );
+  return { from: toISO(firstOfPrevMonth), to: toISO(lastOfPrevMonth) };
 }
 
 function pickBucket(from: string, to: string): Bucket {
