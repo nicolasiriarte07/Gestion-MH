@@ -76,7 +76,7 @@ export default function PeriodFilter({
   })?.key;
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-3">
+    <div className="rounded-xl border border-slate-200 shadow-sm bg-white p-3">
       <div className="flex flex-wrap items-center gap-2">
         {PRESETS.map((p) => (
           <button

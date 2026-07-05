@@ -61,7 +61,7 @@ export function TimeSeriesChart({
     .join(" ");
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4">
+    <div className="rounded-2xl border border-slate-200 shadow-sm bg-white p-4">
       <p className="mb-3 text-sm font-medium text-slate-700">
         Evolución de ventas
       </p>

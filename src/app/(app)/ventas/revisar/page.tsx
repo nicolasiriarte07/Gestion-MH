@@ -67,7 +67,7 @@ export default async function RevisarPage() {
       </div>
 
       {groups.length === 0 ? (
-        <div className="rounded-md border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
           No hay descripciones pendientes de revisión.
         </div>
       ) : (

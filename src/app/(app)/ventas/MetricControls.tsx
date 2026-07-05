@@ -24,7 +24,7 @@ export default function MetricControls({
 
   return (
     <div className="flex flex-wrap items-center gap-4">
-      <div className="flex items-center gap-1 rounded-md border border-slate-200 bg-white p-1">
+      <div className="flex items-center gap-1 rounded-xl border border-slate-200 shadow-sm bg-white p-1">
         {(
           [
             { key: "ventas", label: "Ventas" },
@@ -46,7 +46,7 @@ export default function MetricControls({
       </div>
 
       {metric === "facturacion" && (
-        <div className="flex items-center gap-1 rounded-md border border-slate-200 bg-white p-1">
+        <div className="flex items-center gap-1 rounded-xl border border-slate-200 shadow-sm bg-white p-1">
           {(
             [
               { key: "ars", label: "ARS" },

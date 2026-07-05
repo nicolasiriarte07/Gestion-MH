@@ -70,7 +70,7 @@ export function BreakdownCard({
   const max = Math.max(...values, 1);
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4">
+    <div className="rounded-2xl border border-slate-200 shadow-sm bg-white p-4">
       <p className="mb-3 text-sm font-medium text-slate-700">{title}</p>
       {finalRows.length === 0 ? (
         <p className="text-sm text-slate-400">Sin datos en este período.</p>

@@ -146,7 +146,7 @@ export default function MatchReview({
           return (
             <div
               key={key}
-              className="rounded-md border border-slate-200 bg-white p-3"
+              className="rounded-2xl border border-slate-200 shadow-sm bg-white p-3"
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>

@@ -29,7 +29,7 @@ export default function FilterBar({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-md border border-slate-200 bg-white p-3">
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
       <input
         type="text"
         placeholder="Buscar por código o descripción..."

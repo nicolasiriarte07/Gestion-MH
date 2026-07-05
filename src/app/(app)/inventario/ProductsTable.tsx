@@ -90,7 +90,7 @@ const MIN_COLUMN_WIDTH = 50;
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4">
+    <div className="rounded-2xl border border-slate-200 shadow-sm bg-white p-4">
       <p className="text-2xl font-semibold text-slate-900">{value}</p>
       <p className="text-sm font-medium text-slate-700">{label}</p>
     </div>
@@ -388,7 +388,7 @@ export default function ProductsTable({
         />
       </div>
 
-      <div className="overflow-x-auto rounded-md border border-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white">
         <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
           <span className="text-sm font-medium text-slate-700">
             Productos

@@ -20,7 +20,7 @@ export type SalesSummary = {
 
 function StatTile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4">
+    <div className="rounded-2xl border border-slate-200 shadow-sm bg-white p-4">
       <p className="text-2xl font-semibold text-slate-900">{value}</p>
       <p className="text-sm font-medium text-slate-700">{label}</p>
     </div>
@@ -91,7 +91,7 @@ export default function VentasDashboard({
       </div>
 
       {!totalLines ? (
-        <div className="rounded-md border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
           Todavía no importaste ningún histórico de ventas.{" "}
           <Link href="/ventas/import" className="text-brand underline">
             Importar ahora

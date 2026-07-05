@@ -48,7 +48,7 @@ export default function ImportForm() {
 
       <form
         action={formAction}
-        className="space-y-3 rounded-md border border-slate-200 bg-white p-4"
+        className="space-y-3 rounded-2xl border border-slate-200 shadow-sm bg-white p-4"
       >
         <input
           type="file"
@@ -80,7 +80,7 @@ export default function ImportForm() {
       </form>
 
       {state && (
-        <div className="rounded-md border border-slate-200 bg-white p-4">
+        <div className="rounded-2xl border border-slate-200 shadow-sm bg-white p-4">
           {state.ok ? (
             <p className="text-sm font-medium text-green-700">
               {state.replaced && "Se borraron las ventas anteriores. "}
