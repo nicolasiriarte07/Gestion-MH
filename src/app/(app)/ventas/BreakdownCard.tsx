@@ -22,12 +22,12 @@ export type BreakdownRow = {
   line_count: number;
 };
 
-function rowValue(row: BreakdownRow, metric: Metric, currency: Currency): number {
+export function rowValue(row: BreakdownRow, metric: Metric, currency: Currency): number {
   if (metric === "ventas") return row.line_count;
   return currency === "usd" ? row.total_usd : row.total_ars;
 }
 
-function formatValue(value: number, metric: Metric, currency: Currency): string {
+export function formatValue(value: number, metric: Metric, currency: Currency): string {
   if (metric === "ventas") return String(Math.round(value));
   return formatCurrency(value, currency);
 }

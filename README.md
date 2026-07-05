@@ -109,10 +109,11 @@ unidades vendidas, clientes únicos (cuenta valores distintos de la columna
 Cliente, sin importar cuántas líneas/artículos compró cada uno), evolución
 en el tiempo (gráfico de líneas), ventas por día de la semana (gráfico de
 barras, usando la columna Dia del archivo tal cual viene, no calculado a
-partir de la fecha), y desgloses por tipo de comprobante (gráfico de
-torta; A/B/X — X son ventas en negro, se incluyen en los totales pero se
-ven aparte), unidad de negocio, categoría, producto (columna Descripcion)
-y forma de pago.
+partir de la fecha), desgloses por tipo de comprobante (gráfico de torta;
+A/B/X — X son ventas en negro, se incluyen en los totales pero se ven
+aparte), unidad de negocio, categoría, producto (columna Descripcion) y
+forma de pago, y un ranking Top 10 clientes (columna Cliente) según la
+métrica elegida.
 
 Dos selectores controlan qué se grafica: **Ventas / Facturación** (cambia
 entre mostrar cantidad de líneas o montos en $) y, cuando está en
@@ -163,9 +164,9 @@ Implementado:
 - [x] Dashboard de ventas con control de período (presets + rango
       personalizado), selector de métrica (Ventas/Facturación) y moneda
       (ARS/USD), KPIs (incluyendo clientes únicos), evolución en gráfico de
-      líneas, ventas por día de la semana, y desgloses por tipo de
+      líneas, ventas por día de la semana, desgloses por tipo de
       comprobante (torta), unidad de negocio, categoría, producto y forma
-      de pago
+      de pago, y ranking Top 10 clientes
 - [x] Opción de reemplazar todas las ventas existentes al reimportar (para
       recargar el histórico completo sin duplicar filas)
 

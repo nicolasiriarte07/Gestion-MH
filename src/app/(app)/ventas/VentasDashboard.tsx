@@ -6,6 +6,7 @@ import { BreakdownCard, type BreakdownRow } from "./BreakdownCard";
 import { PieChart } from "./PieChart";
 import { WeekdayChart, type WeekdayRow } from "./WeekdayChart";
 import { TimeSeriesChart, type TimeSeriesRow } from "./TimeSeriesChart";
+import { TopCustomersCard } from "./TopCustomersCard";
 
 export type Bucket = "day" | "week" | "month";
 
@@ -41,6 +42,7 @@ export default function VentasDashboard({
   byProductRows,
   byPaymentRows,
   byWeekdayRows,
+  byCustomerRows,
   timeseries,
 }: {
   totalLines: number;
@@ -57,6 +59,7 @@ export default function VentasDashboard({
   byProductRows: BreakdownRow[];
   byPaymentRows: BreakdownRow[];
   byWeekdayRows: WeekdayRow[];
+  byCustomerRows: BreakdownRow[];
   timeseries: TimeSeriesRow[];
 }) {
   const total = currency === "usd" ? summary.total_usd : summary.total_ars;
@@ -162,6 +165,11 @@ export default function VentasDashboard({
               title="Por forma de pago"
               rows={byPaymentRows}
               colorMode="categorical"
+              metric={metric}
+              currency={currency}
+            />
+            <TopCustomersCard
+              rows={byCustomerRows}
               metric={metric}
               currency={currency}
             />

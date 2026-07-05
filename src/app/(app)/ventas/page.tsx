@@ -56,6 +56,12 @@ type ProductRow = {
   total_usd: number;
   line_count: number;
 };
+type CustomerRow = {
+  customer_name: string;
+  total_ars: number;
+  total_usd: number;
+  line_count: number;
+};
 
 export default async function VentasPage({
   searchParams,
@@ -85,6 +91,7 @@ export default async function VentasPage({
     { data: byProductData },
     { data: byPaymentData },
     { data: byWeekdayData },
+    { data: byCustomerData },
     { data: timeseriesData },
     { data: businessUnits },
     { count: totalLines },
@@ -97,6 +104,7 @@ export default async function VentasPage({
     supabase.rpc("sales_by_product", { from_date: from, to_date: to }),
     supabase.rpc("sales_by_payment_method", { from_date: from, to_date: to }),
     supabase.rpc("sales_by_weekday", { from_date: from, to_date: to }),
+    supabase.rpc("sales_by_customer", { from_date: from, to_date: to }),
     supabase.rpc("sales_timeseries", {
       from_date: from,
       to_date: to,
@@ -170,6 +178,15 @@ export default async function VentasPage({
 
   const byWeekdayRows: WeekdayRow[] = (byWeekdayData ?? []) as WeekdayRow[];
 
+  const byCustomerRows: BreakdownRow[] = (
+    (byCustomerData ?? []) as CustomerRow[]
+  ).map((r) => ({
+    label: r.customer_name,
+    total_ars: r.total_ars,
+    total_usd: r.total_usd,
+    line_count: r.line_count,
+  }));
+
   return (
     <VentasDashboard
       totalLines={totalLines ?? 0}
@@ -186,6 +203,7 @@ export default async function VentasPage({
       byProductRows={byProductRows}
       byPaymentRows={byPaymentRows}
       byWeekdayRows={byWeekdayRows}
+      byCustomerRows={byCustomerRows}
       timeseries={(timeseriesData ?? []) as TimeSeriesRow[]}
     />
   );
