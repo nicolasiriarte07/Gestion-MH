@@ -14,6 +14,7 @@ export type ProductInput = {
   business_unit_id: string | null;
   category_id: string | null;
   subcategory_id: string | null;
+  brand_id: string | null;
 };
 
 export async function createProduct(input: ProductInput) {

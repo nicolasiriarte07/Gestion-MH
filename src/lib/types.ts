@@ -14,6 +14,11 @@ export type Subcategory = {
   name: string;
 };
 
+export type Brand = {
+  id: string;
+  name: string;
+};
+
 export type Product = {
   id: string;
   sku: string;
@@ -26,6 +31,7 @@ export type Product = {
   business_unit_id: string | null;
   category_id: string | null;
   subcategory_id: string | null;
+  brand_id: string | null;
   created_at: string;
   updated_at: string;
 };

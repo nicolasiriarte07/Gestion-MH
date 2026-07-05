@@ -5,6 +5,7 @@ import type {
   BusinessUnit,
   Category,
   Subcategory,
+  Brand,
   Product,
 } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
@@ -52,6 +53,7 @@ function emptyDraft(): DraftProduct {
     business_unit_id: null,
     category_id: null,
     subcategory_id: null,
+    brand_id: null,
   };
 }
 
@@ -61,6 +63,7 @@ type ColumnKey =
   | "business_unit"
   | "category"
   | "subcategory"
+  | "brand"
   | "cost"
   | "price_cash"
   | "price_web"
@@ -76,6 +79,7 @@ const COLUMNS: { key: ColumnKey; label: string; width: number; sortable: boolean
   { key: "business_unit", label: "Unidad de negocio", width: 150, sortable: true },
   { key: "category", label: "Categoría", width: 140, sortable: true },
   { key: "subcategory", label: "Subcategoría", width: 140, sortable: true },
+  { key: "brand", label: "Marca", width: 130, sortable: true },
   { key: "cost", label: "Costo", width: 110, sortable: true },
   { key: "price_cash", label: "P. Contado", width: 110, sortable: true },
   { key: "price_web", label: "P. Web", width: 110, sortable: true },
@@ -102,11 +106,13 @@ export default function ProductsTable({
   businessUnits,
   categories,
   subcategories,
+  brands,
 }: {
   initialProducts: Product[];
   businessUnits: BusinessUnit[];
   categories: Category[];
   subcategories: Subcategory[];
+  brands: Brand[];
 }) {
   const [rows, setRows] = useState<Row[]>(initialProducts);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -146,6 +152,11 @@ export default function ProductsTable({
     const map = new Map(subcategories.map((s) => [s.id, s.name]));
     return (id: string | null) => (id ? (map.get(id) ?? "") : "");
   }, [subcategories]);
+
+  const brandName = useMemo(() => {
+    const map = new Map(brands.map((b) => [b.id, b.name]));
+    return (id: string | null) => (id ? (map.get(id) ?? "") : "");
+  }, [brands]);
 
   function patchRow(id: string, patch: Partial<Row>) {
     setRows((prev) =>
@@ -219,6 +230,7 @@ export default function ProductsTable({
       business_unit_id: draft.business_unit_id,
       category_id: draft.category_id,
       subcategory_id: draft.subcategory_id,
+      brand_id: draft.brand_id,
     };
     const result = await createProduct(input);
     setSaving(draft.id, false);
@@ -301,6 +313,8 @@ export default function ProductsTable({
           return categoryName(row.category_id).toLowerCase();
         case "subcategory":
           return subcategoryName(row.subcategory_id).toLowerCase();
+        case "brand":
+          return brandName(row.brand_id).toLowerCase();
         case "cost":
           return row.cost;
         case "price_cash":
@@ -332,7 +346,7 @@ export default function ProductsTable({
       return 0;
     });
     return [...draftRows, ...sortedProducts];
-  }, [rows, sort, businessUnitName, categoryName, subcategoryName]);
+  }, [rows, sort, businessUnitName, categoryName, subcategoryName, brandName]);
 
   const metrics = useMemo(() => {
     const products = rows.filter((r): r is Product => !isDraft(r));
@@ -526,6 +540,24 @@ export default function ProductsTable({
                       {rowSubcategories.map((sub) => (
                         <option key={sub.id} value={sub.id}>
                           {sub.name}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="overflow-hidden px-3 py-1.5">
+                    <select
+                      className="w-full rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
+                      value={row.brand_id ?? ""}
+                      onChange={(e) => {
+                        applyChange(row, draft, {
+                          brand_id: e.target.value || null,
+                        });
+                      }}
+                    >
+                      <option value="">Sin marca</option>
+                      {brands.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.name}
                         </option>
                       ))}
                     </select>

@@ -78,6 +78,9 @@ Negocio, Categoría Madre, Subcategoría o Publicado, se usan también:
   existen.
 - Al terminar, la pantalla muestra cuántas filas se crearon, actualizaron u
   omitieron (con el motivo).
+- **Marca** no viene del archivo: todos los productos quedan "Sin marca" al
+  importar (o reimportar, sin pisar lo que ya tenía asignado) y se elige a
+  mano desde el desplegable de esa columna en la tabla.
 
 ## 5. Importar el histórico de ventas
 
@@ -133,6 +136,7 @@ Facturación, **ARS / USD** (usa Monto_con_IVA_ars o Monto_con_IVA_usd).
 Ver `supabase/migrations/`. Resumen de tablas:
 
 - **Inventario**: `business_units`, `categories`, `subcategories`,
+  `brands` (catálogo fijo de marcas, se asigna a mano por producto),
   `products`
 - **Proveedores**: `suppliers`, `purchases`, `purchase_items`
 - **Marketing**: `marketing_posts`, `ad_campaigns`

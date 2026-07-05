@@ -2,14 +2,16 @@
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useTransition } from "react";
-import type { BusinessUnit, Category } from "@/lib/types";
+import type { BusinessUnit, Category, Brand } from "@/lib/types";
 
 export default function FilterBar({
   businessUnits,
   categories,
+  brands,
 }: {
   businessUnits: BusinessUnit[];
   categories: Category[];
+  brands: Brand[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -65,6 +67,19 @@ export default function FilterBar({
       </select>
 
       <select
+        defaultValue={searchParams.get("brand") ?? ""}
+        onChange={(e) => setParam("brand", e.target.value)}
+        className="rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
+      >
+        <option value="">Marca: todas</option>
+        {brands.map((b) => (
+          <option key={b.id} value={b.id}>
+            {b.name}
+          </option>
+        ))}
+      </select>
+
+      <select
         defaultValue={searchParams.get("web") ?? ""}
         onChange={(e) => setParam("web", e.target.value)}
         className="rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
@@ -77,6 +92,7 @@ export default function FilterBar({
       {(searchParams.get("q") ||
         searchParams.get("bu") ||
         searchParams.get("cat") ||
+        searchParams.get("brand") ||
         searchParams.get("web")) && (
         <button
           onClick={() => router.push(pathname)}

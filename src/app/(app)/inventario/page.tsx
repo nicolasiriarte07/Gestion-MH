@@ -1,12 +1,19 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import type { BusinessUnit, Category, Subcategory, Product } from "@/lib/types";
+import type {
+  BusinessUnit,
+  Category,
+  Subcategory,
+  Brand,
+  Product,
+} from "@/lib/types";
 import FilterBar from "./FilterBar";
 import ProductsTable from "./ProductsTable";
 
 type SearchParams = {
   bu?: string;
   cat?: string;
+  brand?: string;
   web?: string;
   q?: string;
 };
@@ -16,13 +23,14 @@ export default async function InventarioPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { bu, cat, web, q } = await searchParams;
+  const { bu, cat, brand, web, q } = await searchParams;
   const supabase = await createClient();
 
   const [
     { data: businessUnits },
     { data: categories },
     { data: subcategories },
+    { data: brands },
   ] = await Promise.all([
     supabase.from("business_units").select("id, name").order("name"),
     supabase.from("categories").select("id, name").order("name"),
@@ -30,6 +38,7 @@ export default async function InventarioPage({
       .from("subcategories")
       .select("id, category_id, name")
       .order("name"),
+    supabase.from("brands").select("id, name").order("name"),
   ]);
 
   let query = supabase
@@ -39,6 +48,7 @@ export default async function InventarioPage({
 
   if (bu) query = query.eq("business_unit_id", bu);
   if (cat) query = query.eq("category_id", cat);
+  if (brand) query = query.eq("brand_id", brand);
   if (web === "yes") query = query.eq("is_web", true);
   if (web === "no") query = query.eq("is_web", false);
   if (q) query = query.or(`description.ilike.%${q}%,sku.ilike.%${q}%`);
@@ -65,6 +75,7 @@ export default async function InventarioPage({
       <FilterBar
         businessUnits={(businessUnits ?? []) as BusinessUnit[]}
         categories={(categories ?? []) as Category[]}
+        brands={(brands ?? []) as Brand[]}
       />
 
       {error && (
@@ -74,11 +85,12 @@ export default async function InventarioPage({
       )}
 
       <ProductsTable
-        key={`${bu ?? ""}|${cat ?? ""}|${web ?? ""}|${q ?? ""}`}
+        key={`${bu ?? ""}|${cat ?? ""}|${brand ?? ""}|${web ?? ""}|${q ?? ""}`}
         initialProducts={(products ?? []) as Product[]}
         businessUnits={(businessUnits ?? []) as BusinessUnit[]}
         categories={(categories ?? []) as Category[]}
         subcategories={(subcategories ?? []) as Subcategory[]}
+        brands={(brands ?? []) as Brand[]}
       />
     </div>
   );
