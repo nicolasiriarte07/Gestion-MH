@@ -150,10 +150,12 @@ Ver `supabase/migrations/`. Resumen de tablas:
   `brands` (catálogo fijo de marcas, se asigna a mano por producto),
   `products`
 - **Proveedores**: `suppliers`, `purchases`, `purchase_items`
-- **Marketing**: `marketing_posts` (concepto, descripción,
-  `business_unit_id`, `publish_date`, `content_type`
-  educacional/marca/comercial, `is_scheduled`, `investment_ars`),
-  `ad_campaigns`
+- **Marketing**: pestaña Orgánico con `marketing_posts` (concepto,
+  descripción, `business_unit_id`, `publish_date`, `content_type`
+  educacional/marca/comercial, `is_scheduled`, `investment_ars`); pestaña
+  Pauta con `ad_campaigns` (`campaign_name`, `investment_ars`, `reach`,
+  `start_date`/`end_date` — la Duración en días se calcula a partir de
+  esas dos fechas, no se guarda)
 - **Ventas**: `sale_items`, con `product_id` nullable y `match_status`
   (`pending` / `confirmed` / `rejected` / `no_match`) para el flujo de
   confirmación manual, más `business_unit_id` y `source_article_code` para
@@ -194,9 +196,12 @@ Implementado:
       lista de coincidencias si hay varios clientes parecidos y una vista
       de detalle con el historial completo de compras de cada uno (total
       en ARS/USD, ticket promedio, y el detalle línea por línea)
-- [x] Marketing: cronograma de acciones de comunicación agrupado por mes
-      (concepto, vertical, fecha, tipo de contenido, pautado e inversión),
-      con carga/edición inline y total invertido por mes
+- [x] Marketing: pestañas Orgánico / Pauta. Orgánico es el cronograma de
+      acciones de comunicación agrupado por mes (concepto, descripción,
+      vertical, fecha, tipo de contenido, pautado e inversión); Pauta es
+      un cronograma de campañas pagas agrupado por mes de inicio (campaña,
+      inversión, alcance, fecha de inicio/fin y duración calculada en
+      días). Ambos con carga/edición inline y total invertido por mes
 - [x] Detección de duplicados al reimportar el histórico de ventas (por
       contenido de la fila, no requiere Nombre_PDF)
 - [x] Resumen: pantalla de inicio (`/`) con los números clave del mes

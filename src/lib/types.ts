@@ -51,6 +51,17 @@ export type MarketingPost = {
   updated_at: string;
 };
 
+export type AdCampaign = {
+  id: string;
+  campaign_name: string;
+  investment_ars: number;
+  reach: number;
+  start_date: string;
+  end_date: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type MatchStatus = "pending" | "confirmed" | "rejected" | "no_match";
 
 export type SaleItem = {

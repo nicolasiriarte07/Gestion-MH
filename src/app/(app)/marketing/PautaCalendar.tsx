@@ -1,22 +1,22 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { BusinessUnit, ContentType, MarketingPost } from "@/lib/types";
+import type { AdCampaign } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
 import { parseFlexibleNumber } from "@/lib/excel";
 import { monthKeyOf, formatMonthLabel } from "@/lib/months";
 import AutoGrowTextarea from "./AutoGrowTextarea";
 import {
-  createMarketingPost,
-  deleteMarketingPost,
-  updateMarketingPost,
-  type MarketingPostInput,
-} from "./actions";
+  createAdCampaign,
+  deleteAdCampaign,
+  updateAdCampaign,
+  type AdCampaignInput,
+} from "./pauta-actions";
 
-type DraftPost = MarketingPostInput & { id: string; isDraft: true };
-type Row = MarketingPost | DraftPost;
+type DraftCampaign = AdCampaignInput & { id: string; isDraft: true };
+type Row = AdCampaign | DraftCampaign;
 
-function isDraft(row: Row): row is DraftPost {
+function isDraft(row: Row): row is DraftCampaign {
   return "isDraft" in row;
 }
 
@@ -24,57 +24,45 @@ function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-const VERTICAL_COLORS: Record<string, string> = {
-  "MUNDO HOGAR": "bg-brand-light text-brand-dark",
-  "EQUIPAMIENTOS MH": "bg-violet-100 text-violet-700",
-};
+const reachFormatter = new Intl.NumberFormat("es-AR", {
+  maximumFractionDigits: 0,
+});
 
-const CONTENT_LABELS: Record<ContentType, string> = {
-  educacional: "Educacional",
-  marca: "Marca",
-  comercial: "Comercial",
-};
+function formatReach(value: number): string {
+  return reachFormatter.format(value);
+}
 
-const CONTENT_COLORS: Record<ContentType, string> = {
-  educacional: "bg-blue-100 text-blue-700",
-  marca: "bg-violet-100 text-violet-700",
-  comercial: "bg-emerald-100 text-emerald-700",
-};
+function durationDays(start: string, end: string): number {
+  const startMs = new Date(`${start}T00:00:00Z`).getTime();
+  const endMs = new Date(`${end}T00:00:00Z`).getTime();
+  return Math.round((endMs - startMs) / 86_400_000) + 1;
+}
 
-function emptyDraft(publishDate: string): DraftPost {
+function emptyDraft(startDate: string): DraftCampaign {
   return {
     id: `draft-${crypto.randomUUID()}`,
     isDraft: true,
-    concept: "",
-    description: null,
-    business_unit_id: null,
-    publish_date: publishDate,
-    content_type: null,
-    is_scheduled: false,
+    campaign_name: "",
     investment_ars: 0,
+    reach: 0,
+    start_date: startDate,
+    end_date: startDate,
   };
 }
 
-export default function MarketingCalendar({
-  initialPosts,
-  businessUnits,
+export default function PautaCalendar({
+  initialCampaigns,
 }: {
-  initialPosts: MarketingPost[];
-  businessUnits: BusinessUnit[];
+  initialCampaigns: AdCampaign[];
 }) {
-  const [rows, setRows] = useState<Row[]>(initialPosts);
+  const [rows, setRows] = useState<Row[]>(initialCampaigns);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
-
-  const businessUnitName = useMemo(() => {
-    const map = new Map(businessUnits.map((bu) => [bu.id, bu.name]));
-    return (id: string | null) => (id ? (map.get(id) ?? "") : "");
-  }, [businessUnits]);
 
   const groups = useMemo(() => {
     const byMonth = new Map<string, Row[]>();
     for (const row of rows) {
-      const key = monthKeyOf(row.publish_date);
+      const key = monthKeyOf(row.start_date);
       const list = byMonth.get(key) ?? [];
       list.push(row);
       byMonth.set(key, list);
@@ -84,7 +72,7 @@ export default function MarketingCalendar({
       .map(([monthKey, monthRows]) => ({
         monthKey,
         rows: [...monthRows].sort((a, b) =>
-          a.publish_date.localeCompare(b.publish_date)
+          a.start_date.localeCompare(b.start_date)
         ),
       }));
   }, [rows]);
@@ -113,10 +101,17 @@ export default function MarketingCalendar({
     });
   }
 
-  async function saveField(row: MarketingPost, patch: Partial<MarketingPostInput>) {
+  async function saveField(row: AdCampaign, patch: Partial<AdCampaignInput>) {
+    const nextStart = patch.start_date ?? row.start_date;
+    const nextEnd = patch.end_date ?? row.end_date;
+    if (nextEnd < nextStart) {
+      setError(row.id, "La fecha de fin no puede ser anterior a la de inicio.");
+      return;
+    }
+
     setSaving(row.id, true);
     setError(row.id, null);
-    const result = await updateMarketingPost(row.id, patch);
+    const result = await updateAdCampaign(row.id, patch);
     setSaving(row.id, false);
 
     if (result.error) {
@@ -129,34 +124,43 @@ export default function MarketingCalendar({
   function applyChange(
     row: Row,
     draft: boolean,
-    patch: Partial<MarketingPostInput>
+    patch: Partial<AdCampaignInput>
   ) {
     if (draft) {
+      const nextStart = patch.start_date ?? row.start_date;
+      const nextEnd = patch.end_date ?? row.end_date;
+      if (nextEnd < nextStart) {
+        setError(row.id, "La fecha de fin no puede ser anterior a la de inicio.");
+        return;
+      }
+      setError(row.id, null);
       patchRow(row.id, patch as Partial<Row>);
     } else {
-      saveField(row as MarketingPost, patch);
+      saveField(row as AdCampaign, patch);
     }
   }
 
-  async function saveDraft(draft: DraftPost) {
-    if (!draft.concept.trim()) {
-      setError(draft.id, "El concepto es obligatorio.");
+  async function saveDraft(draft: DraftCampaign) {
+    if (!draft.campaign_name.trim()) {
+      setError(draft.id, "El nombre de la campaña es obligatorio.");
+      return;
+    }
+    if (draft.end_date < draft.start_date) {
+      setError(draft.id, "La fecha de fin no puede ser anterior a la de inicio.");
       return;
     }
 
     setSaving(draft.id, true);
     setError(draft.id, null);
 
-    const input: MarketingPostInput = {
-      concept: draft.concept,
-      description: draft.description,
-      business_unit_id: draft.business_unit_id,
-      publish_date: draft.publish_date,
-      content_type: draft.content_type,
-      is_scheduled: draft.is_scheduled,
+    const input: AdCampaignInput = {
+      campaign_name: draft.campaign_name,
       investment_ars: draft.investment_ars,
+      reach: draft.reach,
+      start_date: draft.start_date,
+      end_date: draft.end_date,
     };
-    const result = await createMarketingPost(input);
+    const result = await createAdCampaign(input);
     setSaving(draft.id, false);
 
     if (result.error) {
@@ -165,7 +169,7 @@ export default function MarketingCalendar({
     }
 
     setRows((prev) =>
-      prev.map((r) => (r.id === draft.id ? (result.data as MarketingPost) : r))
+      prev.map((r) => (r.id === draft.id ? (result.data as AdCampaign) : r))
     );
   }
 
@@ -174,10 +178,10 @@ export default function MarketingCalendar({
       setRows((prev) => prev.filter((r) => r.id !== row.id));
       return;
     }
-    if (!confirm(`¿Eliminar "${row.concept}"?`)) return;
+    if (!confirm(`¿Eliminar "${row.campaign_name}"?`)) return;
 
     setSaving(row.id, true);
-    const result = await deleteMarketingPost(row.id);
+    const result = await deleteAdCampaign(row.id);
     setSaving(row.id, false);
 
     if (result.error) {
@@ -187,8 +191,8 @@ export default function MarketingCalendar({
     setRows((prev) => prev.filter((r) => r.id !== row.id));
   }
 
-  function addDraftRow(publishDate: string) {
-    setRows((prev) => [...prev, emptyDraft(publishDate)]);
+  function addDraftRow(startDate: string) {
+    setRows((prev) => [...prev, emptyDraft(startDate)]);
   }
 
   function parseCurrencyInput(
@@ -200,6 +204,15 @@ export default function MarketingCalendar({
     return value === current ? null : value;
   }
 
+  function parseReachInput(
+    e: React.FocusEvent<HTMLInputElement>,
+    current: number
+  ): number | null {
+    const value = parseFlexibleNumber(e.target.value);
+    e.target.value = formatReach(value);
+    return value === current ? null : value;
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
@@ -207,18 +220,18 @@ export default function MarketingCalendar({
           onClick={() => addDraftRow(todayISO())}
           className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
         >
-          + Nueva acción
+          + Nueva campaña
         </button>
       </div>
 
       {groups.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center text-sm text-slate-500 shadow-sm">
-          Todavía no cargaste ninguna acción de comunicación.
+          Todavía no cargaste ninguna campaña de pauta.
         </div>
       ) : (
         groups.map(({ monthKey, rows: monthRows }) => {
           const totalInvestment = monthRows.reduce(
-            (sum, r) => sum + (isDraft(r) ? r.investment_ars : r.investment_ars),
+            (sum, r) => sum + r.investment_ars,
             0
           );
 
@@ -233,7 +246,7 @@ export default function MarketingCalendar({
                     {formatMonthLabel(monthKey)}
                   </p>
                   <p className="text-xs text-slate-500">
-                    {monthRows.length} acción(es) · Inversión total{" "}
+                    {monthRows.length} campaña(s) · Inversión total{" "}
                     {formatCurrency(totalInvestment)}
                   </p>
                 </div>
@@ -241,30 +254,28 @@ export default function MarketingCalendar({
                   onClick={() => addDraftRow(`${monthKey}-01`)}
                   className="rounded-md border border-brand px-3 py-1.5 text-xs font-medium text-brand hover:bg-brand-light"
                 >
-                  + Agregar acción
+                  + Agregar campaña
                 </button>
               </div>
 
-              <table className="text-xs" style={{ tableLayout: "fixed", width: "100%", minWidth: 1450 }}>
+              <table className="text-xs" style={{ tableLayout: "fixed", width: "100%", minWidth: 1050 }}>
                 <colgroup>
-                  <col style={{ width: 220 }} />
                   <col style={{ width: "auto" }} />
-                  <col style={{ width: 190 }} />
+                  <col style={{ width: 140 }} />
                   <col style={{ width: 130 }} />
-                  <col style={{ width: 150 }} />
-                  <col style={{ width: 80 }} />
+                  <col style={{ width: 140 }} />
+                  <col style={{ width: 140 }} />
                   <col style={{ width: 110 }} />
                   <col style={{ width: 130 }} />
                 </colgroup>
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50 text-left uppercase tracking-wide text-slate-500">
-                    <th className="px-3 py-3 font-medium">Concepto</th>
-                    <th className="px-3 py-3 font-medium">Descripción</th>
-                    <th className="px-3 py-3 font-medium">Vertical</th>
-                    <th className="px-3 py-3 font-medium">Fecha</th>
-                    <th className="px-3 py-3 font-medium">Contenido</th>
-                    <th className="px-3 py-3 font-medium">Pautado</th>
+                    <th className="px-3 py-3 font-medium">Campaña</th>
                     <th className="px-3 py-3 font-medium">Inversión</th>
+                    <th className="px-3 py-3 font-medium">Alcance</th>
+                    <th className="px-3 py-3 font-medium">Inicio</th>
+                    <th className="px-3 py-3 font-medium">Fin</th>
+                    <th className="px-3 py-3 font-medium">Duración</th>
                     <th className="px-3 py-3 font-medium" />
                   </tr>
                 </thead>
@@ -273,9 +284,7 @@ export default function MarketingCalendar({
                     const draft = isDraft(row);
                     const saving = savingIds.has(row.id);
                     const error = errors[row.id];
-                    const businessUnitLabel = businessUnitName(
-                      row.business_unit_id
-                    );
+                    const days = durationDays(row.start_date, row.end_date);
 
                     return (
                       <tr
@@ -285,101 +294,16 @@ export default function MarketingCalendar({
                         <td className="overflow-hidden px-3 py-3">
                           <AutoGrowTextarea
                             className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none"
-                            defaultValue={row.concept}
+                            defaultValue={row.campaign_name}
                             onBlur={(e) => {
                               const value = e.target.value.trim();
-                              if (value === row.concept) return;
-                              applyChange(row, draft, { concept: value });
+                              if (value === row.campaign_name) return;
+                              applyChange(row, draft, { campaign_name: value });
                             }}
                           />
                           {error && (
                             <p className="mt-1 text-xs text-red-600">{error}</p>
                           )}
-                        </td>
-                        <td className="overflow-hidden px-3 py-3">
-                          <AutoGrowTextarea
-                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none"
-                            defaultValue={row.description ?? ""}
-                            onBlur={(e) => {
-                              const value = e.target.value.trim();
-                              if (value === (row.description ?? "")) return;
-                              applyChange(row, draft, {
-                                description: value || null,
-                              });
-                            }}
-                          />
-                        </td>
-                        <td className="overflow-hidden px-3 py-3">
-                          <select
-                            className={`w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none ${
-                              VERTICAL_COLORS[businessUnitLabel] ?? ""
-                            }`}
-                            value={row.business_unit_id ?? ""}
-                            onChange={(e) => {
-                              applyChange(row, draft, {
-                                business_unit_id: e.target.value || null,
-                              });
-                            }}
-                          >
-                            <option value="">Sin asignar</option>
-                            {businessUnits.map((bu) => (
-                              <option key={bu.id} value={bu.id}>
-                                {bu.name}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="overflow-hidden px-3 py-3">
-                          <input
-                            type="date"
-                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none"
-                            value={row.publish_date}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (!value || value === row.publish_date) return;
-                              applyChange(row, draft, { publish_date: value });
-                            }}
-                          />
-                        </td>
-                        <td className="overflow-hidden px-3 py-3">
-                          <select
-                            className={`w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none ${
-                              row.content_type
-                                ? CONTENT_COLORS[row.content_type]
-                                : ""
-                            }`}
-                            value={row.content_type ?? ""}
-                            onChange={(e) => {
-                              applyChange(row, draft, {
-                                content_type:
-                                  (e.target.value as ContentType) || null,
-                              });
-                            }}
-                          >
-                            <option value="">Sin definir</option>
-                            {(
-                              Object.entries(CONTENT_LABELS) as [
-                                ContentType,
-                                string,
-                              ][]
-                            ).map(([key, label]) => (
-                              <option key={key} value={key}>
-                                {label}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="overflow-hidden px-3 py-3 text-center">
-                          <input
-                            type="checkbox"
-                            className="accent-brand"
-                            checked={row.is_scheduled}
-                            onChange={(e) => {
-                              applyChange(row, draft, {
-                                is_scheduled: e.target.checked,
-                              });
-                            }}
-                          />
                         </td>
                         <td className="overflow-hidden px-3 py-3">
                           <input
@@ -401,10 +325,51 @@ export default function MarketingCalendar({
                           />
                         </td>
                         <td className="overflow-hidden px-3 py-3">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 text-right hover:border-slate-300 focus:border-brand focus:outline-none"
+                            defaultValue={formatReach(row.reach)}
+                            onFocus={(e) => e.target.select()}
+                            onBlur={(e) => {
+                              const value = parseReachInput(e, row.reach);
+                              if (value !== null)
+                                applyChange(row, draft, { reach: value });
+                            }}
+                          />
+                        </td>
+                        <td className="overflow-hidden px-3 py-3">
+                          <input
+                            type="date"
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none"
+                            value={row.start_date}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (!value || value === row.start_date) return;
+                              applyChange(row, draft, { start_date: value });
+                            }}
+                          />
+                        </td>
+                        <td className="overflow-hidden px-3 py-3">
+                          <input
+                            type="date"
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none"
+                            value={row.end_date}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (!value || value === row.end_date) return;
+                              applyChange(row, draft, { end_date: value });
+                            }}
+                          />
+                        </td>
+                        <td className="overflow-hidden px-3 py-3 text-slate-600">
+                          {days > 0 ? `${days} día(s)` : "—"}
+                        </td>
+                        <td className="overflow-hidden px-3 py-3">
                           <div className="flex items-center gap-2">
                             {draft && (
                               <button
-                                onClick={() => saveDraft(row as DraftPost)}
+                                onClick={() => saveDraft(row as DraftCampaign)}
                                 disabled={saving}
                                 className="rounded bg-brand px-2 py-1 text-xs font-medium text-white hover:bg-brand-dark disabled:opacity-50"
                               >
