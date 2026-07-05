@@ -148,9 +148,10 @@ Ver `supabase/migrations/`. Resumen de tablas:
   `brands` (catálogo fijo de marcas, se asigna a mano por producto),
   `products`
 - **Proveedores**: `suppliers`, `purchases`, `purchase_items`
-- **Marketing**: `marketing_posts` (concepto, `business_unit_id`,
-  `publish_date`, `content_type` educacional/marca/comercial,
-  `is_scheduled`, `investment_ars`), `ad_campaigns`
+- **Marketing**: `marketing_posts` (concepto, descripción,
+  `business_unit_id`, `publish_date`, `content_type`
+  educacional/marca/comercial, `is_scheduled`, `investment_ars`),
+  `ad_campaigns`
 - **Ventas**: `sale_items`, con `product_id` nullable y `match_status`
   (`pending` / `confirmed` / `rejected` / `no_match`) para el flujo de
   confirmación manual, más `business_unit_id` y `source_article_code` para

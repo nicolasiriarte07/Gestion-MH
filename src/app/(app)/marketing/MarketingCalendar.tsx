@@ -59,6 +59,7 @@ function emptyDraft(publishDate: string): DraftPost {
     id: `draft-${crypto.randomUUID()}`,
     isDraft: true,
     concept: "",
+    description: null,
     business_unit_id: null,
     publish_date: publishDate,
     content_type: null,
@@ -161,6 +162,7 @@ export default function MarketingCalendar({
 
     const input: MarketingPostInput = {
       concept: draft.concept,
+      description: draft.description,
       business_unit_id: draft.business_unit_id,
       publish_date: draft.publish_date,
       content_type: draft.content_type,
@@ -256,8 +258,9 @@ export default function MarketingCalendar({
                 </button>
               </div>
 
-              <table className="text-xs" style={{ tableLayout: "fixed", width: "100%", minWidth: 1000 }}>
+              <table className="text-xs" style={{ tableLayout: "fixed", width: "100%", minWidth: 1450 }}>
                 <colgroup>
+                  <col style={{ width: 220 }} />
                   <col style={{ width: "auto" }} />
                   <col style={{ width: 190 }} />
                   <col style={{ width: 130 }} />
@@ -268,13 +271,14 @@ export default function MarketingCalendar({
                 </colgroup>
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50 text-left uppercase tracking-wide text-slate-500">
-                    <th className="px-3 py-2 font-medium">Concepto</th>
-                    <th className="px-3 py-2 font-medium">Vertical</th>
-                    <th className="px-3 py-2 font-medium">Fecha</th>
-                    <th className="px-3 py-2 font-medium">Contenido</th>
-                    <th className="px-3 py-2 font-medium">Pautado</th>
-                    <th className="px-3 py-2 font-medium">Inversión</th>
-                    <th className="px-3 py-2 font-medium" />
+                    <th className="px-3 py-3 font-medium">Concepto</th>
+                    <th className="px-3 py-3 font-medium">Descripción</th>
+                    <th className="px-3 py-3 font-medium">Vertical</th>
+                    <th className="px-3 py-3 font-medium">Fecha</th>
+                    <th className="px-3 py-3 font-medium">Contenido</th>
+                    <th className="px-3 py-3 font-medium">Pautado</th>
+                    <th className="px-3 py-3 font-medium">Inversión</th>
+                    <th className="px-3 py-3 font-medium" />
                   </tr>
                 </thead>
                 <tbody>
@@ -291,9 +295,9 @@ export default function MarketingCalendar({
                         key={row.id}
                         className="border-b border-slate-100 align-top last:border-0 hover:bg-slate-50"
                       >
-                        <td className="min-w-[220px] overflow-hidden px-3 py-1.5">
+                        <td className="overflow-hidden px-3 py-3">
                           <input
-                            className="w-full rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none"
                             defaultValue={row.concept}
                             onBlur={(e) => {
                               const value = e.target.value.trim();
@@ -305,9 +309,22 @@ export default function MarketingCalendar({
                             <p className="mt-1 text-xs text-red-600">{error}</p>
                           )}
                         </td>
-                        <td className="min-w-[160px] overflow-hidden px-3 py-1.5">
+                        <td className="overflow-hidden px-3 py-3">
+                          <input
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none"
+                            defaultValue={row.description ?? ""}
+                            onBlur={(e) => {
+                              const value = e.target.value.trim();
+                              if (value === (row.description ?? "")) return;
+                              applyChange(row, draft, {
+                                description: value || null,
+                              });
+                            }}
+                          />
+                        </td>
+                        <td className="overflow-hidden px-3 py-3">
                           <select
-                            className={`w-full rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none ${
+                            className={`w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none ${
                               VERTICAL_COLORS[businessUnitLabel] ?? ""
                             }`}
                             value={row.business_unit_id ?? ""}
@@ -325,10 +342,10 @@ export default function MarketingCalendar({
                             ))}
                           </select>
                         </td>
-                        <td className="min-w-[130px] overflow-hidden px-3 py-1.5">
+                        <td className="overflow-hidden px-3 py-3">
                           <input
                             type="date"
-                            className="w-full rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none"
                             value={row.publish_date}
                             onChange={(e) => {
                               const value = e.target.value;
@@ -337,9 +354,9 @@ export default function MarketingCalendar({
                             }}
                           />
                         </td>
-                        <td className="min-w-[140px] overflow-hidden px-3 py-1.5">
+                        <td className="overflow-hidden px-3 py-3">
                           <select
-                            className={`w-full rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none ${
+                            className={`w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none ${
                               row.content_type
                                 ? CONTENT_COLORS[row.content_type]
                                 : ""
@@ -365,7 +382,7 @@ export default function MarketingCalendar({
                             ))}
                           </select>
                         </td>
-                        <td className="overflow-hidden px-3 py-1.5 text-center">
+                        <td className="overflow-hidden px-3 py-3 text-center">
                           <input
                             type="checkbox"
                             className="accent-brand"
@@ -377,11 +394,11 @@ export default function MarketingCalendar({
                             }}
                           />
                         </td>
-                        <td className="min-w-[110px] overflow-hidden px-3 py-1.5">
+                        <td className="overflow-hidden px-3 py-3">
                           <input
                             type="text"
                             inputMode="numeric"
-                            className="w-full rounded border border-transparent px-1.5 py-1 text-right hover:border-slate-300 focus:border-brand focus:outline-none"
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 text-right hover:border-slate-300 focus:border-brand focus:outline-none"
                             defaultValue={formatCurrency(row.investment_ars)}
                             onFocus={(e) => e.target.select()}
                             onBlur={(e) => {
@@ -396,7 +413,7 @@ export default function MarketingCalendar({
                             }}
                           />
                         </td>
-                        <td className="overflow-hidden px-3 py-1.5">
+                        <td className="overflow-hidden px-3 py-3">
                           <div className="flex items-center gap-2">
                             {draft && (
                               <button

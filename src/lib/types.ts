@@ -41,6 +41,7 @@ export type ContentType = "educacional" | "marca" | "comercial";
 export type MarketingPost = {
   id: string;
   concept: string;
+  description: string | null;
   business_unit_id: string | null;
   publish_date: string;
   content_type: ContentType | null;
