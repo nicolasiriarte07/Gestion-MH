@@ -173,6 +173,10 @@ Implementado:
       de pago, y ranking Top 10 clientes
 - [x] Opción de reemplazar todas las ventas existentes al reimportar (para
       recargar el histórico completo sin duplicar filas)
+- [x] Clientes: buscador por nombre (columna Cliente de las ventas), con
+      lista de coincidencias si hay varios clientes parecidos y una vista
+      de detalle con el historial completo de compras de cada uno (total
+      en ARS/USD, ticket promedio, y el detalle línea por línea)
 
 Pendiente (próximos pasos):
 
