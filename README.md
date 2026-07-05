@@ -146,7 +146,9 @@ Ver `supabase/migrations/`. Resumen de tablas:
   `brands` (catálogo fijo de marcas, se asigna a mano por producto),
   `products`
 - **Proveedores**: `suppliers`, `purchases`, `purchase_items`
-- **Marketing**: `marketing_posts`, `ad_campaigns`
+- **Marketing**: `marketing_posts` (concepto, `business_unit_id`,
+  `publish_date`, `content_type` educacional/marca/comercial,
+  `is_scheduled`, `investment_ars`), `ad_campaigns`
 - **Ventas**: `sale_items`, con `product_id` nullable y `match_status`
   (`pending` / `confirmed` / `rejected` / `no_match`) para el flujo de
   confirmación manual, más `business_unit_id` y `source_article_code` para
@@ -184,11 +186,13 @@ Implementado:
       lista de coincidencias si hay varios clientes parecidos y una vista
       de detalle con el historial completo de compras de cada uno (total
       en ARS/USD, ticket promedio, y el detalle línea por línea)
+- [x] Marketing: cronograma de acciones de comunicación agrupado por mes
+      (concepto, vertical, fecha, tipo de contenido, pautado e inversión),
+      con carga/edición inline y total invertido por mes
 
 Pendiente (próximos pasos):
 
 - [ ] Proveedores: contactos y registro de compras
-- [ ] Marketing: calendario de publicaciones y pauta publicitaria
 - [ ] Detección de duplicados al reimportar el histórico de ventas
 - [ ] Reportes de ventas por producto (requiere que la mayoría de las
       líneas estén vinculadas vía Revisar coincidencias)

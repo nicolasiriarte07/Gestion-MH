@@ -36,6 +36,20 @@ export type Product = {
   updated_at: string;
 };
 
+export type ContentType = "educacional" | "marca" | "comercial";
+
+export type MarketingPost = {
+  id: string;
+  concept: string;
+  business_unit_id: string | null;
+  publish_date: string;
+  content_type: ContentType | null;
+  is_scheduled: boolean;
+  investment_ars: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type MatchStatus = "pending" | "confirmed" | "rejected" | "no_match";
 
 export type SaleItem = {
