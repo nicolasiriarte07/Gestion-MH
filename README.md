@@ -114,11 +114,13 @@ unidades vendidas, clientes únicos (cuenta valores distintos de la columna
 Cliente, sin importar cuántas líneas/artículos compró cada uno), evolución
 en el tiempo (gráfico de líneas), ventas por día de la semana (gráfico de
 barras, usando la columna Dia del archivo tal cual viene, no calculado a
-partir de la fecha), desgloses por tipo de comprobante (gráfico de torta;
-A/B/X — X son ventas en negro, se incluyen en los totales pero se ven
-aparte), unidad de negocio, categoría, producto (columna Descripcion) y
-forma de pago, y un ranking Top 10 clientes (columna Cliente) según la
-métrica elegida.
+partir de la fecha), desgloses por tipo de comprobante, unidad de negocio
+y forma de pago (gráficos de torta; en unidad de negocio, MUNDO HOGAR
+siempre en rosa y EQUIPAMIENTOS MH en violeta; A/B/X en tipo de
+comprobante — X son ventas en negro, se incluyen en los totales pero se
+ven aparte), categoría y producto (columna Descripcion, gráfico de
+barras), y un ranking Top 10 clientes (columna Cliente) según la métrica
+elegida.
 
 **Comparar períodos**: activado por defecto, compara las 5 tarjetas de
 arriba contra el **período anterior** (mismo largo de días, inmediatamente
@@ -173,9 +175,8 @@ Implementado:
 - [x] Auth (login/logout, rutas protegidas)
 - [x] Esquema completo de base de datos (los 4 módulos)
 - [x] Inventario: tabla editable con filtros (unidad de negocio, categoría,
-      en web, búsqueda), alta, baja y edición inline, y alertas de stock
-      bajo (5 unidades o menos) priorizadas por lo más vendido en los
-      últimos 90 días
+      en web, búsqueda), alta, baja y edición inline, y una alerta
+      desplegable de stock bajo (0 o 1 unidad) para no ocupar pantalla
 - [x] Importación del Excel de productos/stock (columnas flexibles, con
       unidad de negocio por defecto)
 - [x] Importación del histórico de ventas (.xlsx/.csv), con matching

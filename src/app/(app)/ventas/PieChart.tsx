@@ -41,11 +41,13 @@ export function PieChart({
   rows,
   metric,
   currency,
+  colorMap,
 }: {
   title: string;
   rows: BreakdownRow[];
   metric: Metric;
   currency: Currency;
+  colorMap?: Record<string, string>;
 }) {
   const sorted = [...rows]
     .filter((r) => rowValue(r, metric, currency) > 0)
@@ -78,7 +80,7 @@ export function PieChart({
 
     return {
       path,
-      color: CATEGORICAL_COLORS[i % CATEGORICAL_COLORS.length],
+      color: colorMap?.[row.label] ?? CATEGORICAL_COLORS[i % CATEGORICAL_COLORS.length],
       label: row.label,
       value,
       pct: fraction * 100,

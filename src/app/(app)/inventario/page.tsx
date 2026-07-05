@@ -9,11 +9,9 @@ import type {
 } from "@/lib/types";
 import FilterBar from "./FilterBar";
 import ProductsTable from "./ProductsTable";
-import LowStockAlerts, { type LowStockRow } from "./LowStockAlerts";
+import LowStockAlerts from "./LowStockAlerts";
 
-const LOW_STOCK_THRESHOLD = 5;
-const VELOCITY_WINDOW_DAYS = 90;
-const LOW_STOCK_ALERT_LIMIT = 15;
+const LOW_STOCK_THRESHOLD = 1;
 
 type SearchParams = {
   bu?: string;
@@ -38,7 +36,6 @@ export default async function InventarioPage({
     { data: subcategories },
     { data: brands },
     { data: lowStockProducts },
-    { data: velocityData },
   ] = await Promise.all([
     supabase.from("business_units").select("id, name").order("name"),
     supabase.from("categories").select("id, name").order("name"),
@@ -50,8 +47,8 @@ export default async function InventarioPage({
     supabase
       .from("products")
       .select("*")
-      .lte("stock", LOW_STOCK_THRESHOLD),
-    supabase.rpc("product_sales_velocity", { days: VELOCITY_WINDOW_DAYS }),
+      .lte("stock", LOW_STOCK_THRESHOLD)
+      .order("description", { ascending: true }),
   ]);
 
   let query = supabase
@@ -69,15 +66,7 @@ export default async function InventarioPage({
 
   const { data: products, error } = await query;
 
-  const velocityByProduct = new Map(
-    ((velocityData ?? []) as { product_id: string; units_sold: number }[]).map(
-      (r) => [r.product_id, r.units_sold]
-    )
-  );
-  const lowStockRows: LowStockRow[] = ((lowStockProducts ?? []) as Product[])
-    .map((p) => ({ ...p, units_sold_90d: velocityByProduct.get(p.id) ?? 0 }))
-    .sort((a, b) => b.units_sold_90d - a.units_sold_90d)
-    .slice(0, LOW_STOCK_ALERT_LIMIT);
+  const lowStockRows = (lowStockProducts ?? []) as Product[];
 
   return (
     <div className="space-y-4">

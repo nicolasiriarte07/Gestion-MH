@@ -10,6 +10,13 @@ import { WeekdayChart, type WeekdayRow } from "./WeekdayChart";
 import { TimeSeriesChart, type TimeSeriesRow } from "./TimeSeriesChart";
 import { TopCustomersCard } from "./TopCustomersCard";
 
+// Colores fijos de marca para las dos unidades de negocio (ver skill de
+// dataviz para el resto de la paleta categórica/secuencial).
+const BUSINESS_UNIT_COLORS: Record<string, string> = {
+  "MUNDO HOGAR": "#ec1e79",
+  "EQUIPAMIENTOS MH": "#7c3aed",
+};
+
 export type Bucket = "day" | "week" | "month";
 
 export type SalesSummary = {
@@ -231,12 +238,12 @@ export default function VentasDashboard({
               currency={currency}
             />
             <WeekdayChart rows={byWeekdayRows} metric={metric} currency={currency} />
-            <BreakdownCard
+            <PieChart
               title="Por unidad de negocio"
               rows={byBusinessUnitRows}
-              colorMode="categorical"
               metric={metric}
               currency={currency}
+              colorMap={BUSINESS_UNIT_COLORS}
             />
             <BreakdownCard
               title="Por categoría"
@@ -252,10 +259,9 @@ export default function VentasDashboard({
               metric={metric}
               currency={currency}
             />
-            <BreakdownCard
+            <PieChart
               title="Por forma de pago"
               rows={byPaymentRows}
-              colorMode="categorical"
               metric={metric}
               currency={currency}
             />

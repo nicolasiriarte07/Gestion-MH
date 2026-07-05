@@ -5,11 +5,9 @@ import { formatCurrency } from "@/lib/currency";
 import type { Brand, ContentType, Product } from "@/lib/types";
 import type { BreakdownRow } from "./ventas/BreakdownCard";
 import { TopCustomersCard } from "./ventas/TopCustomersCard";
-import LowStockAlerts, { type LowStockRow } from "./inventario/LowStockAlerts";
+import LowStockAlerts from "./inventario/LowStockAlerts";
 
-const LOW_STOCK_THRESHOLD = 5;
-const VELOCITY_WINDOW_DAYS = 90;
-const LOW_STOCK_ALERT_LIMIT = 5;
+const LOW_STOCK_THRESHOLD = 1;
 const UPCOMING_MARKETING_LIMIT = 5;
 
 const MONTH_NAMES = [
@@ -78,7 +76,6 @@ export default async function ResumenPage() {
     { data: summaryData },
     { data: byCustomerData },
     { data: lowStockProducts },
-    { data: velocityData },
     { data: brands },
     { count: lowStockCount },
     { data: marketingMonthPosts },
@@ -86,8 +83,11 @@ export default async function ResumenPage() {
   ] = await Promise.all([
     supabase.rpc("sales_summary", { from_date: from, to_date: to }),
     supabase.rpc("sales_by_customer", { from_date: from, to_date: to }),
-    supabase.from("products").select("*").lte("stock", LOW_STOCK_THRESHOLD),
-    supabase.rpc("product_sales_velocity", { days: VELOCITY_WINDOW_DAYS }),
+    supabase
+      .from("products")
+      .select("*")
+      .lte("stock", LOW_STOCK_THRESHOLD)
+      .order("description", { ascending: true }),
     supabase.from("brands").select("id, name"),
     supabase
       .from("products")
@@ -117,15 +117,7 @@ export default async function ResumenPage() {
     })
   );
 
-  const velocityByProduct = new Map(
-    ((velocityData ?? []) as { product_id: string; units_sold: number }[]).map(
-      (r) => [r.product_id, r.units_sold]
-    )
-  );
-  const lowStockRows: LowStockRow[] = ((lowStockProducts ?? []) as Product[])
-    .map((p) => ({ ...p, units_sold_90d: velocityByProduct.get(p.id) ?? 0 }))
-    .sort((a, b) => b.units_sold_90d - a.units_sold_90d)
-    .slice(0, LOW_STOCK_ALERT_LIMIT);
+  const lowStockRows = (lowStockProducts ?? []) as Product[];
 
   const marketingInvestment = (
     (marketingMonthPosts ?? []) as { investment_ars: number }[]
@@ -152,7 +144,7 @@ export default async function ResumenPage() {
         <KpiTile
           label="Productos con stock bajo"
           value={String(lowStockCount ?? 0)}
-          sublabel="5 unidades o menos"
+          sublabel="0 o 1 unidad en stock"
         />
         <KpiTile
           label="Inversión en marketing"
