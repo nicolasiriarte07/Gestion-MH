@@ -198,6 +198,10 @@ Implementado:
       con carga/edición inline y total invertido por mes
 - [x] Detección de duplicados al reimportar el histórico de ventas (por
       contenido de la fila, no requiere Nombre_PDF)
+- [x] Resumen: pantalla de inicio (`/`) con los números clave del mes
+      anterior de los 4 módulos juntos (total vendido, cantidad de ventas,
+      productos con stock bajo, inversión en marketing), alertas de stock
+      bajo, Top 10 clientes y próximas acciones de marketing programadas
 
 Pendiente (próximos pasos):
 

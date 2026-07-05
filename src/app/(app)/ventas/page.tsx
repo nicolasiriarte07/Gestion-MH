@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { previousMonthRange } from "@/lib/dates";
 import type { BusinessUnit } from "@/lib/types";
 import type { BreakdownRow } from "./BreakdownCard";
 import type { Metric, Currency } from "./MetricControls";
@@ -6,20 +7,6 @@ import type { CompareMode } from "./CompareControls";
 import type { WeekdayRow } from "./WeekdayChart";
 import type { TimeSeriesRow } from "./TimeSeriesChart";
 import VentasDashboard, { type Bucket, type SalesSummary } from "./VentasDashboard";
-
-// Por defecto, el dashboard arranca mostrando el mes calendario anterior
-// completo (ej. si hoy es cualquier día de julio, muestra junio entero),
-// no todo el histórico.
-function defaultRange(): { from: string; to: string } {
-  const now = new Date();
-  const toISO = (d: Date) => d.toISOString().slice(0, 10);
-  const firstOfThisMonth = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1);
-  const lastOfPrevMonth = new Date(firstOfThisMonth - 1);
-  const firstOfPrevMonth = new Date(
-    Date.UTC(lastOfPrevMonth.getUTCFullYear(), lastOfPrevMonth.getUTCMonth(), 1)
-  );
-  return { from: toISO(firstOfPrevMonth), to: toISO(lastOfPrevMonth) };
-}
 
 // "previous": mismo largo de días, inmediatamente antes del período
 // actual (ej. últimos 30 días -> los 30 días anteriores a esos).
@@ -113,7 +100,7 @@ export default async function VentasPage({
   }>;
 }) {
   const params = await searchParams;
-  const def = defaultRange();
+  const def = previousMonthRange();
   const from = params.from || def.from;
   const to = params.to || def.to;
   const bucket = pickBucket(from, to);

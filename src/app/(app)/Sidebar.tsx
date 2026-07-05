@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  LayoutDashboard,
   Package,
   Truck,
   Megaphone,
@@ -13,6 +14,7 @@ import {
 import LogoutButton from "./LogoutButton";
 
 const NAV_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/", label: "Inicio", icon: LayoutDashboard },
   { href: "/inventario", label: "Inventario", icon: Package },
   { href: "/proveedores", label: "Proveedores", icon: Truck },
   { href: "/marketing", label: "Marketing", icon: Megaphone },
