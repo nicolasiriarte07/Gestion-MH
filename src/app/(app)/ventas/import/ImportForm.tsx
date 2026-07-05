@@ -40,10 +40,13 @@ export default function ImportForm() {
         .
       </p>
 
-      <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
-        Si ya importaste este archivo antes, no lo vuelvas a subir sin marcar
-        &quot;Reemplazar ventas existentes&quot; de abajo: no hay detección de
-        duplicados fila por fila, y las filas se sumarían de nuevo.
+      <p className="rounded-md bg-blue-50 px-3 py-2 text-xs text-blue-800">
+        Podés resubir el mismo archivo (por ejemplo, con ventas nuevas
+        agregadas al final) sin miedo a duplicar: las filas que ya estaban
+        cargadas se reconocen por su contenido y se omiten solas. Solo
+        marcá &quot;Reemplazar ventas existentes&quot; si necesitás recargar
+        todo el histórico desde cero (por ejemplo, para completar una
+        columna que se agregó después de tu última importación).
       </p>
 
       <form
@@ -85,9 +88,10 @@ export default function ImportForm() {
             <p className="text-sm font-medium text-green-700">
               {state.replaced && "Se borraron las ventas anteriores. "}
               Importación completa: {state.totalRows} filas procesadas,{" "}
-              {state.imported} importadas ({state.autoMatched} vinculadas
-              automáticamente por código, {state.pending} pendientes de
-              revisión).
+              {state.imported} nuevas
+              {!!state.duplicates && ` (${state.duplicates} ya existían y se omitieron)`}
+              . Del archivo: {state.autoMatched} vinculadas automáticamente
+              por código, {state.pending} pendientes de revisión.
             </p>
           ) : (
             <p className="text-sm font-medium text-red-700">

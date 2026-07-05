@@ -97,12 +97,14 @@ Nombre_PDF — el orden no importa). Cada fila es una línea de venta:
   (no fila por fila) y sugiere el producto más parecido del catálogo según
   similitud de texto. Vos confirmás, elegís otro producto del desplegable,
   o marcás "sin coincidencia" — nada se asume solo.
-- **No hay detección de duplicados fila por fila**: si subís el mismo
-  archivo dos veces con la casilla "Reemplazar ventas existentes"
-  destildada, las filas se importan de nuevo. Para volver a subir el
-  histórico completo (por ejemplo porque agregaste una columna nueva),
-  tildá esa casilla: borra todas las ventas ya importadas antes de cargar
-  el archivo, así no se duplica nada.
+- **Podés resubir el mismo archivo sin duplicar**: cada fila se identifica
+  por su contenido (fecha, cliente, descripción, cantidad, monto y
+  comprobante); si ya existe una igual, se omite en silencio. Así que para
+  cargar ventas nuevas alcanza con resubir el archivo actualizado (con las
+  filas nuevas agregadas al final, por ejemplo). La casilla "Reemplazar
+  ventas existentes" sigue estando para el caso de recargar el histórico
+  completo desde cero (ej. si agregaste una columna nueva y querés
+  completarla en filas viejas).
 
 La página **Ventas** es un dashboard con control de período (presets como
 "Últimos 30 días", "Este mes", "Este año", o un rango personalizado):
@@ -155,8 +157,10 @@ Ver `supabase/migrations/`. Resumen de tablas:
   el matching por código exacto, `category_raw`/`receipt_number` para el
   dashboard (categoría tal cual viene del archivo, e identificador de
   comprobante, hoy informativo), `amount_usd` (columna Monto_con_IVA_usd)
-  para el selector de moneda, y `weekday_label` (columna Dia) para el
-  gráfico de ventas por día de la semana.
+  para el selector de moneda, `weekday_label` (columna Dia) para el
+  gráfico de ventas por día de la semana, y `dedupe_key` (columna
+  generada, hash del contenido de la fila) con índice único para que
+  reimportar el mismo archivo no duplique filas.
 
 RLS está habilitado en todas las tablas: solo usuarios autenticados pueden
 leer/escribir, no hay acceso anónimo.
@@ -168,7 +172,9 @@ Implementado:
 - [x] Auth (login/logout, rutas protegidas)
 - [x] Esquema completo de base de datos (los 4 módulos)
 - [x] Inventario: tabla editable con filtros (unidad de negocio, categoría,
-      en web, búsqueda), alta, baja y edición inline
+      en web, búsqueda), alta, baja y edición inline, y alertas de stock
+      bajo (5 unidades o menos) priorizadas por lo más vendido en los
+      últimos 90 días
 - [x] Importación del Excel de productos/stock (columnas flexibles, con
       unidad de negocio por defecto)
 - [x] Importación del histórico de ventas (.xlsx/.csv), con matching
@@ -189,10 +195,11 @@ Implementado:
 - [x] Marketing: cronograma de acciones de comunicación agrupado por mes
       (concepto, vertical, fecha, tipo de contenido, pautado e inversión),
       con carga/edición inline y total invertido por mes
+- [x] Detección de duplicados al reimportar el histórico de ventas (por
+      contenido de la fila, no requiere Nombre_PDF)
 
 Pendiente (próximos pasos):
 
 - [ ] Proveedores: contactos y registro de compras
-- [ ] Detección de duplicados al reimportar el histórico de ventas
 - [ ] Reportes de ventas por producto (requiere que la mayoría de las
       líneas estén vinculadas vía Revisar coincidencias)

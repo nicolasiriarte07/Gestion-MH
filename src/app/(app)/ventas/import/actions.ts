@@ -12,6 +12,7 @@ export type SalesImportResult = {
   message?: string;
   totalRows?: number;
   imported?: number;
+  duplicates?: number;
   autoMatched?: number;
   pending?: number;
   replaced?: boolean;
@@ -264,10 +265,12 @@ export async function importSalesExcel(
   }
 
   // "Reemplazar ventas existentes" borra todo sale_items antes de insertar
-  // el archivo nuevo. Es la forma de resubir el mismo histórico (por
-  // ejemplo para completar una columna que se agregó después, como
-  // amount_usd o weekday_label) sin duplicar filas: no hay detección de
-  // duplicados fila por fila, así que la alternativa sería reemplazo total.
+  // el archivo nuevo. Ya no hace falta para evitar duplicados (ver
+  // dedupe_key más abajo), pero sigue siendo necesaria para resubir el
+  // mismo histórico completo cuando se agrega una columna nueva más
+  // adelante (ej. amount_usd/weekday_label): una fila que ya existe se
+  // reconoce como duplicada por su contenido y se omite, así que sin
+  // "reemplazar" esa columna nueva no se completaría en filas viejas.
   const replaceExisting = formData.get("replaceExisting") === "on";
   if (replaceExisting) {
     const { error: deleteError } = await supabase
@@ -293,12 +296,23 @@ export async function importSalesExcel(
     chunks.push(rows.slice(i, i + CHUNK_SIZE));
   }
 
+  // upsert + ignoreDuplicates en vez de insert: si una fila ya existe (su
+  // dedupe_key, calculada a partir de fecha/cliente/descripción/cantidad/
+  // monto/comprobante, coincide con una fila ya cargada), Postgres la
+  // descarta en silencio en vez de duplicarla o fallar. No pisa
+  // match_status/product_id de filas ya confirmadas a mano en Revisar
+  // coincidencias, porque esas filas ni siquiera se tocan.
   const INSERT_CONCURRENCY = 5;
   let insertedCount = 0;
   for (let i = 0; i < chunks.length; i += INSERT_CONCURRENCY) {
     const batch = chunks.slice(i, i + INSERT_CONCURRENCY);
     const results = await Promise.all(
-      batch.map((chunk) => supabase.from("sale_items").insert(chunk))
+      batch.map((chunk) =>
+        supabase
+          .from("sale_items")
+          .upsert(chunk, { onConflict: "dedupe_key", ignoreDuplicates: true })
+          .select("id")
+      )
     );
     const failed = results.find((r) => r.error);
     if (failed?.error) {
@@ -312,7 +326,7 @@ export async function importSalesExcel(
         skipped,
       };
     }
-    insertedCount += batch.reduce((sum, chunk) => sum + chunk.length, 0);
+    insertedCount += results.reduce((sum, r) => sum + (r.data?.length ?? 0), 0);
   }
 
   revalidatePath("/ventas");
@@ -320,7 +334,8 @@ export async function importSalesExcel(
   return {
     ok: true,
     totalRows,
-    imported: rows.length,
+    imported: insertedCount,
+    duplicates: rows.length - insertedCount,
     autoMatched,
     pending: rows.length - autoMatched,
     replaced: replaceExisting,
