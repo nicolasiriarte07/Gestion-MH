@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { ArrowUp, ArrowDown } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import PeriodFilter from "./PeriodFilter";
 import MetricControls, { type Metric, type Currency } from "./MetricControls";
+import CompareControls, { type CompareMode } from "./CompareControls";
 import { BreakdownCard, type BreakdownRow } from "./BreakdownCard";
 import { PieChart } from "./PieChart";
 import { WeekdayChart, type WeekdayRow } from "./WeekdayChart";
@@ -18,11 +20,53 @@ export type SalesSummary = {
   unique_customers: number;
 };
 
-function StatTile({ label, value }: { label: string; value: string }) {
+// undefined => no hay comparación habilitada, no se muestra nada.
+// null => hay comparación pero el período anterior no tiene datos
+// (dividir por cero no tiene un "% de cambio" con sentido).
+function percentDelta(current: number, previous: number): number | null {
+  if (previous === 0) return null;
+  return ((current - previous) / previous) * 100;
+}
+
+function DeltaBadge({ delta }: { delta: number | null | undefined }) {
+  if (delta === undefined || delta === null) return null;
+  const rounded = Math.round(delta);
+  const isPositive = rounded > 0;
+  const isNegative = rounded < 0;
+
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 text-xs font-semibold ${
+        isPositive
+          ? "text-green-600"
+          : isNegative
+            ? "text-red-600"
+            : "text-slate-400"
+      }`}
+    >
+      {isPositive && <ArrowUp size={12} />}
+      {isNegative && <ArrowDown size={12} />}
+      {Math.abs(rounded)}%
+    </span>
+  );
+}
+
+function StatTile({
+  label,
+  value,
+  delta,
+}: {
+  label: string;
+  value: string;
+  delta?: number | null;
+}) {
   return (
     <div className="rounded-2xl border border-slate-200 shadow-sm bg-white p-4">
       <p className="text-2xl font-semibold text-slate-900">{value}</p>
-      <p className="text-sm font-medium text-slate-700">{label}</p>
+      <div className="flex items-center gap-1.5">
+        <p className="text-sm font-medium text-slate-700">{label}</p>
+        <DeltaBadge delta={delta} />
+      </div>
     </div>
   );
 }
@@ -35,7 +79,12 @@ export default function VentasDashboard({
   bucket,
   metric,
   currency,
+  compareEnabled,
+  compareMode,
+  compareFrom,
+  compareTo,
   summary,
+  compareSummary,
   byLetterRows,
   byBusinessUnitRows,
   byCategoryRows,
@@ -52,7 +101,12 @@ export default function VentasDashboard({
   bucket: Bucket;
   metric: Metric;
   currency: Currency;
+  compareEnabled: boolean;
+  compareMode: CompareMode;
+  compareFrom?: string;
+  compareTo?: string;
   summary: SalesSummary;
+  compareSummary: SalesSummary | null;
   byLetterRows: BreakdownRow[];
   byBusinessUnitRows: BreakdownRow[];
   byCategoryRows: BreakdownRow[];
@@ -64,6 +118,32 @@ export default function VentasDashboard({
 }) {
   const total = currency === "usd" ? summary.total_usd : summary.total_ars;
   const avgTicket = summary.line_count > 0 ? total / summary.line_count : 0;
+
+  const compareTotal = compareSummary
+    ? currency === "usd"
+      ? compareSummary.total_usd
+      : compareSummary.total_ars
+    : null;
+  const compareAvgTicket =
+    compareSummary && compareSummary.line_count > 0
+      ? (compareTotal ?? 0) / compareSummary.line_count
+      : null;
+
+  const deltas = compareSummary
+    ? {
+        total: percentDelta(total, compareTotal ?? 0),
+        lineCount: percentDelta(summary.line_count, compareSummary.line_count),
+        avgTicket:
+          compareAvgTicket !== null
+            ? percentDelta(avgTicket, compareAvgTicket)
+            : null,
+        unitCount: percentDelta(summary.unit_count, compareSummary.unit_count),
+        uniqueCustomers: percentDelta(
+          summary.unique_customers,
+          compareSummary.unique_customers
+        ),
+      }
+    : null;
 
   return (
     <div className="space-y-4">
@@ -101,27 +181,38 @@ export default function VentasDashboard({
         <>
           <PeriodFilter from={from} to={to} />
           <MetricControls metric={metric} currency={currency} />
+          <CompareControls
+            enabled={compareEnabled}
+            mode={compareMode}
+            compareFrom={compareFrom}
+            compareTo={compareTo}
+          />
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <StatTile
               label="Total vendido"
               value={formatCurrency(total, currency)}
+              delta={deltas?.total}
             />
             <StatTile
               label="Cantidad de ventas"
               value={String(summary.line_count)}
+              delta={deltas?.lineCount}
             />
             <StatTile
               label="Ticket promedio"
               value={formatCurrency(avgTicket, currency)}
+              delta={deltas?.avgTicket}
             />
             <StatTile
               label="Unidades vendidas"
               value={String(Math.round(summary.unit_count))}
+              delta={deltas?.unitCount}
             />
             <StatTile
               label="Clientes únicos"
               value={String(summary.unique_customers)}
+              delta={deltas?.uniqueCustomers}
             />
           </div>
 

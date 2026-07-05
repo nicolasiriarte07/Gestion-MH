@@ -118,6 +118,13 @@ aparte), unidad de negocio, categoría, producto (columna Descripcion) y
 forma de pago, y un ranking Top 10 clientes (columna Cliente) según la
 métrica elegida.
 
+**Comparar períodos**: activado por defecto, compara las 5 tarjetas de
+arriba contra el **período anterior** (mismo largo de días, inmediatamente
+antes) — se puede cambiar a **mismo período del año anterior**, o
+desactivar la comparación. Cada tarjeta muestra el % de cambio en verde
+(subió) o rojo (bajó); si el período de comparación no tiene datos, no
+muestra porcentaje.
+
 Dos selectores controlan qué se grafica: **Ventas / Facturación** (cambia
 entre mostrar cantidad de líneas o montos en $) y, cuando está en
 Facturación, **ARS / USD** (usa Monto_con_IVA_ars o Monto_con_IVA_usd).
