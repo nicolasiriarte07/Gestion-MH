@@ -103,66 +103,55 @@ export default function DescuentosSimulator({
             <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs tracking-wide text-slate-500 uppercase">
               <th className="px-4 py-2 font-medium">Producto</th>
               <th className="px-4 py-2 text-right font-medium">Costo</th>
-              <th className="px-4 py-2 font-medium">Variante de financiación</th>
-              <th className="px-4 py-2 text-right font-medium">Ganancia neta</th>
+              <th className="px-4 py-2 text-right font-medium">P. Web</th>
+              {FINANCIAL_COST_OPTIONS.map((option) => (
+                <th key={option.key} className="px-4 py-2 text-right font-medium">
+                  {option.label} ({formatPct(option.pct)})
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {pagedProducts.map((product) =>
-              FINANCIAL_COST_OPTIONS.map((option, i) => {
-                const netProfit = netProfitFor(
-                  product.price_web,
-                  product.cost,
-                  discountPct,
-                  option.pct
-                );
-                return (
-                  <tr
-                    key={`${product.id}-${option.key}`}
-                    className={`border-b border-slate-100 ${
-                      i === FINANCIAL_COST_OPTIONS.length - 1
-                        ? "border-b-2 border-b-slate-200"
-                        : ""
-                    }`}
-                  >
-                    {i === 0 && (
-                      <td
-                        rowSpan={FINANCIAL_COST_OPTIONS.length}
-                        className="align-top px-4 py-2"
-                      >
-                        <p className="font-medium text-slate-900">
-                          {product.description}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          {product.sku} · P. Web {formatCurrency(product.price_web)}
-                        </p>
-                      </td>
-                    )}
-                    {i === 0 && (
-                      <td
-                        rowSpan={FINANCIAL_COST_OPTIONS.length}
-                        className="align-top px-4 py-2 text-right text-slate-700"
-                      >
-                        {formatCurrency(product.cost)}
-                      </td>
-                    )}
-                    <td className="px-4 py-2 text-slate-700">
-                      {option.label} ({formatPct(option.pct)})
-                    </td>
+            {pagedProducts.map((product) => (
+              <tr key={product.id} className="border-b border-slate-100">
+                <td className="px-4 py-2">
+                  <p className="font-medium text-slate-900">
+                    {product.description}
+                  </p>
+                  <p className="text-xs text-slate-400">{product.sku}</p>
+                </td>
+                <td className="px-4 py-2 text-right text-slate-700">
+                  {formatCurrency(product.cost)}
+                </td>
+                <td className="px-4 py-2 text-right text-slate-700">
+                  {formatCurrency(product.price_web)}
+                </td>
+                {FINANCIAL_COST_OPTIONS.map((option) => {
+                  const netProfit = netProfitFor(
+                    product.price_web,
+                    product.cost,
+                    discountPct,
+                    option.pct
+                  );
+                  return (
                     <td
+                      key={option.key}
                       className={`px-4 py-2 text-right font-semibold ${
                         netProfit >= 0 ? "text-emerald-700" : "text-red-600"
                       }`}
                     >
                       {formatCurrency(netProfit)}
                     </td>
-                  </tr>
-                );
-              })
-            )}
+                  );
+                })}
+              </tr>
+            ))}
             {pagedProducts.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-slate-400">
+                <td
+                  colSpan={3 + FINANCIAL_COST_OPTIONS.length}
+                  className="px-4 py-8 text-center text-slate-400"
+                >
                   No hay productos que coincidan con la búsqueda.
                 </td>
               </tr>
