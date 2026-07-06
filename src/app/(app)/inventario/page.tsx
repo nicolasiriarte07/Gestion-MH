@@ -3,14 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import type { BusinessUnit, Category, Brand, Product } from "@/lib/types";
 import type { Metric, Currency } from "../ventas/MetricControls";
 import type { BreakdownRow } from "../ventas/BreakdownCard";
-import { BreakdownCard } from "../ventas/BreakdownCard";
-import { PieChart } from "../ventas/PieChart";
-import { BUSINESS_UNIT_COLORS } from "@/lib/businessUnitColors";
 import { fetchAllRows } from "@/lib/supabase/fetchAll";
 import FilterBar from "./FilterBar";
 import ProductsTable from "./ProductsTable";
 import LowStockAlerts from "./LowStockAlerts";
 import InventoryMetrics from "./InventoryMetrics";
+import StockCharts from "./StockCharts";
 import StockMetricToggle, { type StockMetric } from "./StockMetricToggle";
 
 const LOW_STOCK_THRESHOLD = 1;
@@ -162,30 +160,13 @@ export default async function InventarioPage({
         <StockMetricToggle value={activeStockMetric} />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <PieChart
-          title="Stock por unidad de negocio"
-          rows={stockByBusinessUnit}
-          metric={chartMetric}
-          currency={chartCurrency}
-          colorMap={BUSINESS_UNIT_COLORS}
-        />
-        <BreakdownCard
-          title="Stock por categoría"
-          rows={stockByCategory}
-          colorMode="sequential"
-          metric={chartMetric}
-          currency={chartCurrency}
-          className="lg:row-span-2"
-        />
-        <BreakdownCard
-          title="Stock por marca"
-          rows={stockByBrand}
-          colorMode="sequential"
-          metric={chartMetric}
-          currency={chartCurrency}
-        />
-      </div>
+      <StockCharts
+        stockByBusinessUnit={stockByBusinessUnit}
+        stockByCategory={stockByCategory}
+        stockByBrand={stockByBrand}
+        metric={chartMetric}
+        currency={chartCurrency}
+      />
 
       {error && (
         <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">

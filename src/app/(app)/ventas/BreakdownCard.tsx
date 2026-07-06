@@ -1,3 +1,4 @@
+import type { Ref } from "react";
 import { formatCurrency } from "@/lib/currency";
 import type { Metric, Currency } from "./MetricControls";
 
@@ -40,6 +41,7 @@ export function BreakdownCard({
   currency,
   maxRows = 8,
   className = "",
+  containerRef,
 }: {
   title: string;
   rows: BreakdownRow[];
@@ -48,6 +50,7 @@ export function BreakdownCard({
   currency: Currency;
   maxRows?: number;
   className?: string;
+  containerRef?: Ref<HTMLDivElement>;
 }) {
   const sorted = [...rows].sort(
     (a, b) => rowValue(b, metric, currency) - rowValue(a, metric, currency)
@@ -73,13 +76,14 @@ export function BreakdownCard({
 
   return (
     <div
+      ref={containerRef}
       className={`rounded-2xl border border-slate-200 shadow-sm bg-white p-4 ${className}`}
     >
       <p className="mb-3 text-sm font-medium text-slate-700">{title}</p>
       {finalRows.length === 0 ? (
         <p className="text-sm text-slate-400">Sin datos en este período.</p>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2" data-rows-wrapper="">
           {finalRows.map((row, i) => {
             const value = rowValue(row, metric, currency);
             const pct = total > 0 ? (value / total) * 100 : 0;
@@ -92,6 +96,7 @@ export function BreakdownCard({
             return (
               <div
                 key={row.label}
+                data-row=""
                 title={`${row.label}: ${formatValue(value, metric, currency)} · ${row.line_count} línea(s)`}
               >
                 <div className="mb-0.5 flex items-center justify-between gap-2 text-xs">
