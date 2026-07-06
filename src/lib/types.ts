@@ -155,6 +155,25 @@ export type SupplierHistoryEntry = {
   occurred_at: string;
 };
 
+export type CompetitorSite = {
+  id: string;
+  key: string;
+  name: string;
+};
+
+export type CompetitorPriceStatus = "ok" | "not_found" | "error";
+
+export type ProductCompetitorPrice = {
+  id: string;
+  product_id: string;
+  site_id: string;
+  matched_title: string | null;
+  matched_url: string | null;
+  price: number | null;
+  status: CompetitorPriceStatus;
+  checked_at: string;
+};
+
 export type MatchStatus = "pending" | "confirmed" | "rejected" | "no_match";
 
 export type SaleItem = {
