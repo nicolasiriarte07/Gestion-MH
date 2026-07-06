@@ -19,7 +19,10 @@ type SearchParams = {
   brand?: string;
   web?: string;
   q?: string;
+  stockMin?: string;
   stockMax?: string;
+  priceWebMin?: string;
+  priceWebMax?: string;
   stockMetric?: string;
 };
 
@@ -50,7 +53,18 @@ export default async function InventarioPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { bu, cat, brand, web, q, stockMax, stockMetric } = await searchParams;
+  const {
+    bu,
+    cat,
+    brand,
+    web,
+    q,
+    stockMin,
+    stockMax,
+    priceWebMin,
+    priceWebMax,
+    stockMetric,
+  } = await searchParams;
   const supabase = await createClient();
 
   const [
@@ -86,7 +100,10 @@ export default async function InventarioPage({
     if (web === "yes") query = query.eq("is_web", true);
     if (web === "no") query = query.eq("is_web", false);
     if (q) query = query.or(`description.ilike.%${q}%,sku.ilike.%${q}%`);
+    if (stockMin) query = query.gte("stock", Number(stockMin));
     if (stockMax) query = query.lte("stock", Number(stockMax));
+    if (priceWebMin) query = query.gte("price_web", Number(priceWebMin));
+    if (priceWebMax) query = query.lte("price_web", Number(priceWebMax));
 
     return query.range(from, to);
   });
@@ -175,7 +192,7 @@ export default async function InventarioPage({
       )}
 
       <ProductsTable
-        key={`${bu ?? ""}|${cat ?? ""}|${brand ?? ""}|${web ?? ""}|${q ?? ""}`}
+        key={`${bu ?? ""}|${cat ?? ""}|${brand ?? ""}|${web ?? ""}|${q ?? ""}|${stockMin ?? ""}|${stockMax ?? ""}|${priceWebMin ?? ""}|${priceWebMax ?? ""}`}
         initialProducts={filteredProducts}
         businessUnits={(businessUnits ?? []) as BusinessUnit[]}
         categories={(categories ?? []) as Category[]}

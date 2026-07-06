@@ -89,11 +89,51 @@ export default function FilterBar({
         <option value="no">En web: no</option>
       </select>
 
+      <div className="flex items-center gap-1">
+        <span className="text-sm text-slate-500">Stock</span>
+        <input
+          type="number"
+          placeholder="desde"
+          defaultValue={searchParams.get("stockMin") ?? ""}
+          onChange={(e) => setParam("stockMin", e.target.value)}
+          className="w-20 rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-brand focus:outline-none"
+        />
+        <input
+          type="number"
+          placeholder="hasta"
+          defaultValue={searchParams.get("stockMax") ?? ""}
+          onChange={(e) => setParam("stockMax", e.target.value)}
+          className="w-20 rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-brand focus:outline-none"
+        />
+      </div>
+
+      <div className="flex items-center gap-1">
+        <span className="text-sm text-slate-500">P. Web</span>
+        <input
+          type="number"
+          placeholder="desde"
+          defaultValue={searchParams.get("priceWebMin") ?? ""}
+          onChange={(e) => setParam("priceWebMin", e.target.value)}
+          className="w-24 rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-brand focus:outline-none"
+        />
+        <input
+          type="number"
+          placeholder="hasta"
+          defaultValue={searchParams.get("priceWebMax") ?? ""}
+          onChange={(e) => setParam("priceWebMax", e.target.value)}
+          className="w-24 rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-brand focus:outline-none"
+        />
+      </div>
+
       {(searchParams.get("q") ||
         searchParams.get("bu") ||
         searchParams.get("cat") ||
         searchParams.get("brand") ||
-        searchParams.get("web")) && (
+        searchParams.get("web") ||
+        searchParams.get("stockMin") ||
+        searchParams.get("stockMax") ||
+        searchParams.get("priceWebMin") ||
+        searchParams.get("priceWebMax")) && (
         <button
           onClick={() => router.push(pathname)}
           className="rounded-md px-3 py-1.5 text-sm text-slate-500 hover:text-slate-800"

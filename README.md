@@ -201,8 +201,9 @@ Implementado:
       P. Contado, y Precio promedio —con selector Promedio/Mediana— sobre
       P. Contado; se usa P. Contado en vez de Costo porque la mayoría del
       catálogo todavía no tiene el Costo cargado), buscador y filtros (unidad
-      de negocio, categoría, en web), alerta desplegable de stock bajo (0
-      o 1 unidad), gráficos de stock por unidad de negocio (torta),
+      de negocio, categoría, en web, y rangos desde/hasta de Stock y de
+      P. Web), alerta desplegable de stock bajo (0 o 1 unidad), gráficos
+      de stock por unidad de negocio (torta),
       categoría y marca (barras, con selector Unidades/Dinero) y, por
       último, la tabla editable con alta, baja y edición inline (las filas
       de productos publicados en la web se resaltan con fondo verde para
