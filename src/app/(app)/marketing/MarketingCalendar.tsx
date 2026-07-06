@@ -5,7 +5,7 @@ import type { BusinessUnit, ContentType, MarketingPost } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
 import { parseFlexibleNumber } from "@/lib/excel";
 import { monthKeyOf, formatMonthLabel } from "@/lib/months";
-import AutoGrowTextarea from "./AutoGrowTextarea";
+import AutoGrowTextarea from "@/components/AutoGrowTextarea";
 import {
   createMarketingPost,
   deleteMarketingPost,

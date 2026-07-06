@@ -156,7 +156,20 @@ Ver `supabase/migrations/`. Resumen de tablas:
 - **Inventario**: `business_units`, `categories`, `subcategories`,
   `brands` (catálogo fijo de marcas, se asigna a mano por producto),
   `products`
-- **Proveedores**: `suppliers`, `purchases`, `purchase_items`
+- **Proveedores**: `suppliers` (datos generales, contacto, datos
+  comerciales, condiciones de pago como 8 booleanos + observaciones,
+  `is_active`, `internal_notes`), `supplier_brands` (marcas que
+  comercializa, N a N con `brands`), `supplier_products` (productos que
+  provee, con costo propio del proveedor), `supplier_ledger_entries`
+  (cuenta corriente: `kind` compra/pago/ajuste/nota_credito, debe/haber;
+  Pagos en la ficha es un filtro `kind = 'pago'` sobre esta misma tabla —
+  el saldo se calcula en la app, no se guarda), vista `supplier_balances`
+  (saldo/última compra/cantidad de compras agregados por proveedor),
+  `supplier_documents` + bucket privado de Supabase Storage
+  `supplier-documents` (facturas, notas de crédito, listas de precios),
+  `supplier_history` (timeline, poblada por las acciones del servidor).
+  `purchases`/`purchase_items` (de la migración inicial, sin uso) quedan
+  para un futuro módulo de Compras que va a apoyarse en `suppliers`.
 - **Marketing**: pestaña Orgánico con `marketing_posts` (concepto,
   descripción, `business_unit_id`, `publish_date`, `content_type`
   educacional/marca/comercial, `is_scheduled` (Pautado), `is_published`
@@ -220,9 +233,24 @@ Implementado:
       anterior de los 4 módulos juntos (total vendido, cantidad de ventas,
       productos con stock bajo, inversión en marketing), alertas de stock
       bajo, Top 10 clientes y próximas acciones de marketing programadas
+- [x] Proveedores: CRM completo. Listado con KPIs del módulo (cantidad,
+      activos, saldo total pendiente, compras del mes, sin compras hace
+      +90 días), buscador y filtros (categoría, marca, estado), orden por
+      nombre/deuda/última compra; alta y edición con formulario completo
+      (datos generales, contacto, datos comerciales, marcas, condiciones
+      de pago, estado); ficha con 6 pestañas — Resumen (KPIs, gráfico de
+      compras por mes, observaciones internas), Productos (costo/precio/
+      margen/stock, agregar producto existente del catálogo), Cuenta
+      Corriente (movimientos con saldo corrido), Pagos (registro de
+      pagos), Documentos (subida de facturas/listas de precios/imágenes a
+      Supabase Storage, vista en galería) e Historial (timeline
+      automático de altas, compras, pagos y cambios). No depende de un
+      módulo de Compras — es autónomo, y un futuro módulo de Compras se
+      apoyaría en este.
 
 Pendiente (próximos pasos):
 
-- [ ] Proveedores: contactos y registro de compras
+- [ ] Compras: registro de órdenes de compra que alimenten la cuenta
+      corriente de Proveedores
 - [ ] Reportes de ventas por producto (requiere que la mayoría de las
       líneas estén vinculadas vía Revisar coincidencias)

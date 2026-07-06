@@ -63,6 +63,98 @@ export type AdCampaign = {
   updated_at: string;
 };
 
+export type Supplier = {
+  id: string;
+  trade_name: string;
+  legal_name: string | null;
+  cuit: string | null;
+  vat_condition: string | null;
+  gross_income: string | null;
+  address: string | null;
+  city: string | null;
+  province: string | null;
+  postal_code: string | null;
+  country: string;
+  contact_name: string | null;
+  contact_role: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  website: string | null;
+  category: string | null;
+  price_list: string | null;
+  delivery_time: string | null;
+  min_order: string | null;
+  usual_discount: number | null;
+  payment_cash: boolean;
+  payment_7d: boolean;
+  payment_15d: boolean;
+  payment_30d: boolean;
+  payment_60d: boolean;
+  payment_transfer: boolean;
+  payment_check: boolean;
+  payment_card: boolean;
+  payment_notes: string | null;
+  is_active: boolean;
+  internal_notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SupplierBalance = {
+  supplier_id: string;
+  balance: number;
+  last_purchase_date: string | null;
+  purchase_count: number;
+};
+
+export type SupplierProduct = {
+  id: string;
+  supplier_id: string;
+  product_id: string;
+  supplier_cost: number | null;
+  last_purchase_date: string | null;
+  created_at: string;
+};
+
+export type LedgerKind = "compra" | "pago" | "ajuste" | "nota_credito";
+
+export type SupplierLedgerEntry = {
+  id: string;
+  supplier_id: string;
+  entry_date: string;
+  kind: LedgerKind;
+  concept: string;
+  debit: number;
+  credit: number;
+  status: string | null;
+  payment_method: string | null;
+  receipt_number: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
+export type SupplierDocType = "factura" | "nota_credito" | "lista_precios" | "otro";
+
+export type SupplierDocument = {
+  id: string;
+  supplier_id: string;
+  doc_type: SupplierDocType | null;
+  file_name: string;
+  storage_path: string;
+  mime_type: string | null;
+  file_size: number | null;
+  uploaded_at: string;
+};
+
+export type SupplierHistoryEntry = {
+  id: string;
+  supplier_id: string;
+  event_type: string;
+  description: string;
+  occurred_at: string;
+};
+
 export type MatchStatus = "pending" | "confirmed" | "rejected" | "no_match";
 
 export type SaleItem = {
