@@ -34,7 +34,7 @@ function groupStock(
     const key = keyOf(p) ?? "";
     const cur = totals.get(key) ?? { units: 0, money: 0 };
     cur.units += p.stock;
-    cur.money += p.stock * p.cost;
+    cur.money += p.stock * p.price_cash;
     totals.set(key, cur);
   }
   return [...totals.entries()].map(([key, v]) => ({
