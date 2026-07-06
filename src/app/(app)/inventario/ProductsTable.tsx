@@ -425,7 +425,11 @@ export default function ProductsTable({
               return (
                 <tr
                   key={row.id}
-                  className="border-b border-slate-100 align-top last:border-0 hover:bg-slate-50"
+                  className={`border-b border-slate-100 align-top last:border-0 ${
+                    row.is_web
+                      ? "bg-emerald-50 hover:bg-emerald-100"
+                      : "hover:bg-slate-50"
+                  }`}
                 >
                   <td className="overflow-hidden px-2 py-1">
                     <input

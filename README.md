@@ -202,7 +202,9 @@ Implementado:
       de negocio, categoría, en web), alerta desplegable de stock bajo (0
       o 1 unidad), gráficos de stock por unidad de negocio (torta),
       categoría y marca (barras, con selector Unidades/Dinero) y, por
-      último, la tabla editable con alta, baja y edición inline
+      último, la tabla editable con alta, baja y edición inline (las filas
+      de productos publicados en la web se resaltan con fondo verde para
+      distinguirlos de un vistazo)
 - [x] Importación del Excel de productos/stock (columnas flexibles, con
       unidad de negocio por defecto)
 - [x] Importación del histórico de ventas (.xlsx/.csv), con matching
