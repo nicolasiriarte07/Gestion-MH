@@ -39,6 +39,7 @@ export function BreakdownCard({
   metric,
   currency,
   maxRows = 8,
+  className = "",
 }: {
   title: string;
   rows: BreakdownRow[];
@@ -46,6 +47,7 @@ export function BreakdownCard({
   metric: Metric;
   currency: Currency;
   maxRows?: number;
+  className?: string;
 }) {
   const sorted = [...rows].sort(
     (a, b) => rowValue(b, metric, currency) - rowValue(a, metric, currency)
@@ -70,7 +72,9 @@ export function BreakdownCard({
   const max = Math.max(...values, 1);
 
   return (
-    <div className="rounded-2xl border border-slate-200 shadow-sm bg-white p-4">
+    <div
+      className={`rounded-2xl border border-slate-200 shadow-sm bg-white p-4 ${className}`}
+    >
       <p className="mb-3 text-sm font-medium text-slate-700">{title}</p>
       {finalRows.length === 0 ? (
         <p className="text-sm text-slate-400">Sin datos en este período.</p>
