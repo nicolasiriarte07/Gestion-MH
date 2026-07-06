@@ -18,6 +18,14 @@ const FINANCIAL_COST_OPTIONS = [
 
 type FinancialCostKey = (typeof FINANCIAL_COST_OPTIONS)[number]["key"];
 
+const FIXED_COST_DEFAULTS = [
+  { key: "publicidad", label: "Publicidad", amount: 500000 },
+  { key: "plan_tn", label: "Plan TN", amount: 73000 },
+  { key: "herramientas", label: "Herramientas digitales", amount: 8000 },
+] as const;
+
+type FixedCostKey = (typeof FIXED_COST_DEFAULTS)[number]["key"];
+
 function formatPct(value: number): string {
   return `${value.toFixed(1).replace(".", ",")}%`;
 }
@@ -31,6 +39,12 @@ export default function SimuladorWeb({
   const [cogsPct, setCogsPct] = useState(Number(defaultCogsPct.toFixed(1)));
   const [financialKey, setFinancialKey] = useState<FinancialCostKey>(
     FINANCIAL_COST_OPTIONS[0].key
+  );
+  const [fixedCosts, setFixedCosts] = useState<Record<FixedCostKey, number>>(
+    () =>
+      Object.fromEntries(
+        FIXED_COST_DEFAULTS.map((c) => [c.key, c.amount])
+      ) as Record<FixedCostKey, number>
   );
 
   const financialOption = FINANCIAL_COST_OPTIONS.find(
@@ -55,9 +69,29 @@ export default function SimuladorWeb({
   const totalVariableAmount = (price * totalVariablePct) / 100;
   const netProfitAmount = price - totalVariableAmount;
 
+  const totalFixedCosts = FIXED_COST_DEFAULTS.reduce(
+    (sum, c) => sum + fixedCosts[c.key],
+    0
+  );
+  const canBreakEven = netProfitAmount > 0;
+  const breakEvenUnits = canBreakEven
+    ? Math.ceil(totalFixedCosts / netProfitAmount)
+    : null;
+  const breakEvenRevenue =
+    breakEvenUnits !== null ? breakEvenUnits * price : null;
+
   function handlePriceBlur(e: React.FocusEvent<HTMLInputElement>) {
     const value = parseFlexibleNumber(e.target.value);
     setPrice(value);
+    e.target.value = formatCurrency(value);
+  }
+
+  function handleFixedCostBlur(
+    key: FixedCostKey,
+    e: React.FocusEvent<HTMLInputElement>
+  ) {
+    const value = parseFlexibleNumber(e.target.value);
+    setFixedCosts((prev) => ({ ...prev, [key]: value }));
     e.target.value = formatCurrency(value);
   }
 
@@ -171,6 +205,97 @@ export default function SimuladorWeb({
                 {formatCurrency(netProfitAmount)}
               </td>
             </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs tracking-wide text-slate-500 uppercase">
+              <th className="px-4 py-2 font-medium" colSpan={2}>
+                Costos fijos mensuales
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {FIXED_COST_DEFAULTS.map((c) => (
+              <tr key={c.key} className="border-b border-slate-100">
+                <td className="px-4 py-2 text-slate-700">{c.label}</td>
+                <td className="px-4 py-2 text-right">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    defaultValue={formatCurrency(fixedCosts[c.key])}
+                    onFocus={(e) => e.target.select()}
+                    onBlur={(e) => handleFixedCostBlur(c.key, e)}
+                    className="w-40 rounded-md border border-transparent px-2 py-1 text-right text-slate-700 hover:border-slate-300 focus:border-brand focus:outline-none"
+                  />
+                </td>
+              </tr>
+            ))}
+            <tr className="bg-slate-50">
+              <td className="px-4 py-2 font-semibold text-slate-900">
+                Total costos fijos
+              </td>
+              <td className="px-4 py-2 text-right font-semibold text-slate-900">
+                {formatCurrency(totalFixedCosts)}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs tracking-wide text-slate-500 uppercase">
+              <th className="px-4 py-2 font-medium" colSpan={2}>
+                Punto de equilibrio mensual
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b border-slate-100">
+              <td className="px-4 py-2 text-slate-700">
+                Ganancia neta por unidad vendida
+              </td>
+              <td
+                className={`px-4 py-2 text-right font-semibold ${
+                  netProfitAmount >= 0 ? "text-emerald-700" : "text-red-600"
+                }`}
+              >
+                {formatCurrency(netProfitAmount)}
+              </td>
+            </tr>
+            {canBreakEven ? (
+              <>
+                <tr className="border-b border-slate-100">
+                  <td className="px-4 py-2 font-semibold text-slate-900">
+                    Unidades mínimas para cubrir costos fijos
+                  </td>
+                  <td className="px-4 py-2 text-right font-semibold text-slate-900">
+                    {breakEvenUnits} unid./mes
+                  </td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-2 font-semibold text-slate-900">
+                    Facturación mínima mensual
+                  </td>
+                  <td className="px-4 py-2 text-right font-semibold text-slate-900">
+                    {formatCurrency(breakEvenRevenue ?? 0)}
+                  </td>
+                </tr>
+              </>
+            ) : (
+              <tr>
+                <td className="px-4 py-2 text-red-600" colSpan={2}>
+                  Con estos parámetros, cada venta da pérdida — no hay punto
+                  de equilibrio posible. Ajustá el precio, el COGS o el
+                  costo financiero.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

@@ -254,7 +254,14 @@ Implementado:
       Cuotas/Transferencia, cada uno con su % fijo. Muestra cada concepto
       en % del precio y en monto ($), más el total de costos variables y
       la Ganancia neta (en verde si es positiva, en rojo si da negativa).
-      No guarda nada en la base, es una calculadora en vivo.
+      Debajo, punto de equilibrio mensual: costos fijos editables
+      (Publicidad, Plan TN, Herramientas digitales) y, a partir de la
+      Ganancia neta por unidad, las unidades mínimas por mes para
+      cubrirlos y la facturación mínima correspondiente (al ticket
+      promedio = precio de venta cargado arriba); si la ganancia neta da
+      negativa, avisa que no hay punto de equilibrio posible en vez de
+      mostrar un número sin sentido. No guarda nada en la base, es una
+      calculadora en vivo.
 
 Pendiente (próximos pasos):
 
