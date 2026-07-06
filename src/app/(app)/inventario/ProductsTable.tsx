@@ -93,15 +93,6 @@ const COLUMNS: { key: ColumnKey; label: string; width: number; sortable: boolean
 const MIN_COLUMN_WIDTH = 45;
 const ROWS_PER_PAGE = 50;
 
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 shadow-sm bg-white p-4">
-      <p className="text-2xl font-semibold text-slate-900">{value}</p>
-      <p className="text-sm font-medium text-slate-700">{label}</p>
-    </div>
-  );
-}
-
 export default function ProductsTable({
   initialProducts,
   businessUnits,
@@ -352,31 +343,6 @@ export default function ProductsTable({
     return [...draftRows, ...sortedProducts];
   }, [rows, sort, businessUnitName, categoryName, subcategoryName, brandName]);
 
-  const metrics = useMemo(() => {
-    const products = rows.filter((r): r is Product => !isDraft(r));
-    const avg = (values: number[]) =>
-      values.length ? values.reduce((s, n) => s + n, 0) / values.length : 0;
-
-    // Markup y COGS se calculan sobre los mismos productos: los que
-    // tienen Costo y P. Web cargados (> 0). Si a un producto le falta
-    // alguno de los dos, no tiene esa métrica completa y no cuenta para
-    // ninguno de los dos promedios (ni siquiera como 0%).
-    const withCompleteMetrics = products.filter(
-      (p) => p.cost > 0 && p.price_web > 0
-    );
-    const markups = withCompleteMetrics.map(
-      (p) => (p.price_web - p.cost) / p.cost
-    );
-    const cogsValues = withCompleteMetrics.map((p) => p.cost / p.price_web);
-
-    return {
-      count: products.length,
-      avgPrice: avg(products.map((p) => p.price_web)),
-      avgMarkup: avg(markups) * 100,
-      avgCogs: avg(cogsValues) * 100,
-    };
-  }, [rows]);
-
   const totalWidth = COLUMNS.reduce((sum, c) => sum + widths[c.key], 0);
 
   const totalPages = Math.max(1, Math.ceil(sortedRows.length / ROWS_PER_PAGE));
@@ -397,22 +363,6 @@ export default function ProductsTable({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Cantidad de SKUs" value={String(metrics.count)} />
-        <StatCard
-          label="Precio promedio"
-          value={formatCurrency(metrics.avgPrice)}
-        />
-        <StatCard
-          label="Markup promedio"
-          value={`${metrics.avgMarkup.toFixed(0)}%`}
-        />
-        <StatCard
-          label="COGS promedio"
-          value={`${metrics.avgCogs.toFixed(0)}%`}
-        />
-      </div>
-
       <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white">
         <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
           <span className="text-sm font-medium text-slate-700">

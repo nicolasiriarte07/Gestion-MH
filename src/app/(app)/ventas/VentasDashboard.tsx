@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
+import { BUSINESS_UNIT_COLORS } from "@/lib/businessUnitColors";
 import PeriodFilter from "./PeriodFilter";
 import MetricControls, { type Metric, type Currency } from "./MetricControls";
 import CompareControls, { type CompareMode } from "./CompareControls";
@@ -9,13 +10,6 @@ import { PieChart } from "./PieChart";
 import { WeekdayChart, type WeekdayRow } from "./WeekdayChart";
 import { TimeSeriesChart, type TimeSeriesRow } from "./TimeSeriesChart";
 import { TopCustomersCard } from "./TopCustomersCard";
-
-// Colores fijos de marca para las dos unidades de negocio (ver skill de
-// dataviz para el resto de la paleta categórica/secuencial).
-const BUSINESS_UNIT_COLORS: Record<string, string> = {
-  "MUNDO HOGAR": "#ec1e79",
-  "EQUIPAMIENTOS MH": "#7c3aed",
-};
 
 export type Bucket = "day" | "week" | "month";
 

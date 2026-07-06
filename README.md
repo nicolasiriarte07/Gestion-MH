@@ -176,9 +176,13 @@ Implementado:
 
 - [x] Auth (login/logout, rutas protegidas)
 - [x] Esquema completo de base de datos (los 4 módulos)
-- [x] Inventario: tabla editable con filtros (unidad de negocio, categoría,
-      en web, búsqueda), alta, baja y edición inline, y una alerta
-      desplegable de stock bajo (0 o 1 unidad) para no ocupar pantalla
+- [x] Inventario, de arriba hacia abajo: KPIs (cantidad de SKUs, Markup,
+      COGS y Precio promedio —los tres con selector Promedio/Mediana— y
+      Dinero en inventario = stock × costo), buscador y filtros (unidad
+      de negocio, categoría, en web), alerta desplegable de stock bajo (0
+      o 1 unidad), gráficos de stock por unidad de negocio (torta),
+      categoría y marca (barras, con selector Unidades/Dinero) y, por
+      último, la tabla editable con alta, baja y edición inline
 - [x] Importación del Excel de productos/stock (columnas flexibles, con
       unidad de negocio por defecto)
 - [x] Importación del histórico de ventas (.xlsx/.csv), con matching
