@@ -170,11 +170,6 @@ Ver `supabase/migrations/`. Resumen de tablas:
   `supplier_history` (timeline, poblada por las acciones del servidor).
   `purchases`/`purchase_items` (de la migración inicial, sin uso) quedan
   para un futuro módulo de Compras que va a apoyarse en `suppliers`.
-- **Precios de competencia**: `competitor_sites` (catálogo fijo de los 7
-  sitios: MercadoLibre, Fravega, Hendel, Musimundo, Casa Silvia, Casa
-  Carlitos, Casa del Audio) y `product_competitor_prices` (último
-  resultado de búsqueda por producto y sitio: `matched_title`,
-  `matched_url`, `price`, `status` ok/not_found/error, `checked_at`).
 - **Marketing**: pestaña Orgánico con `marketing_posts` (concepto,
   descripción, `business_unit_id`, `publish_date`, `content_type`
   educacional/marca/comercial, `is_scheduled` (Pautado), `is_published`
@@ -252,21 +247,6 @@ Implementado:
       automático de altas, compras, pagos y cambios). No depende de un
       módulo de Compras — es autónomo, y un futuro módulo de Compras se
       apoyaría en este.
-- [x] Precios de competencia: buscador de producto del catálogo propio;
-      al elegir uno, dispara una búsqueda por nombre en 7 sitios
-      (MercadoLibre por su API pública oficial; Fravega, Hendel,
-      Musimundo, Casa Silvia, Casa Carlitos y Casa del Audio leyendo datos
-      estructurados JSON-LD/Open Graph de la página de resultados) y arma
-      una tabla con sitio, producto encontrado (con link), precio,
-      cuándo se actualizó y estado (encontrado/no encontrado/error),
-      comparada arriba con el precio propio. Botón "Actualizar precios"
-      para volver a buscar. Como la búsqueda es por nombre (no por un link
-      guardado a mano), el producto encontrado siempre se muestra para
-      poder confirmar que es el mismo. Las URLs de búsqueda de los 6
-      sitios que no son MercadoLibre son la mejor estimación posible sin
-      acceso a internet desde este entorno de desarrollo — puede hacer
-      falta ajustar alguna una vez probado en producción.
-
 Pendiente (próximos pasos):
 
 - [ ] Compras: registro de órdenes de compra que alimenten la cuenta
