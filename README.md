@@ -196,9 +196,11 @@ Implementado:
 
 - [x] Auth (login/logout, rutas protegidas)
 - [x] Esquema completo de base de datos (los 4 módulos)
-- [x] Inventario, de arriba hacia abajo: KPIs (cantidad de SKUs, Markup,
-      COGS y Precio promedio —los tres con selector Promedio/Mediana— y
-      Dinero en inventario = stock × costo), buscador y filtros (unidad
+- [x] Inventario, de arriba hacia abajo: KPIs (cantidad de SKUs, Markup y
+      COGS —con selector Promedio/Mediana—, Dinero en inventario = stock ×
+      P. Contado, y Precio promedio —con selector Promedio/Mediana— sobre
+      P. Contado; se usa P. Contado en vez de Costo porque la mayoría del
+      catálogo todavía no tiene el Costo cargado), buscador y filtros (unidad
       de negocio, categoría, en web), alerta desplegable de stock bajo (0
       o 1 unidad), gráficos de stock por unidad de negocio (torta),
       categoría y marca (barras, con selector Unidades/Dinero) y, por

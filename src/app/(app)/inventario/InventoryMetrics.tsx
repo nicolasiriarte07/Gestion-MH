@@ -84,9 +84,12 @@ export default function InventoryMetrics({
       (p) => (p.price_web - p.cost) / p.cost
     );
     const cogsValues = withCompleteMetrics.map((p) => p.cost / p.price_web);
-    const prices = products.map((p) => p.price_web);
+    // Dinero en inventario y Precio promedio se calculan con P. Contado
+    // (no con Costo): la mayoría del catálogo todavía no tiene el Costo
+    // cargado, así que usar Costo daría un número muy por debajo del real.
+    const prices = products.map((p) => p.price_cash);
     const inventoryValue = products.reduce(
-      (sum, p) => sum + p.stock * p.cost,
+      (sum, p) => sum + p.stock * p.price_cash,
       0
     );
 
