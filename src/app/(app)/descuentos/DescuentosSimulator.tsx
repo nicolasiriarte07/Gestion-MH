@@ -26,12 +26,14 @@ function netProfitFor(
   cost: number,
   discountPct: number,
   financialPct: number
-): number {
+): { amount: number; marginPct: number } {
   const discountedPrice = priceWeb * (1 - discountPct / 100);
   const tn = (discountedPrice * COMISION_TIENDANUBE_PCT) / 100;
   const iibb = (discountedPrice * IIBB_PCT) / 100;
   const financial = (discountedPrice * financialPct) / 100;
-  return discountedPrice - cost - tn - iibb - financial;
+  const amount = discountedPrice - cost - tn - iibb - financial;
+  const marginPct = discountedPrice > 0 ? (amount / discountedPrice) * 100 : 0;
+  return { amount, marginPct };
 }
 
 export default function DescuentosSimulator({
@@ -127,20 +129,22 @@ export default function DescuentosSimulator({
                   {formatCurrency(product.price_web)}
                 </td>
                 {FINANCIAL_COST_OPTIONS.map((option) => {
-                  const netProfit = netProfitFor(
+                  const { amount, marginPct } = netProfitFor(
                     product.price_web,
                     product.cost,
                     discountPct,
                     option.pct
                   );
+                  const colorClass =
+                    amount >= 0 ? "text-emerald-700" : "text-red-600";
                   return (
-                    <td
-                      key={option.key}
-                      className={`px-4 py-2 text-right font-semibold ${
-                        netProfit >= 0 ? "text-emerald-700" : "text-red-600"
-                      }`}
-                    >
-                      {formatCurrency(netProfit)}
+                    <td key={option.key} className="px-4 py-2 text-right">
+                      <p className={`font-semibold ${colorClass}`}>
+                        {formatCurrency(amount)}
+                      </p>
+                      <p className={`text-xs ${colorClass}`}>
+                        {formatPct(marginPct)}
+                      </p>
                     </td>
                   );
                 })}

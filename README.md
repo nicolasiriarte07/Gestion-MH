@@ -270,8 +270,9 @@ Implementado:
       variante de financiación (MP débito 4,3%, MP 2 cuotas 15,78%, MP 3
       cuotas 18,7%, GO Cuotas 9,9%, Transferencia 10%), ya con la
       comisión Tiendanube (1%) e IIBB (3%) descontados, mostrando la
-      Ganancia neta resultante en verde o rojo. No guarda nada en la
-      base, es una calculadora en vivo.
+      Ganancia neta resultante (monto y % de margen neto sobre el precio
+      con descuento) en verde o rojo. No guarda nada en la base, es una
+      calculadora en vivo.
 
 Pendiente (próximos pasos):
 
