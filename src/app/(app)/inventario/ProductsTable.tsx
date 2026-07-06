@@ -1,13 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import type {
-  BusinessUnit,
-  Category,
-  Subcategory,
-  Brand,
-  Product,
-} from "@/lib/types";
+import type { BusinessUnit, Category, Brand, Product } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
 import { parseFlexibleNumber } from "@/lib/excel";
 import {
@@ -62,7 +56,6 @@ type ColumnKey =
   | "description"
   | "business_unit"
   | "category"
-  | "subcategory"
   | "brand"
   | "cost"
   | "price_cash"
@@ -78,7 +71,6 @@ const COLUMNS: { key: ColumnKey; label: string; width: number; sortable: boolean
   { key: "description", label: "Descripción", width: 190, sortable: true },
   { key: "business_unit", label: "Unidad de negocio", width: 190, sortable: true },
   { key: "category", label: "Categoría", width: 130, sortable: true },
-  { key: "subcategory", label: "Subcategoría", width: 150, sortable: true },
   { key: "brand", label: "Marca", width: 120, sortable: true },
   { key: "cost", label: "Costo", width: 85, sortable: true },
   { key: "price_cash", label: "P. Contado", width: 90, sortable: true },
@@ -97,13 +89,11 @@ export default function ProductsTable({
   initialProducts,
   businessUnits,
   categories,
-  subcategories,
   brands,
 }: {
   initialProducts: Product[];
   businessUnits: BusinessUnit[];
   categories: Category[];
-  subcategories: Subcategory[];
   brands: Brand[];
 }) {
   const [rows, setRows] = useState<Row[]>(initialProducts);
@@ -121,16 +111,6 @@ export default function ProductsTable({
   const [page, setPage] = useState(1);
   const resizeState = useRef<{ key: ColumnKey; startX: number } | null>(null);
 
-  const subcategoriesByCategory = useMemo(() => {
-    const map = new Map<string, Subcategory[]>();
-    for (const sub of subcategories) {
-      const list = map.get(sub.category_id) ?? [];
-      list.push(sub);
-      map.set(sub.category_id, list);
-    }
-    return map;
-  }, [subcategories]);
-
   const businessUnitName = useMemo(() => {
     const map = new Map(businessUnits.map((bu) => [bu.id, bu.name]));
     return (id: string | null) => (id ? (map.get(id) ?? "") : "");
@@ -140,11 +120,6 @@ export default function ProductsTable({
     const map = new Map(categories.map((c) => [c.id, c.name]));
     return (id: string | null) => (id ? (map.get(id) ?? "") : "");
   }, [categories]);
-
-  const subcategoryName = useMemo(() => {
-    const map = new Map(subcategories.map((s) => [s.id, s.name]));
-    return (id: string | null) => (id ? (map.get(id) ?? "") : "");
-  }, [subcategories]);
 
   const brandName = useMemo(() => {
     const map = new Map(brands.map((b) => [b.id, b.name]));
@@ -306,8 +281,6 @@ export default function ProductsTable({
           return businessUnitName(row.business_unit_id).toLowerCase();
         case "category":
           return categoryName(row.category_id).toLowerCase();
-        case "subcategory":
-          return subcategoryName(row.subcategory_id).toLowerCase();
         case "brand":
           return brandName(row.brand_id).toLowerCase();
         case "cost":
@@ -341,7 +314,7 @@ export default function ProductsTable({
       return 0;
     });
     return [...draftRows, ...sortedProducts];
-  }, [rows, sort, businessUnitName, categoryName, subcategoryName, brandName]);
+  }, [rows, sort, businessUnitName, categoryName, brandName]);
 
   const totalWidth = COLUMNS.reduce((sum, c) => sum + widths[c.key], 0);
 
@@ -416,9 +389,6 @@ export default function ProductsTable({
           <tbody>
             {pagedRows.map((row) => {
               const draft = isDraft(row);
-              const rowSubcategories = row.category_id
-                ? (subcategoriesByCategory.get(row.category_id) ?? [])
-                : [];
               const saving = savingIds.has(row.id);
               const error = errors[row.id];
 
@@ -486,25 +456,6 @@ export default function ProductsTable({
                       {categories.map((cat) => (
                         <option key={cat.id} value={cat.id}>
                           {cat.name}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="overflow-hidden px-2 py-1">
-                    <select
-                      className="w-full rounded border border-transparent px-1.5 py-1 hover:border-slate-300 focus:border-brand focus:outline-none"
-                      value={row.subcategory_id ?? ""}
-                      disabled={!row.category_id}
-                      onChange={(e) => {
-                        applyChange(row, draft, {
-                          subcategory_id: e.target.value || null,
-                        });
-                      }}
-                    >
-                      <option value="">Sin subcategoría</option>
-                      {rowSubcategories.map((sub) => (
-                        <option key={sub.id} value={sub.id}>
-                          {sub.name}
                         </option>
                       ))}
                     </select>
