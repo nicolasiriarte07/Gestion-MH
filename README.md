@@ -247,6 +247,15 @@ Implementado:
       automático de altas, compras, pagos y cambios). No depende de un
       módulo de Compras — es autónomo, y un futuro módulo de Compras se
       apoyaría en este.
+- [x] Simulador Web: simula la rentabilidad de una venta por la web.
+      Precio de venta y COGS (%, precargado con el COGS promedio del
+      catálogo) editables; Comisión Tiendanube (1%) e IIBB (3%) fijos;
+      Costo financiero a elegir entre 6 medios de pago de MercadoPago/GO
+      Cuotas/Transferencia, cada uno con su % fijo. Muestra cada concepto
+      en % del precio y en monto ($), más el total de costos variables y
+      la Ganancia neta (en verde si es positiva, en rojo si da negativa).
+      No guarda nada en la base, es una calculadora en vivo.
+
 Pendiente (próximos pasos):
 
 - [ ] Compras: registro de órdenes de compra que alimenten la cuenta
