@@ -221,10 +221,15 @@ Implementado:
       de pago, y ranking Top 10 clientes
 - [x] Opción de reemplazar todas las ventas existentes al reimportar (para
       recargar el histórico completo sin duplicar filas)
-- [x] Clientes: buscador por nombre (columna Cliente de las ventas), con
-      lista de coincidencias si hay varios clientes parecidos y una vista
-      de detalle con el historial completo de compras de cada uno (total
-      en ARS/USD, ticket promedio, y el detalle línea por línea)
+- [x] Clientes: arriba del buscador, métricas generales de toda la base
+      (Clientes únicos, % que volvió a comprar más de una vez, y Recencia
+      media = cada cuántos días compra en promedio, contando cada fecha
+      de compra una sola vez aunque tenga varias líneas). Buscador por
+      nombre (columna Cliente de las ventas), con lista de coincidencias
+      si hay varios clientes parecidos y una vista de detalle con el
+      historial completo de compras de cada uno (total en ARS/USD,
+      ticket promedio en ARS y en USD, Recencia media propia del
+      cliente, y el detalle línea por línea)
 - [x] Marketing: pestañas Orgánico / Pauta. Orgánico es el cronograma de
       acciones de comunicación agrupado por mes (concepto, descripción,
       vertical, fecha, tipo de contenido, pautado, publicado e

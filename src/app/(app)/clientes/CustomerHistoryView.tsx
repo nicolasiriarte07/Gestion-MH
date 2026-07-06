@@ -50,6 +50,19 @@ export default function CustomerHistoryView({
   const firstDate = dates[0];
   const lastDate = dates[dates.length - 1];
 
+  // Recencia media: promedio de días entre una compra y la siguiente,
+  // contando cada fecha de compra una sola vez (varias líneas el mismo
+  // día son una sola visita, no varias compras).
+  const distinctDates = [...new Set(dates)].sort();
+  const gapsDays = distinctDates.slice(1).map((date, i) => {
+    const prev = new Date(distinctDates[i]);
+    const curr = new Date(date);
+    return (curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
+  });
+  const avgRecencyDays = gapsDays.length
+    ? gapsDays.reduce((s, n) => s + n, 0) / gapsDays.length
+    : null;
+
   return (
     <>
       <div className="flex items-center justify-between">
@@ -69,7 +82,7 @@ export default function CustomerHistoryView({
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-2xl font-semibold text-slate-900">
             {formatCurrency(totals.ars, "ars")}
@@ -99,7 +112,28 @@ export default function CustomerHistoryView({
               "ars"
             )}
           </p>
-          <p className="text-sm font-medium text-slate-700">Ticket promedio</p>
+          <p className="text-sm font-medium text-slate-700">
+            Ticket promedio (ARS)
+          </p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-2xl font-semibold text-slate-900">
+            {formatCurrency(
+              history.length ? totals.usd / history.length : 0,
+              "usd"
+            )}
+          </p>
+          <p className="text-sm font-medium text-slate-700">
+            Ticket promedio (USD)
+          </p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="text-2xl font-semibold text-slate-900">
+            {avgRecencyDays === null
+              ? "—"
+              : `${avgRecencyDays.toFixed(0)} día(s)`}
+          </p>
+          <p className="text-sm font-medium text-slate-700">Recencia media</p>
         </div>
       </div>
 

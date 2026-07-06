@@ -4,6 +4,13 @@ import type { BusinessUnit } from "@/lib/types";
 import CustomerSearch from "./CustomerSearch";
 import CustomerResultsList, { type SearchMatch } from "./CustomerResultsList";
 import CustomerHistoryView, { type HistoryRow } from "./CustomerHistoryView";
+import ClientesSummaryMetrics from "./ClientesSummaryMetrics";
+
+type CustomerMetricsSummary = {
+  unique_customers: number;
+  repeat_purchase_pct: number;
+  avg_recency_days: number;
+};
 
 export default async function ClientesPage({
   searchParams,
@@ -14,10 +21,22 @@ export default async function ClientesPage({
   const query = q?.trim() ?? "";
   const supabase = await createClient();
 
+  const { data: summaryData } = await supabase.rpc("customer_metrics_summary");
+  const summary = ((summaryData as CustomerMetricsSummary[] | null)?.[0] ?? {
+    unique_customers: 0,
+    repeat_purchase_pct: 0,
+    avg_recency_days: 0,
+  }) as CustomerMetricsSummary;
+
   if (!query && !customer) {
     return (
       <div className="space-y-4">
         <h1 className="text-lg font-semibold text-slate-900">Clientes</h1>
+        <ClientesSummaryMetrics
+          uniqueCustomers={summary.unique_customers}
+          repeatPurchasePct={summary.repeat_purchase_pct}
+          avgRecencyDays={summary.avg_recency_days}
+        />
         <CustomerSearch initialQuery="" />
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center text-sm text-slate-500 shadow-sm">
           <Users className="text-slate-300" size={32} />
@@ -60,6 +79,11 @@ export default async function ClientesPage({
     return (
       <div className="space-y-4">
         <h1 className="text-lg font-semibold text-slate-900">Clientes</h1>
+        <ClientesSummaryMetrics
+          uniqueCustomers={summary.unique_customers}
+          repeatPurchasePct={summary.repeat_purchase_pct}
+          avgRecencyDays={summary.avg_recency_days}
+        />
         <CustomerSearch initialQuery={query} />
         <CustomerHistoryView
           customerName={selectedCustomer}
@@ -74,6 +98,11 @@ export default async function ClientesPage({
   return (
     <div className="space-y-4">
       <h1 className="text-lg font-semibold text-slate-900">Clientes</h1>
+      <ClientesSummaryMetrics
+        uniqueCustomers={summary.unique_customers}
+        repeatPurchasePct={summary.repeat_purchase_pct}
+        avgRecencyDays={summary.avg_recency_days}
+      />
       <CustomerSearch initialQuery={query} />
       <CustomerResultsList query={query} matches={matches} />
     </div>
