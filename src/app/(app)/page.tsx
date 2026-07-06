@@ -6,6 +6,7 @@ import type { Brand, ContentType, Product } from "@/lib/types";
 import type { BreakdownRow } from "./ventas/BreakdownCard";
 import { TopCustomersCard } from "./ventas/TopCustomersCard";
 import LowStockAlerts from "./inventario/LowStockAlerts";
+import { fetchAllRows } from "@/lib/supabase/fetchAll";
 
 const LOW_STOCK_THRESHOLD = 1;
 const UPCOMING_MARKETING_LIMIT = 5;
@@ -83,11 +84,15 @@ export default async function ResumenPage() {
   ] = await Promise.all([
     supabase.rpc("sales_summary", { from_date: from, to_date: to }),
     supabase.rpc("sales_by_customer", { from_date: from, to_date: to }),
-    supabase
-      .from("products")
-      .select("*")
-      .lte("stock", LOW_STOCK_THRESHOLD)
-      .order("description", { ascending: true }),
+    fetchAllRows<Product>((rangeFrom, rangeTo) =>
+      supabase
+        .from("products")
+        .select("*")
+        .lte("stock", LOW_STOCK_THRESHOLD)
+        .order("description", { ascending: true })
+        .order("id", { ascending: true })
+        .range(rangeFrom, rangeTo)
+    ),
     supabase.from("brands").select("id, name"),
     supabase
       .from("products")

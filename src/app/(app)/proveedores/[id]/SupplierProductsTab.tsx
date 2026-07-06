@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Brand, Category, Product } from "@/lib/types";
+import { fetchAllRows } from "@/lib/supabase/fetchAll";
 import SupplierProductsTable, { type SupplierProductRow } from "./SupplierProductsTable";
 
 export default async function SupplierProductsTab({
@@ -19,7 +20,14 @@ export default async function SupplierProductsTab({
       .from("supplier_products")
       .select("*, products(*)")
       .eq("supplier_id", supplierId),
-    supabase.from("products").select("*").order("description"),
+    fetchAllRows<Product>((from, to) =>
+      supabase
+        .from("products")
+        .select("*")
+        .order("description")
+        .order("id")
+        .range(from, to)
+    ),
     supabase.from("categories").select("id, name"),
     supabase.from("brands").select("id, name"),
   ]);

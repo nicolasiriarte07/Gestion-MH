@@ -5,6 +5,7 @@ import { Readable } from "node:stream";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { resolveBusinessUnitId } from "@/lib/business-unit";
+import { fetchAllRows } from "@/lib/supabase/fetchAll";
 import {
   normalizeHeader,
   cellText,
@@ -256,13 +257,25 @@ export async function importMasterExcel(
   // viene del archivo).
   // ---------------------------------------------------------------------
   const skus = candidates.map((c) => c.sku);
-  const { data: existingProducts } = await supabase
-    .from("products")
-    .select("sku, cost, is_web, business_unit_id, category_id, subcategory_id")
-    .in("sku", skus);
-  const existingBySku = new Map(
-    (existingProducts ?? []).map((p) => [p.sku, p])
+  // Con catálogos de más de 1000 productos, Supabase corta la respuesta a
+  // 1000 filas por consulta (aunque el filtro `.in()` pida más), así que
+  // esto se pagina para traer todos los existentes que coincidan.
+  const { data: existingProducts } = await fetchAllRows<{
+    sku: string;
+    cost: number;
+    is_web: boolean;
+    business_unit_id: string | null;
+    category_id: string | null;
+    subcategory_id: string | null;
+  }>((from, to) =>
+    supabase
+      .from("products")
+      .select("sku, cost, is_web, business_unit_id, category_id, subcategory_id")
+      .in("sku", skus)
+      .order("sku")
+      .range(from, to)
   );
+  const existingBySku = new Map(existingProducts.map((p) => [p.sku, p]));
 
   type UpsertRow = {
     sku: string;

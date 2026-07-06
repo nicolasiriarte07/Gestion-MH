@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Product } from "@/lib/types";
+import { fetchAllRows } from "@/lib/supabase/fetchAll";
 import DescuentosSimulator from "./DescuentosSimulator";
 
 export default async function DescuentosPage() {
@@ -7,11 +8,15 @@ export default async function DescuentosPage() {
 
   // Solo entran productos con Costo cargado (> 0): sin costo no se puede
   // calcular ganancia neta real, solo un número inventado.
-  const { data: products } = await supabase
-    .from("products")
-    .select("*")
-    .gt("cost", 0)
-    .order("description");
+  const { data: products } = await fetchAllRows<Product>((from, to) =>
+    supabase
+      .from("products")
+      .select("*")
+      .gt("cost", 0)
+      .order("description")
+      .order("id")
+      .range(from, to)
+  );
 
   return (
     <div className="space-y-4">
@@ -23,7 +28,7 @@ export default async function DescuentosPage() {
           descontar.
         </p>
       </div>
-      <DescuentosSimulator products={(products ?? []) as Product[]} />
+      <DescuentosSimulator products={products} />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { Readable } from "node:stream";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { resolveBusinessUnitId } from "@/lib/business-unit";
+import { fetchAllRows } from "@/lib/supabase/fetchAll";
 import {
   normalizeHeader,
   cellText,
@@ -145,9 +146,12 @@ export async function importSalesExcel(
     (businessUnits ?? []).map((bu) => [bu.name.trim().toLowerCase(), bu.id])
   );
 
-  const { data: products } = await supabase.from("products").select("id, sku");
+  const { data: products } = await fetchAllRows<{ id: string; sku: string }>(
+    (from, to) =>
+      supabase.from("products").select("id, sku").order("id").range(from, to)
+  );
   const productIdBySku = new Map(
-    (products ?? []).map((p) => [p.sku.trim().toLowerCase(), p.id])
+    products.map((p) => [p.sku.trim().toLowerCase(), p.id])
   );
 
   type InsertRow = {

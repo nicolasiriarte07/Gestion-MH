@@ -12,6 +12,7 @@ import type { BreakdownRow } from "../ventas/BreakdownCard";
 import { BreakdownCard } from "../ventas/BreakdownCard";
 import { PieChart } from "../ventas/PieChart";
 import { BUSINESS_UNIT_COLORS } from "@/lib/businessUnitColors";
+import { fetchAllRows } from "@/lib/supabase/fetchAll";
 import FilterBar from "./FilterBar";
 import ProductsTable from "./ProductsTable";
 import LowStockAlerts from "./LowStockAlerts";
@@ -74,27 +75,34 @@ export default async function InventarioPage({
       .select("id, category_id, name")
       .order("name"),
     supabase.from("brands").select("id, name").order("name"),
-    supabase
-      .from("products")
-      .select("*")
-      .lte("stock", LOW_STOCK_THRESHOLD)
-      .order("description", { ascending: true }),
+    fetchAllRows<Product>((from, to) =>
+      supabase
+        .from("products")
+        .select("*")
+        .lte("stock", LOW_STOCK_THRESHOLD)
+        .order("description", { ascending: true })
+        .order("id", { ascending: true })
+        .range(from, to)
+    ),
   ]);
 
-  let query = supabase
-    .from("products")
-    .select("*")
-    .order("description", { ascending: true });
+  const { data: products, error } = await fetchAllRows<Product>((from, to) => {
+    let query = supabase
+      .from("products")
+      .select("*")
+      .order("description", { ascending: true })
+      .order("id", { ascending: true });
 
-  if (bu) query = query.eq("business_unit_id", bu);
-  if (cat) query = query.eq("category_id", cat);
-  if (brand) query = query.eq("brand_id", brand);
-  if (web === "yes") query = query.eq("is_web", true);
-  if (web === "no") query = query.eq("is_web", false);
-  if (q) query = query.or(`description.ilike.%${q}%,sku.ilike.%${q}%`);
-  if (stockMax) query = query.lte("stock", Number(stockMax));
+    if (bu) query = query.eq("business_unit_id", bu);
+    if (cat) query = query.eq("category_id", cat);
+    if (brand) query = query.eq("brand_id", brand);
+    if (web === "yes") query = query.eq("is_web", true);
+    if (web === "no") query = query.eq("is_web", false);
+    if (q) query = query.or(`description.ilike.%${q}%,sku.ilike.%${q}%`);
+    if (stockMax) query = query.lte("stock", Number(stockMax));
 
-  const { data: products, error } = await query;
+    return query.range(from, to);
+  });
 
   const lowStockRows = (lowStockProducts ?? []) as Product[];
   const filteredProducts = (products ?? []) as Product[];

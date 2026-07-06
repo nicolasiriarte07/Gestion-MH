@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { bestMatch } from "@/lib/similarity";
 import type { BusinessUnit, Product } from "@/lib/types";
+import { fetchAllRows } from "@/lib/supabase/fetchAll";
 import MatchReview, { type PendingGroup } from "./MatchReview";
 
 type PendingRow = {
@@ -10,22 +11,28 @@ type PendingRow = {
   row_count: number;
 };
 
+type ProductLookup = Pick<
+  Product,
+  "id" | "sku" | "description" | "business_unit_id"
+>;
+
 export default async function RevisarPage() {
   const supabase = await createClient();
 
   const [{ data: pendingGroups }, { data: products }, { data: businessUnits }] =
     await Promise.all([
       supabase.rpc("pending_sale_descriptions"),
-      supabase
-        .from("products")
-        .select("id, sku, description, business_unit_id"),
+      fetchAllRows<ProductLookup>((from, to) =>
+        supabase
+          .from("products")
+          .select("id, sku, description, business_unit_id")
+          .order("id")
+          .range(from, to)
+      ),
       supabase.from("business_units").select("id, name"),
     ]);
 
-  const productList = (products ?? []) as Pick<
-    Product,
-    "id" | "sku" | "description" | "business_unit_id"
-  >[];
+  const productList = products;
 
   const groups: PendingGroup[] = ((pendingGroups ?? []) as PendingRow[]).map(
     (g) => {
