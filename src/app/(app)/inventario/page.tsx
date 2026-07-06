@@ -162,7 +162,7 @@ export default async function InventarioPage({
         <StockMetricToggle value={activeStockMetric} />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
         <PieChart
           title="Stock por unidad de negocio"
           rows={stockByBusinessUnit}
@@ -176,6 +176,7 @@ export default async function InventarioPage({
           colorMode="sequential"
           metric={chartMetric}
           currency={chartCurrency}
+          maxRows={100}
         />
         <BreakdownCard
           title="Stock por marca"
