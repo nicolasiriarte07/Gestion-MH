@@ -32,11 +32,16 @@ export default function ImportForm() {
         <strong>P. Contado</strong> (filas sin alguna de estas tres se
         omiten). Si además trae Stock, Costo, P. Web, Unidad de Negocio,
         Categoría Madre, Subcategoría o Publicado/En Web, se usan también.
-        Todo lo demás que falte (incluida la Unidad de Negocio) queda vacío
-        y lo completás después a mano desde la tabla. Los productos se
-        identifican por Código: si ya existe se actualiza, si no existe se
-        crea. Las categorías y subcategorías nuevas se crean
-        automáticamente.
+        Los productos se identifican por Código: si ya existe se
+        actualiza, si no existe se crea. Podés subir un archivo más chico
+        para actualizar solo stock y precios (Código, Descripción, Stock,
+        P. Contado, P. Web) sin romper nada: las columnas que falten no se
+        borran ni se pisan en los productos que ya existen (Costo,
+        Publicado, Unidad de Negocio, Categoría y Subcategoría quedan como
+        estaban); solo en un producto nuevo quedan vacías/sin asignar y
+        las completás después a mano. Marca nunca se toca desde acá, se
+        elige siempre a mano en la tabla. Las categorías y subcategorías
+        nuevas se crean automáticamente.
       </p>
 
       <form

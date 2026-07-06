@@ -5,7 +5,15 @@ import { Readable } from "node:stream";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { resolveBusinessUnitId } from "@/lib/business-unit";
-import { normalizeHeader, cellText, cellNumber, parseArgentineDate } from "@/lib/excel";
+import {
+  normalizeHeader,
+  cellText,
+  cellNumber,
+  parseArgentineDate,
+  decodeCsvBuffer,
+  detectCsvDelimiter,
+  csvKeepAsText,
+} from "@/lib/excel";
 
 export type SalesImportResult = {
   ok: boolean;
@@ -63,7 +71,12 @@ export async function importSalesExcel(
       // Readable.from(buffer) iteraría el Buffer byte a byte; envolverlo
       // en un array lo pasa como un único chunk, que es lo que espera el
       // parser de CSV.
-      worksheet = await workbook.csv.read(Readable.from([buffer]));
+      const csvBuffer = decodeCsvBuffer(buffer);
+      const delimiter = detectCsvDelimiter(csvBuffer);
+      worksheet = await workbook.csv.read(Readable.from([csvBuffer]), {
+        parserOptions: { delimiter },
+        map: csvKeepAsText,
+      });
     } else {
       // exceljs tipa `load` contra un `Buffer` de una versión de
       // @types/node distinta a la nuestra (la trae fast-csv, dependencia

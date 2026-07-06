@@ -68,12 +68,16 @@ Negocio, Categoría Madre, Subcategoría o Publicado, se usan también:
   independientes.
 - **Publicado** (o su alias viejo "En Web") acepta `TRUE`/`FALSE`, `Sí/No`,
   `1/0`, etc.
-- Las columnas opcionales que falten (Stock, Costo, P. Web, Unidad de
-  Negocio, Categoría Madre, Subcategoría, Publicado) quedan vacías/en
-  0/sin asignar: se completan después a mano desde la tabla editable de
-  Inventario. Si el archivo sí trae Unidad de Negocio pero con un valor
-  que no coincide con `MUNDO HOGAR` o `EQUIPAMIENTOS MH`, esa fila se
-  omite (para no asignar una unidad equivocada).
+- Las columnas opcionales que falten (Costo, Unidad de Negocio, Categoría
+  Madre, Subcategoría, Publicado) **no se borran ni se pisan** en un
+  producto que ya existe: se preserva el valor que ya tenía cargado. Si el
+  producto es nuevo, quedan vacías/sin asignar/sin publicar y se completan
+  después a mano desde la tabla editable de Inventario. Si el archivo sí
+  trae Unidad de Negocio pero con un valor que no coincide con
+  `MUNDO HOGAR` o `EQUIPAMIENTOS MH`, esa fila se omite (para no asignar
+  una unidad equivocada). Esto permite subir después archivos más chicos,
+  solo con `Código, Descripción, Stock, P. Contado, P. Web`, para
+  actualizar stock y precios sin tocar el resto de lo ya cargado.
 - **Categoría Madre** y **Subcategoría** se crean automáticamente si no
   existen.
 - Al terminar, la pantalla muestra cuántas filas se crearon, actualizaron u
@@ -81,6 +85,9 @@ Negocio, Categoría Madre, Subcategoría o Publicado, se usan también:
 - **Marca** no viene del archivo: todos los productos quedan "Sin marca" al
   importar (o reimportar, sin pisar lo que ya tenía asignado) y se elige a
   mano desde el desplegable de esa columna en la tabla.
+- El .csv puede venir separado por comas o por punto y coma, y en UTF-8 o
+  en la codificación que usa Excel en español (Windows-1252/ISO-8859-1):
+  se detectan solos.
 
 ## 5. Importar el histórico de ventas
 
@@ -152,10 +159,10 @@ Ver `supabase/migrations/`. Resumen de tablas:
 - **Proveedores**: `suppliers`, `purchases`, `purchase_items`
 - **Marketing**: pestaña Orgánico con `marketing_posts` (concepto,
   descripción, `business_unit_id`, `publish_date`, `content_type`
-  educacional/marca/comercial, `is_scheduled`, `investment_ars`); pestaña
-  Pauta con `ad_campaigns` (`campaign_name`, `investment_ars`, `reach`,
-  `start_date`/`end_date` — la Duración en días se calcula a partir de
-  esas dos fechas, no se guarda)
+  educacional/marca/comercial, `is_scheduled` (Pautado), `is_published`
+  (Publicado), `investment_ars`); pestaña Pauta con `ad_campaigns`
+  (`campaign_name`, `investment_ars`, `reach`, `start_date`/`end_date` — la
+  Duración en días se calcula a partir de esas dos fechas, no se guarda)
 - **Ventas**: `sale_items`, con `product_id` nullable y `match_status`
   (`pending` / `confirmed` / `rejected` / `no_match`) para el flujo de
   confirmación manual, más `business_unit_id` y `source_article_code` para
@@ -202,8 +209,9 @@ Implementado:
       en ARS/USD, ticket promedio, y el detalle línea por línea)
 - [x] Marketing: pestañas Orgánico / Pauta. Orgánico es el cronograma de
       acciones de comunicación agrupado por mes (concepto, descripción,
-      vertical, fecha, tipo de contenido, pautado e inversión); Pauta es
-      un cronograma de campañas pagas agrupado por mes de inicio (campaña,
+      vertical, fecha, tipo de contenido, pautado, publicado e
+      inversión); Pauta es un cronograma de campañas pagas agrupado por
+      mes de inicio (campaña,
       inversión, alcance, fecha de inicio/fin y duración calculada en
       días). Ambos con carga/edición inline y total invertido por mes
 - [x] Detección de duplicados al reimportar el histórico de ventas (por

@@ -51,6 +51,7 @@ function emptyDraft(publishDate: string): DraftPost {
     publish_date: publishDate,
     content_type: null,
     is_scheduled: false,
+    is_published: false,
     investment_ars: 0,
   };
 }
@@ -154,6 +155,7 @@ export default function MarketingCalendar({
       publish_date: draft.publish_date,
       content_type: draft.content_type,
       is_scheduled: draft.is_scheduled,
+      is_published: draft.is_published,
       investment_ars: draft.investment_ars,
     };
     const result = await createMarketingPost(input);
@@ -245,7 +247,7 @@ export default function MarketingCalendar({
                 </button>
               </div>
 
-              <table className="text-xs" style={{ tableLayout: "fixed", width: "100%", minWidth: 1450 }}>
+              <table className="text-xs" style={{ tableLayout: "fixed", width: "100%", minWidth: 1550 }}>
                 <colgroup>
                   <col style={{ width: 220 }} />
                   <col style={{ width: "auto" }} />
@@ -253,6 +255,7 @@ export default function MarketingCalendar({
                   <col style={{ width: 130 }} />
                   <col style={{ width: 150 }} />
                   <col style={{ width: 80 }} />
+                  <col style={{ width: 100 }} />
                   <col style={{ width: 110 }} />
                   <col style={{ width: 130 }} />
                 </colgroup>
@@ -264,6 +267,7 @@ export default function MarketingCalendar({
                     <th className="px-3 py-3 font-medium">Fecha</th>
                     <th className="px-3 py-3 font-medium">Contenido</th>
                     <th className="px-3 py-3 font-medium">Pautado</th>
+                    <th className="px-3 py-3 font-medium">Publicado</th>
                     <th className="px-3 py-3 font-medium">Inversión</th>
                     <th className="px-3 py-3 font-medium" />
                   </tr>
@@ -377,6 +381,18 @@ export default function MarketingCalendar({
                             onChange={(e) => {
                               applyChange(row, draft, {
                                 is_scheduled: e.target.checked,
+                              });
+                            }}
+                          />
+                        </td>
+                        <td className="overflow-hidden px-3 py-3 text-center">
+                          <input
+                            type="checkbox"
+                            className="accent-brand"
+                            checked={row.is_published}
+                            onChange={(e) => {
+                              applyChange(row, draft, {
+                                is_published: e.target.checked,
                               });
                             }}
                           />

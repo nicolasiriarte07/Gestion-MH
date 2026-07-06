@@ -5,7 +5,14 @@ import { Readable } from "node:stream";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { resolveBusinessUnitId } from "@/lib/business-unit";
-import { normalizeHeader, cellText, parseFlexibleNumber } from "@/lib/excel";
+import {
+  normalizeHeader,
+  cellText,
+  parseFlexibleNumber,
+  decodeCsvBuffer,
+  detectCsvDelimiter,
+  csvKeepAsText,
+} from "@/lib/excel";
 
 export type ImportResult = {
   ok: boolean;
@@ -76,7 +83,12 @@ export async function importMasterExcel(
       // Readable.from(buffer) iteraría el Buffer byte a byte (es un
       // Uint8Array iterable); envolverlo en un array lo pasa como un
       // único chunk, que es lo que espera el parser de CSV.
-      worksheet = await workbook.csv.read(Readable.from([buffer]));
+      const csvBuffer = decodeCsvBuffer(buffer);
+      const delimiter = detectCsvDelimiter(csvBuffer);
+      worksheet = await workbook.csv.read(Readable.from([csvBuffer]), {
+        parserOptions: { delimiter },
+        map: csvKeepAsText,
+      });
     } else {
       // exceljs tipa `load` contra un `Buffer` de una versión de
       // @types/node distinta a la nuestra (la trae fast-csv, dependencia
@@ -234,16 +246,19 @@ export async function importMasterExcel(
 
   // ---------------------------------------------------------------------
   // Paso 2: traer los productos que ya existen por Código, para poder
-  // reimportar el mismo archivo (o una versión más nueva) sin perder
-  // datos que el archivo no trae. Costo, Unidad de Negocio, Categoría y
-  // Subcategoría se preservan si la fila del archivo no especifica un
-  // valor; Descripción, P. Contado, P. Web, Publicado y Stock siempre se
-  // actualizan con lo que traiga el archivo.
+  // reimportar el mismo archivo (o una versión más nueva, ej. solo con
+  // Código/Descripción/Stock/P.Contado/P.Web para actualizar stock y
+  // precios) sin perder datos que el archivo no trae. Costo, Publicado,
+  // Unidad de Negocio, Categoría y Subcategoría se preservan si la fila
+  // del archivo no especifica un valor (o si la columna no está en el
+  // archivo); Descripción, P. Contado, P. Web y Stock siempre se
+  // actualizan con lo que traiga el archivo. Marca nunca se toca acá (no
+  // viene del archivo).
   // ---------------------------------------------------------------------
   const skus = candidates.map((c) => c.sku);
   const { data: existingProducts } = await supabase
     .from("products")
-    .select("sku, cost, business_unit_id, category_id, subcategory_id")
+    .select("sku, cost, is_web, business_unit_id, category_id, subcategory_id")
     .in("sku", skus);
   const existingBySku = new Map(
     (existingProducts ?? []).map((p) => [p.sku, p])
@@ -308,7 +323,16 @@ export async function importMasterExcel(
         ? parseFlexibleNumber(costText)
         : (existing?.cost ?? 0);
 
+      // Publicado es opcional igual que unidad de negocio/categoría: si el
+      // archivo no trae la columna (o la fila la deja vacía), se preserva
+      // el valor que ya tenía el producto (o queda sin publicar si es
+      // nuevo), en vez de despublicar todo el catálogo cada vez que se
+      // sube un archivo que no incluye esa columna (ej. una actualización
+      // de stock).
       const webText = record.is_web?.trim().toLowerCase() ?? "";
+      const isWeb = webText
+        ? TRUTHY_WEB_VALUES.has(webText)
+        : (existing?.is_web ?? false);
 
       validRows.push({
         sku,
@@ -317,7 +341,7 @@ export async function importMasterExcel(
         price_cash: parseFlexibleNumber(record.price_cash),
         price_web: parseFlexibleNumber(record.price_web ?? ""),
         stock: Math.round(parseFlexibleNumber(record.stock ?? "")),
-        is_web: TRUTHY_WEB_VALUES.has(webText),
+        is_web: isWeb,
         business_unit_id: businessUnitId,
         category_id: categoryId,
         subcategory_id: subcategoryId,

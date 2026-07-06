@@ -46,6 +46,7 @@ export type MarketingPost = {
   publish_date: string;
   content_type: ContentType | null;
   is_scheduled: boolean;
+  is_published: boolean;
   investment_ars: number;
   created_at: string;
   updated_at: string;

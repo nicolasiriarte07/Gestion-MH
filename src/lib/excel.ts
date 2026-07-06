@@ -1,5 +1,36 @@
 import type ExcelJS from "exceljs";
 
+// Algunas planillas que llegan del negocio (ej. exportadas desde Excel con
+// configuración regional es-AR) no vienen en UTF-8 sino en Windows-1252/
+// ISO-8859-1, y usan punto y coma como separador en vez de coma. Si no se
+// detecta esto, los acentos quedan corruptos y las columnas no se separan.
+export function decodeCsvBuffer(buffer: Buffer): Buffer {
+  try {
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(buffer);
+    return Buffer.from(text, "utf-8");
+  } catch {
+    const text = buffer.toString("latin1");
+    return Buffer.from(text, "utf-8");
+  }
+}
+
+export function detectCsvDelimiter(buffer: Buffer): string {
+  const firstLine = buffer.toString("utf-8", 0, 2000).split(/\r?\n/)[0] ?? "";
+  const commas = (firstLine.match(/,/g) ?? []).length;
+  const semicolons = (firstLine.match(/;/g) ?? []).length;
+  return semicolons > commas ? ";" : ",";
+}
+
+// Por defecto, exceljs convierte cualquier celda de CSV con pinta de
+// número a un `Number` de JS (ej. "929.000" -> 929, perdiendo los 3 ceros;
+// "390.880" -> 390.88). Como los precios vienen con formato es-AR (punto
+// de miles), esto corrompe silenciosamente cualquier precio "redondo" en
+// miles. Con este `map` las celdas quedan como texto tal cual vienen, y es
+// `parseFlexibleNumber` el único que decide cómo interpretar el número.
+export function csvKeepAsText(value: string): string | null {
+  return value === "" ? null : value;
+}
+
 export function normalizeHeader(value: string): string {
   return value
     .normalize("NFD")
