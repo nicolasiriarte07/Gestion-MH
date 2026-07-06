@@ -262,6 +262,15 @@ Implementado:
       negativa, avisa que no hay punto de equilibrio posible en vez de
       mostrar un número sin sentido. No guarda nada en la base, es una
       calculadora en vivo.
+- [x] Descuentos: simulador de hasta qué % de descuento se puede dar por
+      producto sin perder plata. Incluye solo los productos del catálogo
+      con Costo cargado (>0), con buscador y paginado. Un único % de
+      descuento (editable) se aplica a todos, y por cada producto muestra
+      una fila por cada variante de financiación (MP débito 4,3%, MP 2
+      cuotas 15,78%, MP 3 cuotas 18,7%, GO Cuotas 9,9%, Transferencia
+      10%), ya con la comisión Tiendanube (1%) e IIBB (3%) descontados,
+      con la Ganancia neta resultante en verde o rojo. No guarda nada en
+      la base, es una calculadora en vivo.
 
 Pendiente (próximos pasos):
 

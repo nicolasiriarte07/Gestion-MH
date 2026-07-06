@@ -10,6 +10,7 @@ import {
   ShoppingCart,
   Users,
   Calculator,
+  Percent,
   type LucideIcon,
 } from "lucide-react";
 import LogoutButton from "./LogoutButton";
@@ -22,6 +23,7 @@ const NAV_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/ventas", label: "Ventas", icon: ShoppingCart },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/simulador-web", label: "Simulador Web", icon: Calculator },
+  { href: "/descuentos", label: "Descuentos", icon: Percent },
 ];
 
 export default function Sidebar({ userEmail }: { userEmail: string }) {
