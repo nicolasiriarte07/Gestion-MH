@@ -6,6 +6,9 @@ import CustomerResultsList, { type SearchMatch } from "./CustomerResultsList";
 import CustomerHistoryView, { type HistoryRow } from "./CustomerHistoryView";
 import ClientesSummaryMetrics from "./ClientesSummaryMetrics";
 import RecencyByVisitCard, { type RecencyByVisitRow } from "./RecencyByVisitCard";
+import AvgTicketByVisitCard, {
+  type AvgTicketByVisitRow,
+} from "./AvgTicketByVisitCard";
 
 type CustomerMetricsSummary = {
   unique_customers: number;
@@ -22,17 +25,23 @@ export default async function ClientesPage({
   const query = q?.trim() ?? "";
   const supabase = await createClient();
 
-  const [{ data: summaryData }, { data: recencyByVisitData }] =
-    await Promise.all([
-      supabase.rpc("customer_metrics_summary"),
-      supabase.rpc("customer_recency_by_visit"),
-    ]);
+  const [
+    { data: summaryData },
+    { data: recencyByVisitData },
+    { data: avgTicketByVisitData },
+  ] = await Promise.all([
+    supabase.rpc("customer_metrics_summary"),
+    supabase.rpc("customer_recency_by_visit"),
+    supabase.rpc("customer_avg_ticket_usd_by_visit"),
+  ]);
   const summary = ((summaryData as CustomerMetricsSummary[] | null)?.[0] ?? {
     unique_customers: 0,
     repeat_purchase_pct: 0,
     avg_recency_days: 0,
   }) as CustomerMetricsSummary;
   const recencyByVisit = (recencyByVisitData ?? []) as RecencyByVisitRow[];
+  const avgTicketByVisit = (avgTicketByVisitData ??
+    []) as AvgTicketByVisitRow[];
 
   if (!query && !customer) {
     return (
@@ -44,6 +53,7 @@ export default async function ClientesPage({
           avgRecencyDays={summary.avg_recency_days}
         />
         <RecencyByVisitCard rows={recencyByVisit} />
+        <AvgTicketByVisitCard rows={avgTicketByVisit} />
         <CustomerSearch initialQuery="" />
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center text-sm text-slate-500 shadow-sm">
           <Users className="text-slate-300" size={32} />
@@ -92,6 +102,7 @@ export default async function ClientesPage({
           avgRecencyDays={summary.avg_recency_days}
         />
         <RecencyByVisitCard rows={recencyByVisit} />
+        <AvgTicketByVisitCard rows={avgTicketByVisit} />
         <CustomerSearch initialQuery={query} />
         <CustomerHistoryView
           customerName={selectedCustomer}
@@ -112,6 +123,7 @@ export default async function ClientesPage({
         avgRecencyDays={summary.avg_recency_days}
       />
       <RecencyByVisitCard rows={recencyByVisit} />
+      <AvgTicketByVisitCard rows={avgTicketByVisit} />
       <CustomerSearch initialQuery={query} />
       <CustomerResultsList query={query} matches={matches} />
     </div>
