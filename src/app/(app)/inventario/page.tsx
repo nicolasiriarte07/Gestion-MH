@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import type { BusinessUnit, Category, Brand, Product } from "@/lib/types";
+import type {
+  BusinessUnit,
+  Category,
+  Subcategory,
+  Brand,
+  Product,
+} from "@/lib/types";
 import type { Metric, Currency } from "../ventas/MetricControls";
 import type { BreakdownRow } from "../ventas/BreakdownCard";
 import { fetchAllRows } from "@/lib/supabase/fetchAll";
@@ -70,11 +76,16 @@ export default async function InventarioPage({
   const [
     { data: businessUnits },
     { data: categories },
+    { data: subcategories },
     { data: brands },
     { data: lowStockProducts },
   ] = await Promise.all([
     supabase.from("business_units").select("id, name").order("name"),
     supabase.from("categories").select("id, name").order("name"),
+    supabase
+      .from("subcategories")
+      .select("id, category_id, name")
+      .order("name"),
     supabase.from("brands").select("id, name").order("name"),
     fetchAllRows<Product>((from, to) =>
       supabase
@@ -196,6 +207,7 @@ export default async function InventarioPage({
         initialProducts={filteredProducts}
         businessUnits={(businessUnits ?? []) as BusinessUnit[]}
         categories={(categories ?? []) as Category[]}
+        subcategories={(subcategories ?? []) as Subcategory[]}
         brands={(brands ?? []) as Brand[]}
       />
     </div>

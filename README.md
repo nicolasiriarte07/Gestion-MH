@@ -207,7 +207,9 @@ Implementado:
       categoría y marca (barras, con selector Unidades/Dinero) y, por
       último, la tabla editable con alta, baja y edición inline (las filas
       de productos publicados en la web se resaltan con fondo verde para
-      distinguirlos de un vistazo)
+      distinguirlos de un vistazo). Botón "Exportar" para bajar un .csv
+      con los productos que estén filtrados en ese momento, con todas las
+      columnas (incluida Subcategoría, que no se ve en la tabla)
 - [x] Importación del Excel de productos/stock (columnas flexibles, con
       unidad de negocio por defecto)
 - [x] Importación del histórico de ventas (.xlsx/.csv), con matching

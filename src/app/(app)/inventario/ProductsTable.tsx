@@ -1,7 +1,13 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import type { BusinessUnit, Category, Brand, Product } from "@/lib/types";
+import type {
+  BusinessUnit,
+  Category,
+  Subcategory,
+  Brand,
+  Product,
+} from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
 import { parseFlexibleNumber } from "@/lib/excel";
 import {
@@ -31,6 +37,31 @@ function cogsRatio(cost: number, priceWeb: number): number | null {
 
 function formatPercent(ratio: number | null): string {
   return ratio === null ? "—" : `${(ratio * 100).toFixed(0)}%`;
+}
+
+// Excel necesita el punto y coma como separador (no la coma) para leer
+// bien los archivos en español, y el ";" ya se usa en todos los exports
+// de este proyecto para .csv.
+const CSV_DELIMITER = ";";
+
+function csvCell(value: string | number): string {
+  const text = String(value);
+  return /[";\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function downloadCsv(filename: string, rows: (string | number)[][]) {
+  const csv = rows
+    .map((row) => row.map(csvCell).join(CSV_DELIMITER))
+    .join("\r\n");
+  // El BOM al principio hace que Excel detecte UTF-8 y muestre bien los
+  // acentos (si no, "Categoría" se ve como "CategorÃ­a").
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function emptyDraft(): DraftProduct {
@@ -89,11 +120,13 @@ export default function ProductsTable({
   initialProducts,
   businessUnits,
   categories,
+  subcategories,
   brands,
 }: {
   initialProducts: Product[];
   businessUnits: BusinessUnit[];
   categories: Category[];
+  subcategories: Subcategory[];
   brands: Brand[];
 }) {
   const [rows, setRows] = useState<Row[]>(initialProducts);
@@ -115,6 +148,11 @@ export default function ProductsTable({
     const map = new Map(businessUnits.map((bu) => [bu.id, bu.name]));
     return (id: string | null) => (id ? (map.get(id) ?? "") : "");
   }, [businessUnits]);
+
+  const subcategoryName = useMemo(() => {
+    const map = new Map(subcategories.map((s) => [s.id, s.name]));
+    return (id: string | null) => (id ? (map.get(id) ?? "") : "");
+  }, [subcategories]);
 
   const categoryName = useMemo(() => {
     const map = new Map(categories.map((c) => [c.id, c.name]));
@@ -334,6 +372,45 @@ export default function ProductsTable({
     return value === current ? null : value;
   }
 
+  function exportCsv() {
+    const header = [
+      "Código",
+      "Descripción",
+      "Unidad de negocio",
+      "Categoría",
+      "Subcategoría",
+      "Marca",
+      "Costo",
+      "P. Contado",
+      "P. Web",
+      "Markup",
+      "COGS",
+      "Stock",
+      "Publicado",
+    ];
+
+    const dataRows = sortedRows
+      .filter((row): row is Product => !isDraft(row))
+      .map((row) => [
+        row.sku,
+        row.description,
+        businessUnitName(row.business_unit_id) || "Sin asignar",
+        categoryName(row.category_id) || "Sin categoría",
+        subcategoryName(row.subcategory_id) || "Sin subcategoría",
+        brandName(row.brand_id) || "Sin marca",
+        row.cost,
+        row.price_cash,
+        row.price_web,
+        formatPercent(markupRatio(row.cost, row.price_web)),
+        formatPercent(cogsRatio(row.cost, row.price_web)),
+        row.stock,
+        row.is_web ? "Sí" : "No",
+      ]);
+
+    const today = new Date().toISOString().slice(0, 10);
+    downloadCsv(`inventario-${today}.csv`, [header, ...dataRows]);
+  }
+
   return (
     <div className="space-y-4">
       <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white">
@@ -341,12 +418,20 @@ export default function ProductsTable({
           <span className="text-sm font-medium text-slate-700">
             Productos
           </span>
-          <button
-            onClick={addDraftRow}
-            className="rounded-md bg-brand px-2 py-1 text-xs font-medium text-white hover:bg-brand-dark"
-          >
-            + Nuevo producto
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={exportCsv}
+              className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
+            >
+              Exportar
+            </button>
+            <button
+              onClick={addDraftRow}
+              className="rounded-md bg-brand px-2 py-1 text-xs font-medium text-white hover:bg-brand-dark"
+            >
+              + Nuevo producto
+            </button>
+          </div>
         </div>
 
         <table
