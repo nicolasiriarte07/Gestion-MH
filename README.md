@@ -224,7 +224,10 @@ Implementado:
 - [x] Clientes: arriba del buscador, métricas generales de toda la base
       (Clientes únicos, % que volvió a comprar más de una vez, y Recencia
       media = cada cuántos días compra en promedio, contando cada fecha
-      de compra una sola vez aunque tenga varias líneas). Buscador por
+      de compra una sola vez aunque tenga varias líneas), más una tarjeta
+      con los días promedio entre la compra 1 y la 2, la 2 y la 3, y así
+      hasta la 5ta a la 6ta, con la cantidad de clientes que llegó a cada
+      transición. Buscador por
       nombre (columna Cliente de las ventas), con lista de coincidencias
       si hay varios clientes parecidos y una vista de detalle con el
       historial completo de compras de cada uno (total en ARS/USD,
