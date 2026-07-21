@@ -1,3 +1,5 @@
+import { formatCurrency } from "@/lib/currency";
+
 const CHART_WIDTH = 640;
 const CHART_HEIGHT = 220;
 const PADDING_LEFT = 36;
@@ -12,10 +14,19 @@ export type RevenueParetoRow = {
   customers_count: number;
 };
 
+export type RevenueTopCustomerRow = {
+  rank: number;
+  customer_name: string;
+  total_ars: number;
+  pct_of_total: number;
+};
+
 export default function RevenueParetoChart({
   rows,
+  topCustomers,
 }: {
   rows: RevenueParetoRow[];
+  topCustomers: RevenueTopCustomerRow[];
 }) {
   if (rows.length === 0) {
     return (
@@ -67,62 +78,100 @@ export default function RevenueParetoChart({
         </p>
       )}
 
-      <div className="overflow-x-auto">
-        <svg
-          width={CHART_WIDTH}
-          height={CHART_HEIGHT}
-          viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-          className="min-w-[480px]"
-        >
-          {GRID_LINES.map((g) => (
-            <g key={g}>
-              <line
-                x1={PADDING_LEFT}
-                x2={CHART_WIDTH - PADDING_RIGHT}
-                y1={yFor(g)}
-                y2={yFor(g)}
-                stroke="#e2e8f0"
-                strokeDasharray="4 4"
-              />
+      <div className="flex flex-col gap-4 lg:flex-row">
+        <div className="overflow-x-auto">
+          <svg
+            width={CHART_WIDTH}
+            height={CHART_HEIGHT}
+            viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
+            className="min-w-[480px]"
+          >
+            {GRID_LINES.map((g) => (
+              <g key={g}>
+                <line
+                  x1={PADDING_LEFT}
+                  x2={CHART_WIDTH - PADDING_RIGHT}
+                  y1={yFor(g)}
+                  y2={yFor(g)}
+                  stroke="#e2e8f0"
+                  strokeDasharray="4 4"
+                />
+                <text
+                  x={PADDING_LEFT - 6}
+                  y={yFor(g) + 3}
+                  textAnchor="end"
+                  fontSize={10}
+                  fill="#94a3b8"
+                >
+                  {g}
+                </text>
+              </g>
+            ))}
+
+            <path d={linePath} fill="none" stroke="#2a78d6" strokeWidth={2} />
+
+            {points.map((p) => (
+              <circle
+                key={p.decile}
+                cx={xFor(p.decile)}
+                cy={yFor(p.cumulative_pct)}
+                r={4}
+                fill="#2a78d6"
+              >
+                <title>{`${p.decile}% de los clientes → ${p.cumulative_pct.toFixed(1)}% de la facturación`}</title>
+              </circle>
+            ))}
+
+            {points.map((p) => (
               <text
-                x={PADDING_LEFT - 6}
-                y={yFor(g) + 3}
-                textAnchor="end"
+                key={`label-${p.decile}`}
+                x={xFor(p.decile)}
+                y={CHART_HEIGHT - 6}
+                textAnchor="middle"
                 fontSize={10}
                 fill="#94a3b8"
               >
-                {g}
+                {p.decile}
               </text>
-            </g>
-          ))}
+            ))}
+          </svg>
+        </div>
 
-          <path d={linePath} fill="none" stroke="#2a78d6" strokeWidth={2} />
-
-          {points.map((p) => (
-            <circle
-              key={p.decile}
-              cx={xFor(p.decile)}
-              cy={yFor(p.cumulative_pct)}
-              r={4}
-              fill="#2a78d6"
-            >
-              <title>{`${p.decile}% de los clientes → ${p.cumulative_pct.toFixed(1)}% de la facturación`}</title>
-            </circle>
-          ))}
-
-          {points.map((p) => (
-            <text
-              key={`label-${p.decile}`}
-              x={xFor(p.decile)}
-              y={CHART_HEIGHT - 6}
-              textAnchor="middle"
-              fontSize={10}
-              fill="#94a3b8"
-            >
-              {p.decile}
-            </text>
-          ))}
-        </svg>
+        {topCustomers.length > 0 && (
+          <div className="min-w-0 flex-1 overflow-x-auto lg:border-l lg:border-slate-100 lg:pl-4">
+            <p className="mb-2 text-xs font-medium text-slate-500">
+              TOP {topCustomers.length} clientes
+            </p>
+            <table className="w-full table-fixed text-sm">
+              <thead>
+                <tr className="text-left text-xs text-slate-400">
+                  <th className="w-6 pb-1 font-normal">#</th>
+                  <th className="pb-1 font-normal">Cliente</th>
+                  <th className="w-28 pb-1 text-right font-normal">
+                    Facturación
+                  </th>
+                  <th className="w-12 pb-1 text-right font-normal">%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topCustomers.map((c) => (
+                  <tr key={c.rank} className="border-t border-slate-100">
+                    <td className="py-1 text-slate-400">{c.rank}</td>
+                    <td className="max-w-0 truncate py-1 pr-2 text-slate-700">
+                      {c.customer_name}
+                    </td>
+                    <td className="whitespace-nowrap py-1 text-right text-slate-700">
+                      {formatCurrency(c.total_ars)}
+                    </td>
+                    <td className="whitespace-nowrap py-1 text-right text-slate-500">
+                      {c.pct_of_total.toFixed(1)}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
