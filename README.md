@@ -202,7 +202,10 @@ Implementado:
       P. Contado; se usa P. Contado en vez de Costo porque la mayoría del
       catálogo todavía no tiene el Costo cargado), buscador y filtros (unidad
       de negocio, categoría, en web, y rangos desde/hasta de Stock y de
-      P. Web), alerta desplegable de stock bajo (0 o 1 unidad), gráficos
+      P. Web), alerta desplegable de productos publicados en la web con 0
+      stock (la más urgente, en rojo, arriba de todo — perder una venta
+      web por falta de stock es peor que solo tener poco stock) y alerta
+      desplegable de stock bajo en general (0 o 1 unidad), gráficos
       de stock por unidad de negocio (torta),
       categoría y marca (barras, con selector Unidades/Dinero) y, por
       último, la tabla editable con alta, baja y edición inline (las filas

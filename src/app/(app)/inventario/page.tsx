@@ -13,6 +13,7 @@ import { fetchAllRows } from "@/lib/supabase/fetchAll";
 import FilterBar from "./FilterBar";
 import ProductsTable from "./ProductsTable";
 import LowStockAlerts from "./LowStockAlerts";
+import WebOutOfStockAlert from "./WebOutOfStockAlert";
 import InventoryMetrics from "./InventoryMetrics";
 import StockCharts from "./StockCharts";
 import StockMetricToggle, { type StockMetric } from "./StockMetricToggle";
@@ -120,6 +121,9 @@ export default async function InventarioPage({
   });
 
   const lowStockRows = (lowStockProducts ?? []) as Product[];
+  const webOutOfStockRows = lowStockRows.filter(
+    (p) => p.is_web && p.stock === 0
+  );
   const filteredProducts = (products ?? []) as Product[];
 
   const activeStockMetric: StockMetric =
@@ -179,6 +183,11 @@ export default async function InventarioPage({
       <FilterBar
         businessUnits={(businessUnits ?? []) as BusinessUnit[]}
         categories={(categories ?? []) as Category[]}
+        brands={(brands ?? []) as Brand[]}
+      />
+
+      <WebOutOfStockAlert
+        rows={webOutOfStockRows}
         brands={(brands ?? []) as Brand[]}
       />
 
