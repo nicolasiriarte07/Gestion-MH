@@ -34,13 +34,11 @@ export default async function ClientesPage({
     { data: recencyByVisitData },
     { data: avgTicketByVisitData },
     { data: revenueParetoData },
-    { data: revenueTopData },
   ] = await Promise.all([
     supabase.rpc("customer_metrics_summary"),
     supabase.rpc("customer_recency_by_visit"),
     supabase.rpc("customer_avg_ticket_usd_by_visit"),
     supabase.rpc("customer_revenue_pareto"),
-    supabase.rpc("customer_revenue_top"),
   ]);
   const summary = ((summaryData as CustomerMetricsSummary[] | null)?.[0] ?? {
     unique_customers: 0,
@@ -51,6 +49,18 @@ export default async function ClientesPage({
   const avgTicketByVisit = (avgTicketByVisitData ??
     []) as AvgTicketByVisitRow[];
   const revenuePareto = (revenueParetoData ?? []) as RevenueParetoRow[];
+
+  // La tabla de TOP clientes tiene que mostrar exactamente los clientes que
+  // forman el TOP 10% del gráfico de Pareto (no un TOP fijo), para que sus
+  // porcentajes individuales sumen el mismo % que muestra la curva.
+  const top10Decile = revenuePareto.find((r) => r.decile === 10);
+  const topCustomersCount = top10Decile?.customers_count ?? 0;
+  const { data: revenueTopData } =
+    topCustomersCount > 0
+      ? await supabase.rpc("customer_revenue_top", {
+          limit_count: topCustomersCount,
+        })
+      : { data: [] };
   const revenueTop = (revenueTopData ?? []) as RevenueTopCustomerRow[];
 
   if (!query && !customer) {

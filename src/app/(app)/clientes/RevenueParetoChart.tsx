@@ -62,6 +62,17 @@ export default function RevenueParetoChart({
 
   const top10 = rows.find((r) => r.decile === 10);
 
+  // % acumulado propio de esta lista (independiente del `pct_of_total` de
+  // cada fila), para que el último renglón coincida con el % del decil 10
+  // del gráfico y se vea de dónde sale ese número.
+  const topCustomersWithCumulative = topCustomers.reduce<
+    Array<RevenueTopCustomerRow & { cumulative_pct: number }>
+  >((acc, c) => {
+    const previousCumulative = acc.length > 0 ? acc[acc.length - 1].cumulative_pct : 0;
+    acc.push({ ...c, cumulative_pct: previousCumulative + c.pct_of_total });
+    return acc;
+  }, []);
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <p className="mb-1 text-sm font-medium text-slate-700">
@@ -137,39 +148,47 @@ export default function RevenueParetoChart({
           </svg>
         </div>
 
-        {topCustomers.length > 0 && (
-          <div className="min-w-0 flex-1 overflow-x-auto lg:border-l lg:border-slate-100 lg:pl-4">
+        {topCustomersWithCumulative.length > 0 && (
+          <div className="min-w-0 flex-1 lg:border-l lg:border-slate-100 lg:pl-4">
             <p className="mb-2 text-xs font-medium text-slate-500">
-              TOP {topCustomers.length} clientes
+              {`Los ${topCustomersWithCumulative.length} clientes que forman ese TOP 10%`}
             </p>
-            <table className="w-full table-fixed text-sm">
-              <thead>
-                <tr className="text-left text-xs text-slate-400">
-                  <th className="w-6 pb-1 font-normal">#</th>
-                  <th className="pb-1 font-normal">Cliente</th>
-                  <th className="w-28 pb-1 text-right font-normal">
-                    Facturación
-                  </th>
-                  <th className="w-12 pb-1 text-right font-normal">%</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topCustomers.map((c) => (
-                  <tr key={c.rank} className="border-t border-slate-100">
-                    <td className="py-1 text-slate-400">{c.rank}</td>
-                    <td className="max-w-0 truncate py-1 pr-2 text-slate-700">
-                      {c.customer_name}
-                    </td>
-                    <td className="whitespace-nowrap py-1 text-right text-slate-700">
-                      {formatCurrency(c.total_ars)}
-                    </td>
-                    <td className="whitespace-nowrap py-1 text-right text-slate-500">
-                      {c.pct_of_total.toFixed(1)}%
-                    </td>
+            <div className="max-h-[220px] overflow-y-auto overflow-x-auto">
+              <table className="w-full table-fixed text-sm">
+                <thead className="sticky top-0 bg-white">
+                  <tr className="text-left text-xs text-slate-400">
+                    <th className="w-6 pb-1 font-normal">#</th>
+                    <th className="pb-1 font-normal">Cliente</th>
+                    <th className="w-28 pb-1 text-right font-normal">
+                      Facturación
+                    </th>
+                    <th className="w-12 pb-1 text-right font-normal">%</th>
+                    <th className="w-14 pb-1 text-right font-normal">
+                      % acum.
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {topCustomersWithCumulative.map((c) => (
+                    <tr key={c.rank} className="border-t border-slate-100">
+                      <td className="py-1 text-slate-400">{c.rank}</td>
+                      <td className="max-w-0 truncate py-1 pr-2 text-slate-700">
+                        {c.customer_name}
+                      </td>
+                      <td className="whitespace-nowrap py-1 text-right text-slate-700">
+                        {formatCurrency(c.total_ars)}
+                      </td>
+                      <td className="whitespace-nowrap py-1 text-right text-slate-500">
+                        {c.pct_of_total.toFixed(1)}%
+                      </td>
+                      <td className="whitespace-nowrap py-1 text-right font-medium text-brand-dark">
+                        {c.cumulative_pct.toFixed(1)}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
