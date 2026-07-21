@@ -9,6 +9,9 @@ import RecencyByVisitCard, { type RecencyByVisitRow } from "./RecencyByVisitCard
 import AvgTicketByVisitCard, {
   type AvgTicketByVisitRow,
 } from "./AvgTicketByVisitCard";
+import RevenueParetoChart, {
+  type RevenueParetoRow,
+} from "./RevenueParetoChart";
 
 type CustomerMetricsSummary = {
   unique_customers: number;
@@ -29,10 +32,12 @@ export default async function ClientesPage({
     { data: summaryData },
     { data: recencyByVisitData },
     { data: avgTicketByVisitData },
+    { data: revenueParetoData },
   ] = await Promise.all([
     supabase.rpc("customer_metrics_summary"),
     supabase.rpc("customer_recency_by_visit"),
     supabase.rpc("customer_avg_ticket_usd_by_visit"),
+    supabase.rpc("customer_revenue_pareto"),
   ]);
   const summary = ((summaryData as CustomerMetricsSummary[] | null)?.[0] ?? {
     unique_customers: 0,
@@ -42,6 +47,7 @@ export default async function ClientesPage({
   const recencyByVisit = (recencyByVisitData ?? []) as RecencyByVisitRow[];
   const avgTicketByVisit = (avgTicketByVisitData ??
     []) as AvgTicketByVisitRow[];
+  const revenuePareto = (revenueParetoData ?? []) as RevenueParetoRow[];
 
   if (!query && !customer) {
     return (
@@ -54,6 +60,7 @@ export default async function ClientesPage({
         />
         <RecencyByVisitCard rows={recencyByVisit} />
         <AvgTicketByVisitCard rows={avgTicketByVisit} />
+        <RevenueParetoChart rows={revenuePareto} />
         <CustomerSearch initialQuery="" />
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center text-sm text-slate-500 shadow-sm">
           <Users className="text-slate-300" size={32} />
@@ -103,6 +110,7 @@ export default async function ClientesPage({
         />
         <RecencyByVisitCard rows={recencyByVisit} />
         <AvgTicketByVisitCard rows={avgTicketByVisit} />
+        <RevenueParetoChart rows={revenuePareto} />
         <CustomerSearch initialQuery={query} />
         <CustomerHistoryView
           customerName={selectedCustomer}
@@ -124,6 +132,7 @@ export default async function ClientesPage({
       />
       <RecencyByVisitCard rows={recencyByVisit} />
       <AvgTicketByVisitCard rows={avgTicketByVisit} />
+      <RevenueParetoChart rows={revenuePareto} />
       <CustomerSearch initialQuery={query} />
       <CustomerResultsList query={query} matches={matches} />
     </div>

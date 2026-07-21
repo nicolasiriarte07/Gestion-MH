@@ -233,7 +233,11 @@ Implementado:
       con los días promedio entre la compra 1 y la 2, la 2 y la 3, y así
       hasta la 5ta a la 6ta, y otra con el ticket promedio en USD de la
       1ra a la 5ta compra — las dos con la cantidad de clientes detrás de
-      cada número, para saber qué tan representativo es. Buscador por
+      cada número, para saber qué tan representativo es, y un gráfico de
+      Pareto de concentración de facturación (curva acumulada por decil
+      de clientes ordenados de mayor a menor gasto) con el insight
+      "El TOP 10% de tus clientes genera el X% de tu facturación".
+      Buscador por
       nombre (columna Cliente de las ventas), con lista de coincidencias
       si hay varios clientes parecidos y una vista de detalle con el
       historial completo de compras de cada uno (total en ARS/USD,
