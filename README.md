@@ -252,7 +252,9 @@ Implementado:
       inversión); Pauta es un cronograma de campañas pagas agrupado por
       mes de inicio (campaña,
       inversión, alcance, fecha de inicio/fin y duración calculada en
-      días). Ambos con carga/edición inline y total invertido por mes
+      días). Ambos con carga/edición inline y total invertido por mes, y
+      cada mes es un acordeón: se puede retraer o expandir haciendo clic
+      en su encabezado para ver solo los meses que interesan
 - [x] Detección de duplicados al reimportar el histórico de ventas (por
       contenido de la fila, no requiere Nombre_PDF)
 - [x] Resumen: pantalla de inicio (`/`) con los números clave del mes

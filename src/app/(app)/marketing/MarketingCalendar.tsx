@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import type { BusinessUnit, ContentType, MarketingPost } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
 import { parseFlexibleNumber } from "@/lib/excel";
@@ -66,6 +67,27 @@ export default function MarketingCalendar({
   const [rows, setRows] = useState<Row[]>(initialPosts);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
+  const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(
+    new Set()
+  );
+
+  function toggleMonth(monthKey: string) {
+    setCollapsedMonths((prev) => {
+      const next = new Set(prev);
+      if (next.has(monthKey)) next.delete(monthKey);
+      else next.add(monthKey);
+      return next;
+    });
+  }
+
+  function expandMonth(monthKey: string) {
+    setCollapsedMonths((prev) => {
+      if (!prev.has(monthKey)) return prev;
+      const next = new Set(prev);
+      next.delete(monthKey);
+      return next;
+    });
+  }
 
   const businessUnitName = useMemo(() => {
     const map = new Map(businessUnits.map((bu) => [bu.id, bu.name]));
@@ -223,30 +245,56 @@ export default function MarketingCalendar({
             (sum, r) => sum + (isDraft(r) ? r.investment_ars : r.investment_ars),
             0
           );
+          const collapsed = collapsedMonths.has(monthKey);
 
           return (
             <div
               key={monthKey}
               className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"
             >
-              <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {formatMonthLabel(monthKey)}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {monthRows.length} acción(es) · Inversión total{" "}
-                    {formatCurrency(totalInvestment)}
-                  </p>
+              <button
+                onClick={() => toggleMonth(monthKey)}
+                className="flex w-full items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 text-left hover:bg-slate-50"
+              >
+                <div className="flex items-center gap-2">
+                  {collapsed ? (
+                    <ChevronRight size={16} className="shrink-0 text-slate-400" />
+                  ) : (
+                    <ChevronDown size={16} className="shrink-0 text-slate-400" />
+                  )}
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {formatMonthLabel(monthKey)}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {monthRows.length} acción(es) · Inversión total{" "}
+                      {formatCurrency(totalInvestment)}
+                    </p>
+                  </div>
                 </div>
-                <button
-                  onClick={() => addDraftRow(`${monthKey}-01`)}
-                  className="rounded-md border border-brand px-3 py-1.5 text-xs font-medium text-brand hover:bg-brand-light"
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addDraftRow(`${monthKey}-01`);
+                    expandMonth(monthKey);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      addDraftRow(`${monthKey}-01`);
+                      expandMonth(monthKey);
+                    }
+                  }}
+                  className="shrink-0 rounded-md border border-brand px-3 py-1.5 text-xs font-medium text-brand hover:bg-brand-light"
                 >
                   + Agregar acción
-                </button>
-              </div>
+                </span>
+              </button>
 
+              {!collapsed && (
               <table className="text-xs" style={{ tableLayout: "fixed", width: "100%", minWidth: 1550 }}>
                 <colgroup>
                   <col style={{ width: 220 }} />
@@ -441,6 +489,7 @@ export default function MarketingCalendar({
                   })}
                 </tbody>
               </table>
+              )}
             </div>
           );
         })
