@@ -195,6 +195,9 @@ leer/escribir, no hay acceso anónimo.
 Implementado:
 
 - [x] Auth (login/logout, rutas protegidas)
+- [x] Menú lateral retráctil (botón "Retraer menú" abajo de los enlaces):
+      lo deja solo con los íconos para ganar espacio horizontal en pantallas
+      chicas; la preferencia se recuerda entre visitas
 - [x] Esquema completo de base de datos (los 4 módulos)
 - [x] Inventario, de arriba hacia abajo: KPIs (cantidad de SKUs, Markup y
       COGS —con selector Promedio/Mediana—, Dinero en inventario = stock ×
