@@ -24,15 +24,23 @@ function isDraft(row: Row): row is DraftProduct {
   return "isDraft" in row;
 }
 
-// Markup = cuánto se suma sobre el costo para llegar al precio web.
-// COGS % = qué porción del precio web representa el costo. Son valores
-// calculados, no se guardan en la base.
-function markupRatio(cost: number, priceWeb: number): number | null {
-  return cost > 0 ? (priceWeb - cost) / cost : null;
+// Markup = cuánto se suma sobre el costo para llegar al precio de venta.
+// COGS % = qué porción del precio de venta representa el costo. Son
+// valores calculados, no se guardan en la base. El precio de venta usado
+// (Web o Contado) es elegible por el usuario, ver `MarkupBasis`.
+type MarkupBasis = "price_web" | "price_cash";
+
+const MARKUP_BASIS_LABEL: Record<MarkupBasis, string> = {
+  price_web: "P. Web",
+  price_cash: "P. Contado",
+};
+
+function markupRatio(cost: number, price: number): number | null {
+  return cost > 0 ? (price - cost) / cost : null;
 }
 
-function cogsRatio(cost: number, priceWeb: number): number | null {
-  return priceWeb > 0 ? cost / priceWeb : null;
+function cogsRatio(cost: number, price: number): number | null {
+  return price > 0 ? cost / price : null;
 }
 
 function formatPercent(ratio: number | null): string {
@@ -142,6 +150,7 @@ export default function ProductsTable({
     null
   );
   const [page, setPage] = useState(1);
+  const [markupBasis, setMarkupBasis] = useState<MarkupBasis>("price_web");
   const resizeState = useRef<{ key: ColumnKey; startX: number } | null>(null);
 
   const businessUnitName = useMemo(() => {
@@ -328,9 +337,9 @@ export default function ProductsTable({
         case "price_web":
           return row.price_web;
         case "markup":
-          return markupRatio(row.cost, row.price_web) ?? -Infinity;
+          return markupRatio(row.cost, row[markupBasis]) ?? -Infinity;
         case "cogs":
-          return cogsRatio(row.cost, row.price_web) ?? -Infinity;
+          return cogsRatio(row.cost, row[markupBasis]) ?? -Infinity;
         case "stock":
           return row.stock;
         case "is_web":
@@ -352,7 +361,7 @@ export default function ProductsTable({
       return 0;
     });
     return [...draftRows, ...sortedProducts];
-  }, [rows, sort, businessUnitName, categoryName, brandName]);
+  }, [rows, sort, businessUnitName, categoryName, brandName, markupBasis]);
 
   const totalWidth = COLUMNS.reduce((sum, c) => sum + widths[c.key], 0);
 
@@ -373,6 +382,7 @@ export default function ProductsTable({
   }
 
   function exportCsv() {
+    const basisLabel = MARKUP_BASIS_LABEL[markupBasis];
     const header = [
       "Código",
       "Descripción",
@@ -383,8 +393,8 @@ export default function ProductsTable({
       "Costo",
       "P. Contado",
       "P. Web",
-      "Markup",
-      "COGS",
+      `Markup (sobre ${basisLabel})`,
+      `COGS (sobre ${basisLabel})`,
       "Stock",
       "Publicado",
     ];
@@ -401,8 +411,8 @@ export default function ProductsTable({
         row.cost,
         row.price_cash,
         row.price_web,
-        formatPercent(markupRatio(row.cost, row.price_web)),
-        formatPercent(cogsRatio(row.cost, row.price_web)),
+        formatPercent(markupRatio(row.cost, row[markupBasis])),
+        formatPercent(cogsRatio(row.cost, row[markupBasis])),
         row.stock,
         row.is_web ? "Sí" : "No",
       ]);
@@ -414,11 +424,31 @@ export default function ProductsTable({
   return (
     <div className="space-y-4">
       <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white">
-        <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-3 py-2">
           <span className="text-sm font-medium text-slate-700">
             Productos
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+              <span>Markup / COGS sobre:</span>
+              <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+                {(
+                  Object.entries(MARKUP_BASIS_LABEL) as [MarkupBasis, string][]
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => setMarkupBasis(key)}
+                    className={`rounded-md px-2 py-1 font-medium ${
+                      markupBasis === key
+                        ? "bg-white text-brand-dark shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <button
               onClick={exportCsv}
               className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
@@ -606,10 +636,10 @@ export default function ProductsTable({
                     />
                   </td>
                   <td className="overflow-hidden px-2 py-1 whitespace-nowrap text-slate-600">
-                    {formatPercent(markupRatio(row.cost, row.price_web))}
+                    {formatPercent(markupRatio(row.cost, row[markupBasis]))}
                   </td>
                   <td className="overflow-hidden px-2 py-1 whitespace-nowrap text-slate-600">
-                    {formatPercent(cogsRatio(row.cost, row.price_web))}
+                    {formatPercent(cogsRatio(row.cost, row[markupBasis]))}
                   </td>
                   <td className="overflow-hidden px-2 py-1">
                     <input

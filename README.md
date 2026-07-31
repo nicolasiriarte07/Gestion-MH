@@ -213,7 +213,11 @@ Implementado:
       categoría y marca (barras, con selector Unidades/Dinero) y, por
       último, la tabla editable con alta, baja y edición inline (las filas
       de productos publicados en la web se resaltan con fondo verde para
-      distinguirlos de un vistazo). Botón "Exportar" para bajar un .csv
+      distinguirlos de un vistazo). Las columnas Markup y COGS de la tabla
+      (a diferencia de las del KPI de arriba, que siempre usan P. Web) se
+      pueden calcular sobre P. Web o sobre P. Contado con un selector
+      arriba de la tabla, para comparar rentabilidad contra cualquiera de
+      los dos precios de venta. Botón "Exportar" para bajar un .csv
       con los productos que estén filtrados en ese momento, con todas las
       columnas (incluida Subcategoría, que no se ve en la tabla)
 - [x] Importación del Excel de productos/stock (columnas flexibles, con
