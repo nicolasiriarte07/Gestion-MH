@@ -28,7 +28,33 @@ import InventarioDrawer from "./InventarioDrawer";
 import ProductFormModal from "./ProductFormModal";
 import StockAdjustModal from "./StockAdjustModal";
 
-type SortKey = "description" | "sku" | "brand" | "category" | "stock" | "cost" | "price_cash" | "margin";
+type ColumnKey =
+  | "description"
+  | "sku"
+  | "brand"
+  | "category"
+  | "stock"
+  | "cost"
+  | "price_cash"
+  | "margin"
+  | "estado";
+
+const COLUMN_DEFS: { key: ColumnKey; label: string; width: number }[] = [
+  { key: "description", label: "Producto", width: 240 },
+  { key: "sku", label: "SKU", width: 120 },
+  { key: "brand", label: "Marca", width: 120 },
+  { key: "category", label: "Categoría", width: 160 },
+  { key: "stock", label: "Stock", width: 80 },
+  { key: "cost", label: "Costo", width: 100 },
+  { key: "price_cash", label: "Precio", width: 100 },
+  { key: "margin", label: "Margen", width: 90 },
+  { key: "estado", label: "Estado", width: 120 },
+];
+
+const CHECKBOX_COL_WIDTH = 44;
+const THUMB_COL_WIDTH = 56;
+const ACTIONS_COL_WIDTH = 48;
+const MIN_COLUMN_WIDTH = 60;
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
 
@@ -66,7 +92,7 @@ export default function InventarioTable({
   brands: Brand[];
 }) {
   const [rows, setRows] = useState<Product[]>(initialProducts);
-  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(null);
+  const [sort, setSort] = useState<{ key: ColumnKey; dir: "asc" | "desc" } | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -75,7 +101,40 @@ export default function InventarioTable({
   const [formProduct, setFormProduct] = useState<Product | null>(null);
   const [adjustingProduct, setAdjustingProduct] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [widths, setWidths] = useState<Record<ColumnKey, number>>(() =>
+    Object.fromEntries(COLUMN_DEFS.map((c) => [c.key, c.width])) as Record<
+      ColumnKey,
+      number
+    >
+  );
   const menuRef = useRef<HTMLDivElement>(null);
+  const resizeState = useRef<{ key: ColumnKey; startX: number } | null>(null);
+
+  function handleResizeStart(key: ColumnKey, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    resizeState.current = { key, startX: e.clientX };
+
+    function handleMouseMove(ev: MouseEvent) {
+      if (!resizeState.current) return;
+      const delta = ev.clientX - resizeState.current.startX;
+      resizeState.current.startX = ev.clientX;
+      setWidths((prev) => ({
+        ...prev,
+        [resizeState.current!.key]: Math.max(
+          MIN_COLUMN_WIDTH,
+          prev[resizeState.current!.key] + delta
+        ),
+      }));
+    }
+    function handleMouseUp() {
+      resizeState.current = null;
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    }
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  }
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -100,7 +159,7 @@ export default function InventarioTable({
     return (id: string | null) => (id ? (map.get(id) ?? "") : "");
   }, [brands]);
 
-  function toggleSort(key: SortKey) {
+  function toggleSort(key: ColumnKey) {
     setSort((prev) => {
       if (!prev || prev.key !== key) return { key, dir: "asc" };
       if (prev.dir === "asc") return { key, dir: "desc" };
@@ -122,6 +181,7 @@ export default function InventarioTable({
         case "category":
           return categoryName(p.category_id).toLowerCase();
         case "stock":
+        case "estado":
           return p.stock;
         case "cost":
           return p.cost;
@@ -226,16 +286,11 @@ export default function InventarioTable({
     downloadCsv(`inventario-${today}.csv`, [header, ...dataRows]);
   }
 
-  const columns: { key: SortKey; label: string }[] = [
-    { key: "description", label: "Producto" },
-    { key: "sku", label: "SKU" },
-    { key: "brand", label: "Marca" },
-    { key: "category", label: "Categoría" },
-    { key: "stock", label: "Stock" },
-    { key: "cost", label: "Costo" },
-    { key: "price_cash", label: "Precio" },
-    { key: "margin", label: "Margen" },
-  ];
+  const totalWidth =
+    CHECKBOX_COL_WIDTH +
+    THUMB_COL_WIDTH +
+    COLUMN_DEFS.reduce((sum, c) => sum + widths[c.key], 0) +
+    ACTIONS_COL_WIDTH;
 
   return (
     <Card padded={false} className="font-inter overflow-hidden">
@@ -266,10 +321,18 @@ export default function InventarioTable({
       </div>
 
       <div className="max-h-[640px] overflow-auto">
-        <table className="w-full min-w-[1100px] text-sm">
+        <table className="text-sm" style={{ tableLayout: "fixed", width: totalWidth }}>
+          <colgroup>
+            <col style={{ width: CHECKBOX_COL_WIDTH }} />
+            <col style={{ width: THUMB_COL_WIDTH }} />
+            {COLUMN_DEFS.map((col) => (
+              <col key={col.key} style={{ width: widths[col.key] }} />
+            ))}
+            <col style={{ width: ACTIONS_COL_WIDTH }} />
+          </colgroup>
           <thead className="sticky top-0 z-10 bg-mh-bg">
             <tr className="border-b border-mh-border text-left text-xs font-semibold text-mh-ink-muted uppercase">
-              <th className="w-10 px-4 py-3">
+              <th className="px-4 py-3">
                 <input
                   type="checkbox"
                   className="accent-mh-pink"
@@ -277,21 +340,24 @@ export default function InventarioTable({
                   onChange={toggleSelectAllPage}
                 />
               </th>
-              <th className="w-14 px-2 py-3" />
-              {columns.map((col) => (
-                <th key={col.key} className="px-3 py-3 font-semibold">
+              <th className="px-2 py-3" />
+              {COLUMN_DEFS.map((col) => (
+                <th key={col.key} className="relative px-3 py-3 font-semibold select-none">
                   <button
                     onClick={() => toggleSort(col.key)}
-                    className="flex items-center gap-1 uppercase hover:text-mh-ink"
+                    className="flex items-center gap-1 truncate uppercase hover:text-mh-ink"
                   >
                     {col.label}
                     {sort?.key === col.key &&
                       (sort.dir === "asc" ? <ChevronUp size={13} /> : <ChevronDown size={13} />)}
                   </button>
+                  <div
+                    onMouseDown={(e) => handleResizeStart(col.key, e)}
+                    className="absolute top-0 right-0 h-full w-1.5 cursor-col-resize hover:bg-mh-pink/30"
+                  />
                 </th>
               ))}
-              <th className="px-3 py-3 font-semibold">Estado</th>
-              <th className="w-12 px-3 py-3" />
+              <th className="px-3 py-3" />
             </tr>
           </thead>
           <tbody>
@@ -316,24 +382,32 @@ export default function InventarioTable({
                       <Package size={18} />
                     </div>
                   </td>
-                  <td className="px-3 py-3">
-                    <p className="max-w-[220px] truncate font-bold text-mh-ink">{p.description}</p>
-                    <p className="text-xs text-mh-ink-muted">{p.sku}</p>
+                  <td className="overflow-hidden px-3 py-3">
+                    <p className="truncate font-bold text-mh-ink">{p.description}</p>
+                    <p className="truncate text-xs text-mh-ink-muted">{p.sku}</p>
                   </td>
-                  <td className="px-3 py-3 text-mh-ink-muted">{p.sku}</td>
-                  <td className="px-3 py-3 text-mh-ink">{brandName(p.brand_id) || "—"}</td>
-                  <td className="px-3 py-3">
+                  <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
+                    <p className="truncate">{p.sku}</p>
+                  </td>
+                  <td className="overflow-hidden px-3 py-3 text-mh-ink">
+                    <p className="truncate">{brandName(p.brand_id) || "—"}</p>
+                  </td>
+                  <td className="overflow-hidden px-3 py-3">
                     {p.category_id ? (
                       <Badge tone="pink">{categoryName(p.category_id)}</Badge>
                     ) : (
                       <span className="text-mh-ink-muted">—</span>
                     )}
                   </td>
-                  <td className={`px-3 py-3 font-bold ${stockTextClass(p.stock)}`}>{p.stock}</td>
-                  <td className="px-3 py-3 text-mh-ink">{formatCurrency(p.cost)}</td>
-                  <td className="px-3 py-3 font-semibold text-mh-ink">{formatCurrency(p.price_cash)}</td>
-                  <td className="px-3 py-3 text-mh-ink">{margin === null ? "—" : `${(margin * 100).toFixed(0)}%`}</td>
-                  <td className="px-3 py-3">
+                  <td className={`overflow-hidden px-3 py-3 font-bold ${stockTextClass(p.stock)}`}>{p.stock}</td>
+                  <td className="overflow-hidden px-3 py-3 text-mh-ink">
+                    <p className="truncate">{formatCurrency(p.cost)}</p>
+                  </td>
+                  <td className="overflow-hidden px-3 py-3 font-semibold text-mh-ink">
+                    <p className="truncate">{formatCurrency(p.price_cash)}</p>
+                  </td>
+                  <td className="overflow-hidden px-3 py-3 text-mh-ink">{margin === null ? "—" : `${(margin * 100).toFixed(0)}%`}</td>
+                  <td className="overflow-hidden px-3 py-3">
                     <Badge tone={stockTone(p.stock)}>{stockLabel(p.stock)}</Badge>
                   </td>
                   <td className="relative px-3 py-3" onClick={(e) => e.stopPropagation()}>
@@ -359,7 +433,7 @@ export default function InventarioTable({
             })}
             {pagedRows.length === 0 && (
               <tr>
-                <td colSpan={columns.length + 4} className="px-6 py-16 text-center text-mh-ink-muted">
+                <td colSpan={COLUMN_DEFS.length + 3} className="px-6 py-16 text-center text-mh-ink-muted">
                   No hay productos que coincidan con los filtros.
                 </td>
               </tr>

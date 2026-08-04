@@ -217,9 +217,11 @@ Implementado:
       amigable del rango de stock—, y "Más filtros" con rango de Stock/
       P. Web y en web sí/no); la tabla (estilo Shopify: miniatura,
       producto en negrita con SKU debajo, badges de categoría y estado,
-      stock en color según nivel, selección múltiple con exportar/
-      eliminar en lote, orden por columna, paginación con selector de
-      tamaño de página) — hacer clic en una fila abre un panel lateral
+      stock en color según nivel, columnas que se pueden estirar
+      arrastrando el borde (para nombres largos), selección múltiple con
+      exportar/eliminar en lote, orden por columna, paginación con
+      selector de tamaño de página) — hacer clic en una fila abre un
+      panel lateral
       (Drawer) con el detalle completo en vez de navegar a otra pantalla,
       con pestañas Resumen/Historial/Movimientos (las dos últimas están
       vacías: no hay todavía una tabla de movimientos de stock en la base)
