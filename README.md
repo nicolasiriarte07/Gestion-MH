@@ -261,10 +261,30 @@ Implementado:
       en su encabezado para ver solo los meses que interesan
 - [x] Detección de duplicados al reimportar el histórico de ventas (por
       contenido de la fila, no requiere Nombre_PDF)
-- [x] Resumen: pantalla de inicio (`/`) con los números clave del mes
-      anterior de los 4 módulos juntos (total vendido, cantidad de ventas,
-      productos con stock bajo, inversión en marketing), alertas de stock
-      bajo, Top 10 clientes y próximas acciones de marketing programadas
+- [x] Sistema de diseño nuevo ("mh-*" en `src/components/ds/` y
+      `globals.css`: Card, KpiCard, Donut, MiniBarChart, AreaLineChart,
+      DateRangePicker, NotificationsBell — inspirado en Stripe/Linear/
+      Vercel, tipografía Inter, colores rosa/azul MH + grises, sin
+      degradados, radio 16px, sombras muy sutiles), aplicado por ahora al
+      Sidebar (rosa sólido, ítem activo en blanco, mismo colapso a
+      íconos que ya tenía) y a Inicio. El resto de los módulos sigue con
+      el estilo anterior (Sora, `--color-brand`) hasta que se migren uno
+      por uno.
+- [x] Inicio (`/`), rediseñado con el sistema de diseño nuevo: saludo +
+      selector de fecha (con período por defecto = mes anterior, presets
+      y rango personalizado) + botón "Nueva venta"; 4 KPIs (Ventas
+      totales y Cantidad de ventas comparados contra el período anterior
+      equivalente con flecha ↑/↓; Productos en stock bajo y Inversión en
+      marketing —este último siempre del mes calendario en curso,
+      independiente del selector— como foto del momento, sin
+      comparación); gráfico de ventas de los últimos 30 días (fijo,
+      no depende del selector) con toggle Facturación/Ventas y las
+      4 mini-métricas del período debajo (total vendido, ticket
+      promedio, unidades vendidas, clientes únicos); Top 10 clientes
+      con barra proporcional; y una fila de 4 tarjetas iguales (ventas
+      por tipo de comprobante y por unidad de negocio en dona, por día
+      de la semana en barras, y accesos rápidos a Nueva venta/Nuevo
+      cliente/Ingresar stock/Ver inventario/Ver reportes)
 - [x] Proveedores: CRM completo. Listado con KPIs del módulo (cantidad,
       activos, saldo total pendiente, compras del mes, sin compras hace
       +90 días), buscador y filtros (categoría, marca, estado), orden por

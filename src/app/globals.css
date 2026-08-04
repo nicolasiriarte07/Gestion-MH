@@ -11,10 +11,31 @@
   --font-sans: var(--font-sora);
   --font-heading: var(--font-sora);
 
-  /* Paleta de marca MUNDO HOGAR (mundohogar.com.ar) */
+  /* Paleta de marca MUNDO HOGAR (mundohogar.com.ar), usada hoy por los
+     módulos existentes (Ventas, Inventario, Clientes, etc.). No se toca
+     al introducir el nuevo sistema de diseño, para no alterar esos
+     módulos hasta que se migren explícitamente. */
   --color-brand: #ec1e79;
   --color-brand-dark: #c4145f;
   --color-brand-light: #fde6f0;
+
+  /* Sistema de diseño nuevo ("mh-*"), usado por el shell (Sidebar) y por
+     los módulos ya migrados (por ahora, Inicio). Convive con --color-brand
+     de arriba a propósito: son dos paletas de la misma marca en distintas
+     etapas de rollout, no un error. */
+  --font-inter: var(--font-inter-sans);
+
+  --color-mh-pink: #f3437e;
+  --color-mh-pink-dark: #d92e66;
+  --color-mh-pink-light: #fce7ef;
+  --color-mh-blue: #00429c;
+  --color-mh-blue-dark: #002e70;
+  --color-mh-blue-light: #e6ecf7;
+  --color-mh-bg: #f6f7fb;
+  --color-mh-surface: #ffffff;
+  --color-mh-border: #ececec;
+  --color-mh-ink: #14171f;
+  --color-mh-ink-muted: #6b7280;
 }
 
 body {
