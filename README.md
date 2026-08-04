@@ -199,27 +199,44 @@ Implementado:
       lo deja solo con los íconos para ganar espacio horizontal en pantallas
       chicas; la preferencia se recuerda entre visitas
 - [x] Esquema completo de base de datos (los 4 módulos)
-- [x] Inventario, de arriba hacia abajo: KPIs (cantidad de SKUs, Markup y
-      COGS —con selector Promedio/Mediana—, Dinero en inventario = stock ×
-      P. Contado, y Precio promedio —con selector Promedio/Mediana— sobre
-      P. Contado; se usa P. Contado en vez de Costo porque la mayoría del
-      catálogo todavía no tiene el Costo cargado), buscador y filtros (unidad
-      de negocio, categoría, en web, y rangos desde/hasta de Stock y de
-      P. Web), alerta desplegable de productos publicados en la web con 0
-      stock (la más urgente, en rojo, arriba de todo — perder una venta
-      web por falta de stock es peor que solo tener poco stock) y alerta
-      desplegable de stock bajo en general (0 o 1 unidad), gráficos
-      de stock por unidad de negocio (torta),
-      categoría y marca (barras, con selector Unidades/Dinero) y, por
-      último, la tabla editable con alta, baja y edición inline (las filas
-      de productos publicados en la web se resaltan con fondo verde para
-      distinguirlos de un vistazo). Las columnas Markup y COGS de la tabla
-      (a diferencia de las del KPI de arriba, que siempre usan P. Web) se
-      pueden calcular sobre P. Web o sobre P. Contado con un selector
-      arriba de la tabla, para comparar rentabilidad contra cualquiera de
-      los dos precios de venta. Botón "Exportar" para bajar un .csv
-      con los productos que estén filtrados en ese momento, con todas las
-      columnas (incluida Subcategoría, que no se ve en la tabla)
+- [x] Inventario, rediseñado con el sistema de diseño nuevo (segundo
+      módulo migrado después de Inicio; mismo Sidebar/tipografía/colores/
+      radios, sin lógica ni consultas nuevas — ver detalle de qué quedó
+      afuera más abajo). De arriba hacia abajo: header con "Importar
+      Excel" y "Nuevo producto" (abre un formulario modal, ya no agrega
+      una fila para cargar inline); 5 KPIs (cantidad de productos, valor
+      total del inventario = stock × P. Contado, productos con stock bajo,
+      productos sin stock, markup promedio) — se recalculan según los
+      filtros activos, igual que antes, pero sin flecha de comparación
+      contra el mes anterior: el inventario es una foto del momento, no
+      hay una tabla de historial para comparar contra un período pasado
+      todavía; 2 tarjetas compactas de alerta (Stock crítico = publicados
+      en la web con 0 unidades, Stock bajo = 0 o 1 unidad) con un botón
+      que lleva directo a la tabla ya filtrada; barra de búsqueda y
+      filtros (categoría, marca, unidad de negocio, estado —traducción
+      amigable del rango de stock—, y "Más filtros" con rango de Stock/
+      P. Web y en web sí/no); la tabla (estilo Shopify: miniatura,
+      producto en negrita con SKU debajo, badges de categoría y estado,
+      stock en color según nivel, selección múltiple con exportar/
+      eliminar en lote, orden por columna, paginación con selector de
+      tamaño de página) — hacer clic en una fila abre un panel lateral
+      (Drawer) con el detalle completo en vez de navegar a otra pantalla,
+      con pestañas Resumen/Historial/Movimientos (las dos últimas están
+      vacías: no hay todavía una tabla de movimientos de stock en la base)
+      y accesos a "Editar producto" (formulario completo) y "Ajustar
+      stock" (modal chico de un solo campo, para el uso diario de cargar
+      stock rápido); y una grilla final de 4 tarjetas (stock por
+      categoría y marcas con mayor inventario en barras horizontales,
+      productos con mayor valor inmovilizado en una lista corta, y
+      "Últimos movimientos" con el mismo estado vacío honesto de arriba).
+      Botón "Exportar" en la tabla baja el mismo .csv completo de antes.
+      Quedaron afuera de este rediseño (requieren datos que hoy no
+      existen, no se tocó la base para agregarlos): foto real del
+      producto (se muestra un ícono), columna/filtro de Proveedor por
+      producto, ubicación y código de barras, e historial real de
+      movimientos de stock. Los botones "Etiquetas" y "Actualizar
+      precios" de la tabla están visualmente listos pero deshabilitados
+      (funciones nuevas, no solo de layout)
 - [x] Importación del Excel de productos/stock (columnas flexibles, con
       unidad de negocio por defecto)
 - [x] Importación del histórico de ventas (.xlsx/.csv), con matching
