@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Globe,
 } from "lucide-react";
 import Link from "next/link";
 import Card from "@/components/ds/Card";
@@ -30,6 +31,7 @@ import StockAdjustModal from "./StockAdjustModal";
 
 type ColumnKey =
   | "description"
+  | "is_web"
   | "sku"
   | "brand"
   | "business_unit"
@@ -44,6 +46,10 @@ type ColumnKey =
 
 const COLUMN_DEFS: { key: ColumnKey; label: string; width: number }[] = [
   { key: "description", label: "Producto", width: 240 },
+  // Publicado en la web: se pide destacado (es "lo más importante" para
+  // el negocio), por eso va como segunda columna, bien a la vista, y no
+  // perdida al final de la tabla como estaba en el diseño viejo.
+  { key: "is_web", label: "En Web", width: 110 },
   { key: "sku", label: "SKU", width: 120 },
   { key: "brand", label: "Marca", width: 120 },
   { key: "business_unit", label: "Unidad de Negocio", width: 170 },
@@ -200,6 +206,8 @@ export default function InventarioTable({
       switch (sort!.key) {
         case "description":
           return p.description.toLowerCase();
+        case "is_web":
+          return p.is_web ? 1 : 0;
         case "sku":
           return p.sku.toLowerCase();
         case "brand":
@@ -263,7 +271,10 @@ export default function InventarioTable({
 
   async function handleQuickEdit(
     product: Product,
-    patch: { business_unit_id: string | null } | { category_id: string | null }
+    patch:
+      | { business_unit_id: string | null }
+      | { category_id: string | null }
+      | { is_web: boolean }
   ) {
     setRows((prev) => prev.map((p) => (p.id === product.id ? { ...p, ...patch } : p)));
     const result = await updateProduct(product.id, patch);
@@ -455,6 +466,20 @@ export default function InventarioTable({
                   <td className="overflow-hidden px-3 py-3">
                     <p className="truncate font-bold text-mh-ink">{p.description}</p>
                     <p className="truncate text-xs text-mh-ink-muted">{p.sku}</p>
+                  </td>
+                  <td className="overflow-hidden px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => handleQuickEdit(p, { is_web: !p.is_web })}
+                      title="Clic para publicar o despublicar"
+                      className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition-colors ${
+                        p.is_web
+                          ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                          : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                      }`}
+                    >
+                      <Globe size={12} />
+                      {p.is_web ? "En web" : "No"}
+                    </button>
                   </td>
                   <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
                     <p className="truncate">{p.sku}</p>
