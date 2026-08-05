@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 import type { AdCampaign } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
 import { parseFlexibleNumber } from "@/lib/excel";
@@ -236,18 +236,19 @@ export default function PautaCalendar({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="font-inter space-y-4">
       <div className="flex justify-end">
         <button
           onClick={() => addDraftRow(todayISO())}
-          className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
+          className="flex items-center gap-1.5 rounded-xl bg-mh-pink px-4 py-2.5 text-sm font-semibold text-white hover:bg-mh-pink-dark"
         >
-          + Nueva campaña
+          <Plus size={16} />
+          Nueva campaña
         </button>
       </div>
 
       {groups.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center text-sm text-slate-500 shadow-sm">
+        <div className="rounded-2xl border border-dashed border-mh-border bg-mh-surface p-12 text-center text-sm text-mh-ink-muted shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           Todavía no cargaste ninguna campaña de pauta.
         </div>
       ) : (
@@ -261,23 +262,23 @@ export default function PautaCalendar({
           return (
             <div
               key={monthKey}
-              className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"
+              className="overflow-x-auto rounded-2xl border border-mh-border bg-mh-surface shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
             >
               <button
                 onClick={() => toggleMonth(monthKey)}
-                className="flex w-full items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 text-left hover:bg-slate-50"
+                className="flex w-full items-center justify-between gap-3 border-b border-mh-border px-4 py-3 text-left hover:bg-mh-bg"
               >
                 <div className="flex items-center gap-2">
                   {collapsed ? (
-                    <ChevronRight size={16} className="shrink-0 text-slate-400" />
+                    <ChevronRight size={16} className="shrink-0 text-mh-ink-muted" />
                   ) : (
-                    <ChevronDown size={16} className="shrink-0 text-slate-400" />
+                    <ChevronDown size={16} className="shrink-0 text-mh-ink-muted" />
                   )}
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">
+                    <p className="text-sm font-bold text-mh-ink">
                       {formatMonthLabel(monthKey)}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-mh-ink-muted">
                       {monthRows.length} campaña(s) · Inversión total{" "}
                       {formatCurrency(totalInvestment)}
                     </p>
@@ -299,7 +300,7 @@ export default function PautaCalendar({
                       expandMonth(monthKey);
                     }
                   }}
-                  className="shrink-0 rounded-md border border-brand px-3 py-1.5 text-xs font-medium text-brand hover:bg-brand-light"
+                  className="shrink-0 rounded-lg border border-mh-pink px-3 py-1.5 text-xs font-semibold text-mh-pink hover:bg-mh-pink-light"
                 >
                   + Agregar campaña
                 </span>
@@ -317,14 +318,14 @@ export default function PautaCalendar({
                   <col style={{ width: 130 }} />
                 </colgroup>
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50 text-left uppercase tracking-wide text-slate-500">
-                    <th className="px-3 py-3 font-medium">Campaña</th>
-                    <th className="px-3 py-3 font-medium">Inversión</th>
-                    <th className="px-3 py-3 font-medium">Alcance</th>
-                    <th className="px-3 py-3 font-medium">Inicio</th>
-                    <th className="px-3 py-3 font-medium">Fin</th>
-                    <th className="px-3 py-3 font-medium">Duración</th>
-                    <th className="px-3 py-3 font-medium" />
+                  <tr className="border-b border-mh-border bg-mh-bg text-left text-xs font-semibold text-mh-ink-muted uppercase">
+                    <th className="px-3 py-3">Campaña</th>
+                    <th className="px-3 py-3">Inversión</th>
+                    <th className="px-3 py-3">Alcance</th>
+                    <th className="px-3 py-3">Inicio</th>
+                    <th className="px-3 py-3">Fin</th>
+                    <th className="px-3 py-3">Duración</th>
+                    <th className="px-3 py-3" />
                   </tr>
                 </thead>
                 <tbody>
@@ -337,11 +338,11 @@ export default function PautaCalendar({
                     return (
                       <tr
                         key={row.id}
-                        className="border-b border-slate-100 align-top last:border-0 hover:bg-slate-50"
+                        className="border-b border-mh-border/70 align-top last:border-0 hover:bg-mh-bg"
                       >
                         <td className="overflow-hidden px-3 py-3">
                           <AutoGrowTextarea
-                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none"
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-mh-border focus:border-mh-pink focus:outline-none"
                             defaultValue={row.campaign_name}
                             onBlur={(e) => {
                               const value = e.target.value.trim();
@@ -357,7 +358,7 @@ export default function PautaCalendar({
                           <input
                             type="text"
                             inputMode="numeric"
-                            className="w-full rounded border border-transparent px-1.5 py-1.5 text-right hover:border-slate-300 focus:border-brand focus:outline-none"
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 text-right hover:border-mh-border focus:border-mh-pink focus:outline-none"
                             defaultValue={formatCurrency(row.investment_ars)}
                             onFocus={(e) => e.target.select()}
                             onBlur={(e) => {
@@ -376,7 +377,7 @@ export default function PautaCalendar({
                           <input
                             type="text"
                             inputMode="numeric"
-                            className="w-full rounded border border-transparent px-1.5 py-1.5 text-right hover:border-slate-300 focus:border-brand focus:outline-none"
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 text-right hover:border-mh-border focus:border-mh-pink focus:outline-none"
                             defaultValue={formatReach(row.reach)}
                             onFocus={(e) => e.target.select()}
                             onBlur={(e) => {
@@ -389,7 +390,7 @@ export default function PautaCalendar({
                         <td className="overflow-hidden px-3 py-3">
                           <input
                             type="date"
-                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none"
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-mh-border focus:border-mh-pink focus:outline-none"
                             value={row.start_date}
                             onChange={(e) => {
                               const value = e.target.value;
@@ -401,7 +402,7 @@ export default function PautaCalendar({
                         <td className="overflow-hidden px-3 py-3">
                           <input
                             type="date"
-                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none"
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-mh-border focus:border-mh-pink focus:outline-none"
                             value={row.end_date}
                             onChange={(e) => {
                               const value = e.target.value;
@@ -410,7 +411,7 @@ export default function PautaCalendar({
                             }}
                           />
                         </td>
-                        <td className="overflow-hidden px-3 py-3 text-slate-600">
+                        <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
                           {days > 0 ? `${days} día(s)` : "—"}
                         </td>
                         <td className="overflow-hidden px-3 py-3">
@@ -419,7 +420,7 @@ export default function PautaCalendar({
                               <button
                                 onClick={() => saveDraft(row as DraftCampaign)}
                                 disabled={saving}
-                                className="rounded bg-brand px-2 py-1 text-xs font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+                                className="rounded-lg bg-mh-pink px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-mh-pink-dark disabled:opacity-50"
                               >
                                 {saving ? "..." : "Guardar"}
                               </button>
@@ -427,7 +428,7 @@ export default function PautaCalendar({
                             <button
                               onClick={() => handleDelete(row)}
                               disabled={saving}
-                              className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
+                              className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
                             >
                               Eliminar
                             </button>

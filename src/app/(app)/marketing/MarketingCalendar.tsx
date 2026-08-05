@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 import type { BusinessUnit, ContentType, MarketingPost } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
 import { parseFlexibleNumber } from "@/lib/excel";
 import { monthKeyOf, formatMonthLabel } from "@/lib/months";
 import AutoGrowTextarea from "@/components/AutoGrowTextarea";
+import { CONTENT_LABELS, CONTENT_TONE_CLASSES, VERTICAL_TONE_CLASSES } from "./marketingLabels";
 import {
   createMarketingPost,
   deleteMarketingPost,
@@ -24,23 +25,6 @@ function isDraft(row: Row): row is DraftPost {
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
-
-const VERTICAL_COLORS: Record<string, string> = {
-  "MUNDO HOGAR": "bg-brand-light text-brand-dark",
-  "EQUIPAMIENTOS MH": "bg-violet-100 text-violet-700",
-};
-
-const CONTENT_LABELS: Record<ContentType, string> = {
-  educacional: "Educacional",
-  marca: "Marca",
-  comercial: "Comercial",
-};
-
-const CONTENT_COLORS: Record<ContentType, string> = {
-  educacional: "bg-blue-100 text-blue-700",
-  marca: "bg-violet-100 text-violet-700",
-  comercial: "bg-emerald-100 text-emerald-700",
-};
 
 function emptyDraft(publishDate: string): DraftPost {
   return {
@@ -225,18 +209,19 @@ export default function MarketingCalendar({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="font-inter space-y-4">
       <div className="flex justify-end">
         <button
           onClick={() => addDraftRow(todayISO())}
-          className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
+          className="flex items-center gap-1.5 rounded-xl bg-mh-pink px-4 py-2.5 text-sm font-semibold text-white hover:bg-mh-pink-dark"
         >
-          + Nueva acción
+          <Plus size={16} />
+          Nueva acción
         </button>
       </div>
 
       {groups.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center text-sm text-slate-500 shadow-sm">
+        <div className="rounded-2xl border border-dashed border-mh-border bg-mh-surface p-12 text-center text-sm text-mh-ink-muted shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           Todavía no cargaste ninguna acción de comunicación.
         </div>
       ) : (
@@ -250,23 +235,23 @@ export default function MarketingCalendar({
           return (
             <div
               key={monthKey}
-              className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm"
+              className="overflow-x-auto rounded-2xl border border-mh-border bg-mh-surface shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
             >
               <button
                 onClick={() => toggleMonth(monthKey)}
-                className="flex w-full items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 text-left hover:bg-slate-50"
+                className="flex w-full items-center justify-between gap-3 border-b border-mh-border px-4 py-3 text-left hover:bg-mh-bg"
               >
                 <div className="flex items-center gap-2">
                   {collapsed ? (
-                    <ChevronRight size={16} className="shrink-0 text-slate-400" />
+                    <ChevronRight size={16} className="shrink-0 text-mh-ink-muted" />
                   ) : (
-                    <ChevronDown size={16} className="shrink-0 text-slate-400" />
+                    <ChevronDown size={16} className="shrink-0 text-mh-ink-muted" />
                   )}
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">
+                    <p className="text-sm font-bold text-mh-ink">
                       {formatMonthLabel(monthKey)}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-mh-ink-muted">
                       {monthRows.length} acción(es) · Inversión total{" "}
                       {formatCurrency(totalInvestment)}
                     </p>
@@ -288,7 +273,7 @@ export default function MarketingCalendar({
                       expandMonth(monthKey);
                     }
                   }}
-                  className="shrink-0 rounded-md border border-brand px-3 py-1.5 text-xs font-medium text-brand hover:bg-brand-light"
+                  className="shrink-0 rounded-lg border border-mh-pink px-3 py-1.5 text-xs font-semibold text-mh-pink hover:bg-mh-pink-light"
                 >
                   + Agregar acción
                 </span>
@@ -308,16 +293,16 @@ export default function MarketingCalendar({
                   <col style={{ width: 130 }} />
                 </colgroup>
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50 text-left uppercase tracking-wide text-slate-500">
-                    <th className="px-3 py-3 font-medium">Concepto</th>
-                    <th className="px-3 py-3 font-medium">Descripción</th>
-                    <th className="px-3 py-3 font-medium">Vertical</th>
-                    <th className="px-3 py-3 font-medium">Fecha</th>
-                    <th className="px-3 py-3 font-medium">Contenido</th>
-                    <th className="px-3 py-3 font-medium">Pautado</th>
-                    <th className="px-3 py-3 font-medium">Publicado</th>
-                    <th className="px-3 py-3 font-medium">Inversión</th>
-                    <th className="px-3 py-3 font-medium" />
+                  <tr className="border-b border-mh-border bg-mh-bg text-left text-xs font-semibold text-mh-ink-muted uppercase">
+                    <th className="px-3 py-3">Concepto</th>
+                    <th className="px-3 py-3">Descripción</th>
+                    <th className="px-3 py-3">Vertical</th>
+                    <th className="px-3 py-3">Fecha</th>
+                    <th className="px-3 py-3">Contenido</th>
+                    <th className="px-3 py-3">Pautado</th>
+                    <th className="px-3 py-3">Publicado</th>
+                    <th className="px-3 py-3">Inversión</th>
+                    <th className="px-3 py-3" />
                   </tr>
                 </thead>
                 <tbody>
@@ -332,11 +317,11 @@ export default function MarketingCalendar({
                     return (
                       <tr
                         key={row.id}
-                        className="border-b border-slate-100 align-top last:border-0 hover:bg-slate-50"
+                        className="border-b border-mh-border/70 align-top last:border-0 hover:bg-mh-bg"
                       >
                         <td className="overflow-hidden px-3 py-3">
                           <AutoGrowTextarea
-                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none"
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-mh-border focus:border-mh-pink focus:outline-none"
                             defaultValue={row.concept}
                             onBlur={(e) => {
                               const value = e.target.value.trim();
@@ -350,7 +335,7 @@ export default function MarketingCalendar({
                         </td>
                         <td className="overflow-hidden px-3 py-3">
                           <AutoGrowTextarea
-                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none"
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-mh-border focus:border-mh-pink focus:outline-none"
                             defaultValue={row.description ?? ""}
                             onBlur={(e) => {
                               const value = e.target.value.trim();
@@ -363,8 +348,8 @@ export default function MarketingCalendar({
                         </td>
                         <td className="overflow-hidden px-3 py-3">
                           <select
-                            className={`w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none ${
-                              VERTICAL_COLORS[businessUnitLabel] ?? ""
+                            className={`w-full rounded border border-transparent px-1.5 py-1.5 hover:border-mh-border focus:border-mh-pink focus:outline-none ${
+                              VERTICAL_TONE_CLASSES[businessUnitLabel] ?? ""
                             }`}
                             value={row.business_unit_id ?? ""}
                             onChange={(e) => {
@@ -384,7 +369,7 @@ export default function MarketingCalendar({
                         <td className="overflow-hidden px-3 py-3">
                           <input
                             type="date"
-                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none"
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-mh-border focus:border-mh-pink focus:outline-none"
                             value={row.publish_date}
                             onChange={(e) => {
                               const value = e.target.value;
@@ -395,9 +380,9 @@ export default function MarketingCalendar({
                         </td>
                         <td className="overflow-hidden px-3 py-3">
                           <select
-                            className={`w-full rounded border border-transparent px-1.5 py-1.5 hover:border-slate-300 focus:border-brand focus:outline-none ${
+                            className={`w-full rounded border border-transparent px-1.5 py-1.5 hover:border-mh-border focus:border-mh-pink focus:outline-none ${
                               row.content_type
-                                ? CONTENT_COLORS[row.content_type]
+                                ? CONTENT_TONE_CLASSES[row.content_type]
                                 : ""
                             }`}
                             value={row.content_type ?? ""}
@@ -424,7 +409,7 @@ export default function MarketingCalendar({
                         <td className="overflow-hidden px-3 py-3 text-center">
                           <input
                             type="checkbox"
-                            className="accent-brand"
+                            className="accent-mh-pink"
                             checked={row.is_scheduled}
                             onChange={(e) => {
                               applyChange(row, draft, {
@@ -436,7 +421,7 @@ export default function MarketingCalendar({
                         <td className="overflow-hidden px-3 py-3 text-center">
                           <input
                             type="checkbox"
-                            className="accent-brand"
+                            className="accent-mh-pink"
                             checked={row.is_published}
                             onChange={(e) => {
                               applyChange(row, draft, {
@@ -449,7 +434,7 @@ export default function MarketingCalendar({
                           <input
                             type="text"
                             inputMode="numeric"
-                            className="w-full rounded border border-transparent px-1.5 py-1.5 text-right hover:border-slate-300 focus:border-brand focus:outline-none"
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 text-right hover:border-mh-border focus:border-mh-pink focus:outline-none"
                             defaultValue={formatCurrency(row.investment_ars)}
                             onFocus={(e) => e.target.select()}
                             onBlur={(e) => {
@@ -470,7 +455,7 @@ export default function MarketingCalendar({
                               <button
                                 onClick={() => saveDraft(row as DraftPost)}
                                 disabled={saving}
-                                className="rounded bg-brand px-2 py-1 text-xs font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+                                className="rounded-lg bg-mh-pink px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-mh-pink-dark disabled:opacity-50"
                               >
                                 {saving ? "..." : "Guardar"}
                               </button>
@@ -478,7 +463,7 @@ export default function MarketingCalendar({
                             <button
                               onClick={() => handleDelete(row)}
                               disabled={saving}
-                              className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
+                              className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
                             >
                               Eliminar
                             </button>

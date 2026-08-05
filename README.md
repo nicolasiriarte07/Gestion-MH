@@ -301,15 +301,48 @@ Implementado:
       (`?q=`/`?customer=`) con su vista de historial de compras
       (detalle línea por línea) — solo restyleados, siguen siendo la
       forma de ver el historial completo de un cliente puntual.
-- [x] Marketing: pestañas Orgánico / Pauta. Orgánico es el cronograma de
-      acciones de comunicación agrupado por mes (concepto, descripción,
-      vertical, fecha, tipo de contenido, pautado, publicado e
-      inversión); Pauta es un cronograma de campañas pagas agrupado por
-      mes de inicio (campaña,
-      inversión, alcance, fecha de inicio/fin y duración calculada en
-      días). Ambos con carga/edición inline y total invertido por mes, y
-      cada mes es un acordeón: se puede retraer o expandir haciendo clic
-      en su encabezado para ver solo los meses que interesan
+- [x] Marketing: centro de planificación migrado al sistema de diseño
+      nuevo, con 4 vistas de la misma información (Calendario, Agenda,
+      Kanban, Lista) más un panel lateral de resumen y un dashboard
+      inferior. Sigue habiendo solo 2 entidades reales en la base:
+      `marketing_posts` (Orgánico: concepto, descripción, vertical,
+      fecha, tipo de contenido, pautado/publicado, inversión) y
+      `ad_campaigns` (Pauta: campaña, inversión, alcance, fecha de
+      inicio/fin). No existe una entidad de "promociones" (Descuentos es
+      un módulo aparte), ni de "tareas", ni campos de responsable,
+      canal, prioridad, checklist, comentarios o archivos adjuntos —
+      todo eso lo pedía el brief pero no tiene datos ni tabla detrás, así
+      que quedó deshabilitado (con tooltip) u omitido con una nota
+      explícita en vez de inventarse.
+      El "estado" de cada campaña/publicación (Programada/En
+      curso/Finalizada) no es una columna: se calcula a partir de
+      `is_published` (Orgánico) o de start/end_date (Pauta) — ver
+      `normalize.ts`. "Pausada" no se usa: ninguna de las dos tablas
+      tiene un flag de pausa manual.
+      Vista Calendario: grid mensual con navegación mes anterior/
+      siguiente, cada publicación/campaña como chip de color (rosa
+      Orgánico, azul Pauta) en cada día que abarca. Agenda: lista
+      cronológica agrupada por día. Kanban: columnas por estado
+      derivado. Lista: es literalmente el módulo de antes (las tablas
+      editables inline agrupadas por mes, con su acordeón), solo
+      restyleada, con las sub-tabs Orgánico/Pauta ahora en el cliente
+      para no recargar la página al cambiar de vista. Clic en cualquier
+      publicación/campaña (en cualquier vista salvo Lista, que ya era
+      editable inline) abre un Drawer editable en vez de navegar, con
+      Duplicar (reusa createMarketingPost/createAdCampaign) y Finalizar
+      (marca is_published=true o pone end_date=hoy) además de Eliminar.
+      Panel derecho: próximas campañas, publicaciones de hoy, próximos
+      vencimientos (campañas que terminan en 14 días) y accesos rápidos
+      — todo real. Dashboard inferior: estado de campañas (donut, real),
+      próximas acciones (timeline, real) y rendimiento mensual
+      (campañas iniciadas + publicaciones publicadas por mes, real);
+      "Campañas por canal" queda como estado vacío explicado, no hay
+      dato de canal.
+      5 KPIs: 3 tal cual el brief (campañas activas, publicaciones
+      programadas, alcance estimado = suma real de `reach`) y 2
+      reemplazados por métricas reales (inversión total del mes y
+      acciones del mes) en vez de "promociones vigentes"/"tareas
+      pendientes", que no tienen datos.
 - [x] Detección de duplicados al reimportar el histórico de ventas (por
       contenido de la fila, no requiere Nombre_PDF)
 - [x] Sistema de diseño nuevo ("mh-*" en `src/components/ds/` y

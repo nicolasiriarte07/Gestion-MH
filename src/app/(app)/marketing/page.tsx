@@ -1,16 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import type { AdCampaign, BusinessUnit, MarketingPost } from "@/lib/types";
-import MarketingCalendar from "./MarketingCalendar";
-import PautaCalendar from "./PautaCalendar";
-import MarketingTabs, { type MarketingTab } from "./MarketingTabs";
+import MarketingView from "./MarketingView";
 
-export default async function MarketingPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ tab?: string }>;
-}) {
-  const { tab } = await searchParams;
-  const activeTab: MarketingTab = tab === "pauta" ? "pauta" : "organico";
+export default async function MarketingPage() {
   const supabase = await createClient();
 
   const [
@@ -30,36 +22,22 @@ export default async function MarketingPage({
   ]);
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-lg font-semibold text-slate-900">Marketing</h1>
-      <p className="text-sm text-slate-500">
-        Cronograma de acciones de comunicación, organizado por mes.
-      </p>
-
-      <MarketingTabs active={activeTab} />
-
-      {activeTab === "organico" ? (
-        <>
-          {postsError && (
-            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-              Error al cargar las acciones: {postsError.message}
-            </p>
-          )}
-          <MarketingCalendar
-            initialPosts={(posts ?? []) as MarketingPost[]}
-            businessUnits={(businessUnits ?? []) as BusinessUnit[]}
-          />
-        </>
-      ) : (
-        <>
-          {campaignsError && (
-            <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-              Error al cargar las campañas: {campaignsError.message}
-            </p>
-          )}
-          <PautaCalendar initialCampaigns={(campaigns ?? []) as AdCampaign[]} />
-        </>
+    <div className="font-inter space-y-4">
+      {postsError && (
+        <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+          Error al cargar las acciones: {postsError.message}
+        </p>
       )}
+      {campaignsError && (
+        <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+          Error al cargar las campañas: {campaignsError.message}
+        </p>
+      )}
+      <MarketingView
+        posts={(posts ?? []) as MarketingPost[]}
+        campaigns={(campaigns ?? []) as AdCampaign[]}
+        businessUnits={(businessUnits ?? []) as BusinessUnit[]}
+      />
     </div>
   );
 }
