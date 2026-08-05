@@ -358,7 +358,11 @@ export async function importMasterExcel(
       // nuevo), en vez de despublicar todo el catálogo cada vez que se
       // sube un archivo que no incluye esa columna (ej. una actualización
       // de stock).
-      const webText = record.is_web?.trim().toLowerCase() ?? "";
+      // `normalizeHeader` saca tildes y pasa a minúscula igual que para
+      // los encabezados: "Sí" (como lo exporta esta misma app) no
+      // matcheaba contra el "si" sin tilde de TRUTHY_WEB_VALUES, así que
+      // toda fila con "Sí" se importaba como no publicada (bug real).
+      const webText = record.is_web ? normalizeHeader(record.is_web) : "";
       const isWeb = webText
         ? TRUTHY_WEB_VALUES.has(webText)
         : (existing?.is_web ?? false);
