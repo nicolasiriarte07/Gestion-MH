@@ -252,23 +252,55 @@ Implementado:
       de pago, y ranking Top 10 clientes
 - [x] Opción de reemplazar todas las ventas existentes al reimportar (para
       recargar el histórico completo sin duplicar filas)
-- [x] Clientes: arriba del buscador, métricas generales de toda la base
-      (Clientes únicos, % que volvió a comprar más de una vez, y Recencia
-      media = cada cuántos días compra en promedio, contando cada fecha
-      de compra una sola vez aunque tenga varias líneas), más una tarjeta
-      con los días promedio entre la compra 1 y la 2, la 2 y la 3, y así
-      hasta la 5ta a la 6ta, y otra con el ticket promedio en USD de la
-      1ra a la 5ta compra — las dos con la cantidad de clientes detrás de
-      cada número, para saber qué tan representativo es. Estas métricas
-      excluyen "Consumidor Final" (nombre genérico para ventas sin cliente
-      identificado) para no distorsionar los números con una bolsa de
-      ventas anónimas.
-      Buscador por
-      nombre (columna Cliente de las ventas), con lista de coincidencias
-      si hay varios clientes parecidos y una vista de detalle con el
-      historial completo de compras de cada uno (total en ARS/USD,
-      ticket promedio en ARS y en USD, Recencia media propia del
-      cliente, y el detalle línea por línea)
+- [x] Clientes: CRM migrado al sistema de diseño nuevo. Importante: no
+      existe una tabla `customers` en la base — un "cliente" es
+      simplemente un nombre que aparece en las ventas importadas
+      (`sale_items.customer_name`), sin ficha propia. Por eso no hay ni
+      puede haber CUIT/DNI, teléfono, email, dirección, ciudad, vendedor
+      asignado, saldo ni notas reales por cliente — son datos que el
+      brief pedía pero que requerirían una tabla de clientes nueva (fuera
+      de alcance de un rediseño visual). La lista completa de clientes se
+      arma agregando `sale_items` por nombre (paginado, sin el límite de
+      25 que tiene la función `search_customers`), igual que "Compras
+      acumuladas" en Proveedores. Todo esto sigue excluyendo "Consumidor
+      Final" (ventas sin cliente identificado), mismo criterio que ya
+      usaban las métricas generales.
+      Header con "+ Nuevo cliente" (lleva a Importar ventas: es la única
+      forma real de que un cliente nuevo entre al sistema); 5 KPIs
+      (clientes totales, nuevos este mes, activos, facturación de
+      clientes del mes, ticket promedio); barra de acciones (Exportar
+      CSV e Imprimir reales; Importar lleva a la importación de ventas;
+      Nueva venta y Enviar campaña quedan deshabilitadas — no existe
+      carga manual de una venta puntual ni un sistema de campañas);
+      buscador instantáneo (filtra en el momento, sin recargar la
+      página) + filtro de Estado + orden — se descartaron los filtros de
+      Localidad y Vendedor del brief por falta de datos; tabla estilo
+      Shopify (avatar con iniciales, cliente, última compra, cantidad de
+      compras, facturación, ticket promedio, estado, selección múltiple)
+      — clic en una fila abre un Drawer con el detalle rápido (actividad,
+      historial reciente y productos más comprados vía la misma RPC
+      `customer_sales_history` de siempre) en vez de navegar; "Ver
+      historial completo", "Editar cliente", "Nueva venta", "Enviar
+      WhatsApp/Email" quedan como botones deshabilitados salvo el
+      primero, que sigue llevando a la vista de historial completo de
+      siempre (ver abajo); grilla final de 4 tarjetas (clientes con
+      mayor facturación, clientes inactivos hace +90 días con días sin
+      comprar, y últimos movimientos combinando altas —primera compra en
+      los últimos 30 días— y compras recientes; "Clientes por localidad"
+      queda como estado vacío explicado, no hay ese dato).
+      Estados de cliente (Activo/Frecuente/Nuevo/Inactivo/VIP, un color
+      fijo cada uno) son una segmentación nueva definida sobre estos
+      mismos datos: Inactivo = sin comprar hace +90 días, VIP = 10% de
+      mayor facturación histórica (entre los activos), Nuevo = primera
+      compra hace ≤30 días, Frecuente = 3 o más visitas distintas,
+      Activo = el resto.
+      Se mantienen sin tocar la lógica ni las 3 tarjetas de métricas
+      generales que ya existían (Clientes únicos/% recompra/Recencia
+      media, días entre compra N y N+1, ticket promedio USD por número
+      de compra) y el flujo completo de búsqueda por nombre exacto
+      (`?q=`/`?customer=`) con su vista de historial de compras
+      (detalle línea por línea) — solo restyleados, siguen siendo la
+      forma de ver el historial completo de un cliente puntual.
 - [x] Marketing: pestañas Orgánico / Pauta. Orgánico es el cronograma de
       acciones de comunicación agrupado por mes (concepto, descripción,
       vertical, fecha, tipo de contenido, pautado, publicado e

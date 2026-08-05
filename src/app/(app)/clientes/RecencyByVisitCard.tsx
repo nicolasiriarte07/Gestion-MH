@@ -1,3 +1,5 @@
+import Card from "@/components/ds/Card";
+
 export type RecencyByVisitRow = {
   visit_number: number;
   avg_days: number;
@@ -20,23 +22,21 @@ export default function RecencyByVisitCard({
   const byVisitNumber = new Map(rows.map((r) => [r.visit_number, r]));
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="mb-3 text-sm font-medium text-slate-700">
-        Días entre compra y compra
-      </p>
+    <Card padding="sm" className="font-inter">
+      <p className="mb-3 text-sm font-bold text-mh-ink">Días entre compra y compra</p>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         {[2, 3, 4, 5, 6].map((visitNumber) => {
           const row = byVisitNumber.get(visitNumber);
           return (
-            <div key={visitNumber} className="rounded-xl bg-slate-50 p-3">
-              <p className="text-lg font-semibold text-slate-900">
+            <div key={visitNumber} className="rounded-xl bg-mh-bg p-3">
+              <p className="text-lg font-extrabold text-mh-ink">
                 {row ? `${row.avg_days.toFixed(0)} día(s)` : "—"}
               </p>
-              <p className="text-xs font-medium text-slate-600">
+              <p className="text-xs font-medium text-mh-ink-muted">
                 {TRANSITION_LABELS[visitNumber]}
               </p>
               {row && (
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-mh-ink-muted">
                   {row.customers_count} cliente(s)
                 </p>
               )}
@@ -44,6 +44,6 @@ export default function RecencyByVisitCard({
           );
         })}
       </div>
-    </div>
+    </Card>
   );
 }

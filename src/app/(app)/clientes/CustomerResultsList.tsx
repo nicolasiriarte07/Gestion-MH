@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { formatCurrency } from "@/lib/currency";
+import Card from "@/components/ds/Card";
+import Avatar from "@/components/ds/Avatar";
 
 export type SearchMatch = {
   customer_name: string;
@@ -19,39 +21,40 @@ export default function CustomerResultsList({
 }) {
   if (matches.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
+      <div className="font-inter rounded-2xl border border-dashed border-mh-border bg-mh-surface p-8 text-center text-sm text-mh-ink-muted">
         No se encontraron clientes que coincidan con &quot;{query}&quot;.
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">
+    <Card padding="none" className="font-inter overflow-hidden">
+      <div className="border-b border-mh-border px-5 py-3 text-sm font-bold text-mh-ink">
         {matches.length} cliente(s) encontrados
       </div>
-      <div className="divide-y divide-slate-100">
+      <div className="divide-y divide-mh-border/70">
         {matches.map((m) => (
           <Link
             key={m.customer_name}
             href={`/clientes?q=${encodeURIComponent(query)}&customer=${encodeURIComponent(m.customer_name)}`}
-            className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-slate-50"
+            className="flex items-center gap-4 px-5 py-3 hover:bg-mh-pink-light/40"
           >
-            <div>
-              <p className="text-sm font-medium text-slate-900">
+            <Avatar name={m.customer_name} size={36} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-mh-ink">
                 {m.customer_name}
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-mh-ink-muted">
                 {m.line_count} línea(s) · desde {m.first_sale_date} hasta{" "}
                 {m.last_sale_date}
               </p>
             </div>
-            <p className="whitespace-nowrap text-sm font-semibold text-slate-900">
+            <p className="shrink-0 text-sm font-bold text-mh-ink">
               {formatCurrency(m.total_ars, "ars")}
             </p>
           </Link>
         ))}
       </div>
-    </div>
+    </Card>
   );
 }
