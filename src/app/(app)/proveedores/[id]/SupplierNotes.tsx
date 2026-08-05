@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import AutoGrowTextarea from "@/components/AutoGrowTextarea";
+import Card from "@/components/ds/Card";
 import { updateSupplier } from "../actions";
 
 export default function SupplierNotes({
@@ -14,16 +15,16 @@ export default function SupplierNotes({
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="mb-2 text-sm font-semibold text-slate-900">
+    <Card padding="sm" className="font-inter">
+      <p className="mb-2 text-sm font-bold text-mh-ink">
         Observaciones internas
       </p>
-      <p className="mb-2 text-xs text-slate-500">
+      <p className="mb-2 text-xs text-mh-ink-muted">
         Notas propias sobre este proveedor (ej. &quot;No entregar
         cheques&quot;, &quot;Siempre mejora precio a fin de mes&quot;).
       </p>
       <AutoGrowTextarea
-        className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
+        className="w-full rounded-xl border border-mh-border px-3 py-2 text-sm focus:border-mh-pink focus:outline-none"
         defaultValue={initialNotes ?? ""}
         onBlur={async (e) => {
           const value = e.target.value.trim();
@@ -34,7 +35,7 @@ export default function SupplierNotes({
           setError(result.error ?? null);
         }}
       />
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-    </div>
+      {error && <p className="mt-1 text-xs font-medium text-red-600">{error}</p>}
+    </Card>
   );
 }

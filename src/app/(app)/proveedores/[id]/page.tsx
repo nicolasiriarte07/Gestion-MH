@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { ChevronLeft, Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { Brand, Supplier, SupplierBalance } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
+import Badge from "@/components/ds/Badge";
+import Avatar from "@/components/ds/Avatar";
 import SupplierTabs, { type SupplierTab } from "./SupplierTabs";
 import SupplierSummaryTab from "./SupplierSummaryTab";
 import SupplierProductsTab from "./SupplierProductsTab";
@@ -63,34 +66,42 @@ export default async function SupplierDetailPage({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold text-slate-900">
-              {supplierRow.trade_name}
-            </h1>
-            <span
-              className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                supplierRow.is_active
-                  ? "bg-emerald-100 text-emerald-700"
-                  : "bg-slate-100 text-slate-500"
-              }`}
-            >
-              {supplierRow.is_active ? "Activo" : "Inactivo"}
-            </span>
+    <div className="font-inter space-y-6">
+      <Link
+        href="/proveedores"
+        className="flex items-center gap-1 text-sm font-semibold text-mh-ink-muted hover:text-mh-ink"
+      >
+        <ChevronLeft size={16} />
+        Volver a Proveedores
+      </Link>
+
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Avatar name={supplierRow.trade_name} size={56} />
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-[1.75rem] leading-tight font-extrabold tracking-tight text-mh-ink">
+                {supplierRow.trade_name}
+              </h1>
+              <Badge tone={supplierRow.is_active ? "green" : "gray"}>
+                {supplierRow.is_active ? "Activo" : "Inactivo"}
+              </Badge>
+              <Badge tone={supplierBalance.balance > 0 ? "red" : "green"}>
+                {supplierBalance.balance > 0 ? "Con deuda" : "Al día"}
+              </Badge>
+            </div>
+            <p className="mt-1 text-sm font-medium text-mh-ink-muted">
+              {[supplierRow.category, supplierRow.city].filter(Boolean).join(" · ") ||
+                "Sin categoría ni ciudad cargadas"}
+            </p>
           </div>
-          <p className="text-sm text-slate-500">
-            {[supplierRow.category, supplierRow.city].filter(Boolean).join(" · ") ||
-              "Sin categoría ni ciudad cargadas"}
-          </p>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <p className="text-xs text-slate-500">Saldo de cuenta corriente</p>
+            <p className="text-xs font-semibold text-mh-ink-muted">Saldo de cuenta corriente</p>
             <p
-              className={`text-lg font-semibold ${
-                supplierBalance.balance > 0 ? "text-red-600" : "text-slate-900"
+              className={`text-xl font-extrabold ${
+                supplierBalance.balance > 0 ? "text-red-600" : "text-mh-ink"
               }`}
             >
               {formatCurrency(supplierBalance.balance)}
@@ -98,15 +109,10 @@ export default async function SupplierDetailPage({
           </div>
           <Link
             href={`/proveedores/${id}/editar`}
-            className="rounded-md border border-brand px-3 py-1.5 text-sm font-medium text-brand hover:bg-brand-light"
+            className="flex items-center gap-1.5 rounded-xl bg-mh-pink px-4 py-2.5 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-mh-pink-dark"
           >
+            <Pencil size={16} />
             Editar
-          </Link>
-          <Link
-            href="/proveedores"
-            className="text-sm text-slate-500 hover:text-slate-800"
-          >
-            ← Volver
           </Link>
         </div>
       </div>

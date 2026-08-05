@@ -2,7 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/currency";
 import { monthKeyOf, formatMonthLabel } from "@/lib/months";
 import type { Supplier, SupplierBalance } from "@/lib/types";
-import { BreakdownCard, type BreakdownRow } from "../../ventas/BreakdownCard";
+import { type BreakdownRow } from "../../ventas/BreakdownCard";
+import { VentasBreakdownCard } from "../../ventas/VentasBreakdownCard";
+import Card from "@/components/ds/Card";
 import SupplierNotes from "./SupplierNotes";
 
 function StatCard({
@@ -15,14 +17,12 @@ function StatCard({
   title?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm" title={title}>
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-        {label}
-      </p>
-      <p className="mt-1 truncate text-2xl font-semibold text-slate-900">
+    <Card padding="sm" title={title}>
+      <p className="text-xs font-semibold text-mh-ink-muted">{label}</p>
+      <p className="mt-1 truncate text-2xl font-extrabold text-mh-ink">
         {value}
       </p>
-    </div>
+    </Card>
   );
 }
 
@@ -69,8 +69,8 @@ export default async function SupplierSummaryTab({
     }));
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+    <div className="font-inter space-y-6">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         <StatCard label="Total comprado" value={formatCurrency(totalPurchased)} />
         <StatCard
           label="Saldo pendiente"
@@ -99,10 +99,9 @@ export default async function SupplierSummaryTab({
         />
       </div>
 
-      <BreakdownCard
+      <VentasBreakdownCard
         title="Compras por mes"
         rows={chartRows}
-        colorMode="sequential"
         metric="facturacion"
         currency="ars"
         maxRows={12}

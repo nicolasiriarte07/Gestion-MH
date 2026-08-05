@@ -2,10 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Package } from "lucide-react";
+import { Package, Plus } from "lucide-react";
 import type { Product } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
 import Modal from "@/components/Modal";
+import Card from "@/components/ds/Card";
 import { addSupplierProduct, removeSupplierProduct } from "../actions";
 
 export type SupplierProductRow = {
@@ -86,86 +87,89 @@ export default function SupplierProductsTable({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="font-inter space-y-4">
       <div className="flex justify-end">
         <button
           onClick={() => setShowModal(true)}
-          className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
+          className="flex items-center gap-1.5 rounded-xl bg-mh-pink px-4 py-2.5 text-sm font-semibold text-white hover:bg-mh-pink-dark"
         >
-          + Agregar producto existente
+          <Plus size={16} />
+          Agregar producto existente
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50 text-left uppercase tracking-wide text-slate-500">
-              <th className="px-3 py-2 font-medium">Imagen</th>
-              <th className="px-3 py-2 font-medium">SKU</th>
-              <th className="px-3 py-2 font-medium">Producto</th>
-              <th className="px-3 py-2 font-medium">Categoría</th>
-              <th className="px-3 py-2 font-medium">Marca</th>
-              <th className="px-3 py-2 font-medium">Costo actual</th>
-              <th className="px-3 py-2 font-medium">Precio venta</th>
-              <th className="px-3 py-2 font-medium">Margen</th>
-              <th className="px-3 py-2 font-medium">Stock</th>
-              <th className="px-3 py-2 font-medium">Última compra</th>
-              <th className="px-3 py-2 font-medium" />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr
-                key={row.id}
-                className="border-b border-slate-100 last:border-0 hover:bg-slate-50"
-              >
-                <td className="px-3 py-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-300">
-                    <Package size={16} />
-                  </div>
-                </td>
-                <td className="px-3 py-2 text-slate-600">{row.sku}</td>
-                <td className="px-3 py-2 font-medium text-slate-900">
-                  {row.description}
-                </td>
-                <td className="px-3 py-2 text-slate-600">{row.categoryName}</td>
-                <td className="px-3 py-2 text-slate-600">{row.brandName}</td>
-                <td className="px-3 py-2 text-slate-600">
-                  {row.supplier_cost !== null
-                    ? formatCurrency(row.supplier_cost)
-                    : "—"}
-                </td>
-                <td className="px-3 py-2 text-slate-600">
-                  {formatCurrency(row.price_web)}
-                </td>
-                <td className="px-3 py-2 text-slate-600">
-                  {marginPct(row.supplier_cost, row.price_web)}
-                </td>
-                <td className="px-3 py-2 text-slate-600">{row.stock}</td>
-                <td className="px-3 py-2 text-slate-600">
-                  {row.last_purchase_date ?? "—"}
-                </td>
-                <td className="px-3 py-2">
-                  <button
-                    onClick={() => handleRemove(row)}
-                    disabled={removingId === row.id}
-                    className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
-                  >
-                    Quitar
-                  </button>
-                </td>
+      <Card padding="none" className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-mh-border bg-mh-bg text-left text-xs font-semibold text-mh-ink-muted uppercase">
+                <th className="px-4 py-3">Imagen</th>
+                <th className="px-3 py-3">SKU</th>
+                <th className="px-3 py-3">Producto</th>
+                <th className="px-3 py-3">Categoría</th>
+                <th className="px-3 py-3">Marca</th>
+                <th className="px-3 py-3">Costo actual</th>
+                <th className="px-3 py-3">Precio venta</th>
+                <th className="px-3 py-3">Margen</th>
+                <th className="px-3 py-3">Stock</th>
+                <th className="px-3 py-3">Última compra</th>
+                <th className="px-3 py-3" />
               </tr>
-            ))}
-            {rows.length === 0 && (
-              <tr>
-                <td colSpan={11} className="px-3 py-8 text-center text-slate-400">
-                  Todavía no hay productos asociados a este proveedor.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr
+                  key={row.id}
+                  className="border-b border-mh-border/70 last:border-0 hover:bg-mh-pink-light/40"
+                >
+                  <td className="px-4 py-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-mh-bg text-mh-ink-muted">
+                      <Package size={16} />
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 text-mh-ink-muted">{row.sku}</td>
+                  <td className="px-3 py-3 font-bold text-mh-ink">
+                    {row.description}
+                  </td>
+                  <td className="px-3 py-3 text-mh-ink-muted">{row.categoryName}</td>
+                  <td className="px-3 py-3 text-mh-ink-muted">{row.brandName}</td>
+                  <td className="px-3 py-3 text-mh-ink-muted">
+                    {row.supplier_cost !== null
+                      ? formatCurrency(row.supplier_cost)
+                      : "—"}
+                  </td>
+                  <td className="px-3 py-3 text-mh-ink-muted">
+                    {formatCurrency(row.price_web)}
+                  </td>
+                  <td className="px-3 py-3 text-mh-ink-muted">
+                    {marginPct(row.supplier_cost, row.price_web)}
+                  </td>
+                  <td className="px-3 py-3 text-mh-ink-muted">{row.stock}</td>
+                  <td className="px-3 py-3 text-mh-ink-muted">
+                    {row.last_purchase_date ?? "—"}
+                  </td>
+                  <td className="px-3 py-3">
+                    <button
+                      onClick={() => handleRemove(row)}
+                      disabled={removingId === row.id}
+                      className="rounded-lg px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    >
+                      Quitar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={11} className="px-6 py-10 text-center text-mh-ink-muted">
+                    Todavía no hay productos asociados a este proveedor.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
       {showModal && (
         <Modal title="Agregar producto existente" onClose={() => setShowModal(false)}>
@@ -175,7 +179,7 @@ export default function SupplierProductsTable({
             placeholder="Buscar por código o descripción..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="mb-3 w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
+            className="font-inter mb-3 w-full rounded-xl border border-mh-border px-3 py-2 text-sm focus:border-mh-pink focus:outline-none"
           />
           <div className="max-h-80 space-y-1 overflow-y-auto">
             {filteredProducts.map((p) => (
@@ -183,18 +187,18 @@ export default function SupplierProductsTable({
                 key={p.id}
                 onClick={() => handleAdd(p.id)}
                 disabled={adding === p.id}
-                className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-slate-50 disabled:opacity-50"
+                className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-50 disabled:opacity-50"
               >
-                <span className="min-w-0 truncate">
-                  <span className="text-slate-400">{p.sku}</span> {p.description}
+                <span className="min-w-0 truncate text-mh-ink">
+                  <span className="text-mh-ink-muted">{p.sku}</span> {p.description}
                 </span>
-                <span className="shrink-0 text-xs text-slate-500">
+                <span className="shrink-0 text-xs text-mh-ink-muted">
                   {formatCurrency(p.price_web)}
                 </span>
               </button>
             ))}
             {filteredProducts.length === 0 && (
-              <p className="px-2 py-4 text-center text-sm text-slate-400">
+              <p className="px-2 py-4 text-center text-sm text-mh-ink-muted">
                 No se encontraron productos.
               </p>
             )}

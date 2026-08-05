@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import type { Brand, Supplier } from "@/lib/types";
+import Card from "@/components/ds/Card";
 import { createSupplier, updateSupplier, setSupplierBrands, type SupplierInput } from "./actions";
 
 const inputClass =
-  "w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-brand focus:outline-none";
+  "font-inter w-full rounded-xl border border-mh-border px-3 py-2 text-sm text-mh-ink focus:border-mh-pink focus:outline-none";
 
 function Field({
   label,
@@ -18,7 +20,7 @@ function Field({
 }) {
   return (
     <label className="block text-sm">
-      <span className="mb-1 block font-medium text-slate-700">{label}</span>
+      <span className="mb-1 block font-semibold text-mh-ink">{label}</span>
       {children}
     </label>
   );
@@ -32,12 +34,12 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <p className="text-sm font-semibold text-slate-900">{title}</p>
+    <Card padding="sm" className="font-inter space-y-4">
+      <p className="text-sm font-bold text-mh-ink">{title}</p>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {children}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -208,21 +210,21 @@ export default function SupplierForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-slate-900">
-          {mode === "create" ? "Nuevo proveedor" : `Editar ${supplier?.trade_name}`}
-        </h1>
-        <Link
-          href={mode === "edit" && supplier ? `/proveedores/${supplier.id}` : "/proveedores"}
-          className="text-sm text-slate-500 hover:text-slate-800"
-        >
-          Cancelar
-        </Link>
-      </div>
+    <form onSubmit={handleSubmit} className="font-inter space-y-6">
+      <Link
+        href={mode === "edit" && supplier ? `/proveedores/${supplier.id}` : "/proveedores"}
+        className="flex items-center gap-1 text-sm font-semibold text-mh-ink-muted hover:text-mh-ink"
+      >
+        <ChevronLeft size={16} />
+        {mode === "edit" && supplier ? "Volver al proveedor" : "Volver a Proveedores"}
+      </Link>
+
+      <h1 className="text-[1.75rem] leading-tight font-extrabold tracking-tight text-mh-ink">
+        {mode === "create" ? "Nuevo proveedor" : `Editar ${supplier?.trade_name}`}
+      </h1>
 
       {error && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
           {error}
         </p>
       )}
@@ -392,24 +394,24 @@ export default function SupplierForm({
         </Field>
       </Section>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="mb-3 text-sm font-semibold text-slate-900">
+      <Card padding="sm" className="font-inter">
+        <p className="mb-3 text-sm font-bold text-mh-ink">
           Marcas que comercializa
         </p>
         {brands.length === 0 ? (
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-mh-ink-muted">
             No hay marcas cargadas todavía (se administran desde Inventario).
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {brands.map((b) => (
               <label
                 key={b.id}
-                className="flex items-center gap-2 text-sm text-slate-700"
+                className="flex items-center gap-2 text-sm font-medium text-mh-ink"
               >
                 <input
                   type="checkbox"
-                  className="accent-brand"
+                  className="accent-mh-pink"
                   checked={brandIds.has(b.id)}
                   onChange={() => toggleBrand(b.id)}
                 />
@@ -418,21 +420,21 @@ export default function SupplierForm({
             ))}
           </div>
         )}
-      </div>
+      </Card>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="mb-3 text-sm font-semibold text-slate-900">
+      <Card padding="sm" className="font-inter">
+        <p className="mb-3 text-sm font-bold text-mh-ink">
           Condiciones de pago
         </p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {PAYMENT_TERMS.map((term) => (
             <label
               key={term.key}
-              className="flex items-center gap-2 text-sm text-slate-700"
+              className="flex items-center gap-2 text-sm font-medium text-mh-ink"
             >
               <input
                 type="checkbox"
-                className="accent-brand"
+                className="accent-mh-pink"
                 checked={Boolean(input[term.key])}
                 onChange={(e) =>
                   set(term.key, e.target.checked as SupplierInput[typeof term.key])
@@ -452,32 +454,32 @@ export default function SupplierForm({
             />
           </Field>
         </div>
-      </div>
+      </Card>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="mb-3 text-sm font-semibold text-slate-900">Estado</p>
-        <label className="flex items-center gap-2 text-sm text-slate-700">
+      <Card padding="sm" className="font-inter">
+        <p className="mb-3 text-sm font-bold text-mh-ink">Estado</p>
+        <label className="flex items-center gap-2 text-sm font-medium text-mh-ink">
           <input
             type="checkbox"
-            className="accent-brand"
+            className="accent-mh-pink"
             checked={input.is_active}
             onChange={(e) => set("is_active", e.target.checked)}
           />
           Proveedor activo
         </label>
-      </div>
+      </Card>
 
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end gap-3">
         <Link
           href={mode === "edit" && supplier ? `/proveedores/${supplier.id}` : "/proveedores"}
-          className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+          className="rounded-xl border border-mh-border px-4 py-2.5 text-sm font-semibold text-mh-ink hover:bg-slate-50"
         >
           Cancelar
         </Link>
         <button
           type="submit"
           disabled={saving}
-          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+          className="rounded-xl bg-mh-pink px-4 py-2.5 text-sm font-semibold text-white hover:bg-mh-pink-dark disabled:opacity-50"
         >
           {saving
             ? "Guardando..."

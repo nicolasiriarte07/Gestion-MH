@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
 import type { SupplierLedgerEntry } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
 import { parseFlexibleNumber } from "@/lib/excel";
 import Modal from "@/components/Modal";
+import Card from "@/components/ds/Card";
 import { addLedgerEntry, deleteLedgerEntry } from "../actions";
 
 function todayISO(): string {
@@ -89,78 +91,85 @@ export default function SupplierPaymentsTable({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="font-inter space-y-4">
       <div className="flex justify-end">
         <button
           onClick={() => setShowModal(true)}
-          className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
+          className="flex items-center gap-1.5 rounded-xl bg-mh-pink px-4 py-2.5 text-sm font-semibold text-white hover:bg-mh-pink-dark"
         >
-          + Registrar pago
+          <Plus size={16} />
+          Registrar pago
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50 text-left uppercase tracking-wide text-slate-500">
-              <th className="px-3 py-2 font-medium">Fecha</th>
-              <th className="px-3 py-2 font-medium">Monto</th>
-              <th className="px-3 py-2 font-medium">Medio de pago</th>
-              <th className="px-3 py-2 font-medium">Comprobante</th>
-              <th className="px-3 py-2 font-medium">Observaciones</th>
-              <th className="px-3 py-2 font-medium" />
-            </tr>
-          </thead>
-          <tbody>
-            {payments.map((p) => (
-              <tr
-                key={p.id}
-                className="border-b border-slate-100 last:border-0 hover:bg-slate-50"
-              >
-                <td className="whitespace-nowrap px-3 py-2 text-slate-600">
-                  {p.entry_date}
-                </td>
-                <td className="px-3 py-2 font-medium text-slate-900">
-                  {formatCurrency(p.credit)}
-                </td>
-                <td className="px-3 py-2 text-slate-600">
-                  {p.payment_method ?? "—"}
-                </td>
-                <td className="px-3 py-2 text-slate-600">
-                  {p.receipt_number ?? "—"}
-                </td>
-                <td className="px-3 py-2 text-slate-600">{p.notes ?? "—"}</td>
-                <td className="px-3 py-2">
-                  <button
-                    onClick={() => handleDelete(p)}
-                    disabled={removingId === p.id}
-                    className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
-                  >
-                    Eliminar
-                  </button>
-                </td>
+      <Card padding="none" className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-mh-border bg-mh-bg text-left text-xs font-semibold text-mh-ink-muted uppercase">
+                <th className="px-4 py-3">Fecha</th>
+                <th className="px-3 py-3">Monto</th>
+                <th className="px-3 py-3">Medio de pago</th>
+                <th className="px-3 py-3">Comprobante</th>
+                <th className="px-3 py-3">Observaciones</th>
+                <th className="px-3 py-3" />
               </tr>
-            ))}
-            {payments.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-slate-400">
-                  Todavía no hay pagos registrados.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {payments.map((p) => (
+                <tr
+                  key={p.id}
+                  className="border-b border-mh-border/70 last:border-0 hover:bg-mh-pink-light/40"
+                >
+                  <td className="px-4 py-3 whitespace-nowrap text-mh-ink-muted">
+                    {p.entry_date}
+                  </td>
+                  <td className="px-3 py-3 font-bold text-mh-ink">
+                    {formatCurrency(p.credit)}
+                  </td>
+                  <td className="px-3 py-3 text-mh-ink-muted">
+                    {p.payment_method ?? "—"}
+                  </td>
+                  <td className="px-3 py-3 text-mh-ink-muted">
+                    {p.receipt_number ?? "—"}
+                  </td>
+                  <td className="px-3 py-3 text-mh-ink-muted">{p.notes ?? "—"}</td>
+                  <td className="px-3 py-3">
+                    <button
+                      onClick={() => handleDelete(p)}
+                      disabled={removingId === p.id}
+                      className="rounded-lg px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {payments.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-mh-ink-muted">
+                    Todavía no hay pagos registrados.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
       {showModal && (
         <Modal title="Registrar pago" onClose={() => setShowModal(false)}>
           <div className="space-y-3">
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && (
+              <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+                {error}
+              </p>
+            )}
             <label className="block text-sm">
-              <span className="mb-1 block font-medium text-slate-700">Fecha</span>
+              <span className="mb-1 block font-semibold text-mh-ink">Fecha</span>
               <input
                 type="date"
-                className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
+                className="w-full rounded-xl border border-mh-border px-3 py-2 text-sm focus:border-mh-pink focus:outline-none"
                 value={form.entry_date}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, entry_date: e.target.value }))
@@ -168,9 +177,9 @@ export default function SupplierPaymentsTable({
               />
             </label>
             <label className="block text-sm">
-              <span className="mb-1 block font-medium text-slate-700">Monto</span>
+              <span className="mb-1 block font-semibold text-mh-ink">Monto</span>
               <input
-                className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
+                className="w-full rounded-xl border border-mh-border px-3 py-2 text-sm focus:border-mh-pink focus:outline-none"
                 value={form.amount}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, amount: e.target.value }))
@@ -178,11 +187,11 @@ export default function SupplierPaymentsTable({
               />
             </label>
             <label className="block text-sm">
-              <span className="mb-1 block font-medium text-slate-700">
+              <span className="mb-1 block font-semibold text-mh-ink">
                 Medio de pago
               </span>
               <input
-                className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
+                className="w-full rounded-xl border border-mh-border px-3 py-2 text-sm focus:border-mh-pink focus:outline-none"
                 value={form.payment_method}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, payment_method: e.target.value }))
@@ -191,11 +200,11 @@ export default function SupplierPaymentsTable({
               />
             </label>
             <label className="block text-sm">
-              <span className="mb-1 block font-medium text-slate-700">
+              <span className="mb-1 block font-semibold text-mh-ink">
                 Comprobante
               </span>
               <input
-                className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
+                className="w-full rounded-xl border border-mh-border px-3 py-2 text-sm focus:border-mh-pink focus:outline-none"
                 value={form.receipt_number}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, receipt_number: e.target.value }))
@@ -203,11 +212,11 @@ export default function SupplierPaymentsTable({
               />
             </label>
             <label className="block text-sm">
-              <span className="mb-1 block font-medium text-slate-700">
+              <span className="mb-1 block font-semibold text-mh-ink">
                 Observaciones
               </span>
               <textarea
-                className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
+                className="w-full rounded-xl border border-mh-border px-3 py-2 text-sm focus:border-mh-pink focus:outline-none"
                 rows={2}
                 value={form.notes}
                 onChange={(e) =>
@@ -219,7 +228,7 @@ export default function SupplierPaymentsTable({
               <button
                 onClick={handleRegister}
                 disabled={saving}
-                className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+                className="rounded-xl bg-mh-pink px-4 py-2.5 text-sm font-semibold text-white hover:bg-mh-pink-dark disabled:opacity-50"
               >
                 {saving ? "Guardando..." : "Registrar pago"}
               </button>

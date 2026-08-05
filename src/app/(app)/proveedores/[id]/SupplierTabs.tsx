@@ -33,7 +33,7 @@ export default function SupplierTabs({ active }: { active: SupplierTab }) {
   }
 
   return (
-    <div className="flex flex-wrap gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+    <div className="font-inter flex flex-wrap gap-1 rounded-2xl border border-mh-border bg-mh-surface p-1.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
       {TABS.map((tab) => {
         const Icon = tab.icon;
         const isActive = tab.key === active;
@@ -41,10 +41,10 @@ export default function SupplierTabs({ active }: { active: SupplierTab }) {
           <button
             key={tab.key}
             onClick={() => selectTab(tab.key)}
-            className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-colors ${
               isActive
-                ? "bg-brand text-white shadow-sm"
-                : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                ? "bg-mh-pink text-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+                : "text-mh-ink-muted hover:bg-slate-50 hover:text-mh-ink"
             }`}
           >
             <Icon size={16} strokeWidth={2} />

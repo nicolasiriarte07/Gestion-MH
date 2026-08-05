@@ -2,8 +2,9 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, FileSpreadsheet, File as FileIcon, Trash2 } from "lucide-react";
+import { FileText, FileSpreadsheet, File as FileIcon, Trash2, Upload } from "lucide-react";
 import type { SupplierDocType, SupplierDocument } from "@/lib/types";
+import Card from "@/components/ds/Card";
 import { deleteSupplierDocument, uploadSupplierDocument } from "../actions";
 
 export type SupplierDocumentRow = SupplierDocument & { signedUrl: string | null };
@@ -84,12 +85,12 @@ export default function SupplierDocumentsGallery({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="font-inter space-y-4">
+      <Card padding="sm" className="flex flex-wrap items-center gap-3">
         <select
           value={docType}
           onChange={(e) => setDocType(e.target.value as SupplierDocType)}
-          className="rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-brand focus:outline-none"
+          className="rounded-xl border border-mh-border px-3 py-2 text-sm focus:border-mh-pink focus:outline-none"
         >
           {(Object.entries(DOC_TYPE_LABELS) as [SupplierDocType, string][]).map(
             ([key, label]) => (
@@ -103,28 +104,29 @@ export default function SupplierDocumentsGallery({
           ref={fileInputRef}
           type="file"
           accept=".pdf,.xls,.xlsx,.png,.jpg,.jpeg,.webp"
-          className="text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-brand-dark"
+          className="text-sm text-mh-ink-muted file:mr-3 file:rounded-xl file:border-0 file:bg-mh-pink file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-mh-pink-dark"
         />
         <button
           onClick={handleUpload}
           disabled={uploading}
-          className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-xl bg-mh-pink px-4 py-2.5 text-sm font-semibold text-white hover:bg-mh-pink-dark disabled:opacity-50"
         >
+          <Upload size={16} />
           {uploading ? "Subiendo..." : "Subir documento"}
         </button>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-      </div>
+        {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+      </Card>
 
       {documents.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center text-sm text-slate-500 shadow-sm">
+        <div className="rounded-2xl border border-dashed border-mh-border bg-mh-surface p-12 text-center text-sm text-mh-ink-muted">
           Todavía no subiste ningún documento.
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {documents.map((doc) => (
             <div
               key={doc.id}
-              className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+              className="group relative overflow-hidden rounded-2xl border border-mh-border bg-mh-surface shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
             >
               <a
                 href={doc.signedUrl ?? undefined}
@@ -140,15 +142,15 @@ export default function SupplierDocumentsGallery({
                     className="h-28 w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-28 w-full items-center justify-center bg-slate-50 text-slate-300">
+                  <div className="flex h-28 w-full items-center justify-center bg-mh-bg text-mh-ink-muted/60">
                     <DocIcon mimeType={doc.mime_type} />
                   </div>
                 )}
-                <div className="p-2">
-                  <p className="truncate text-xs font-medium text-slate-900">
+                <div className="p-3">
+                  <p className="truncate text-xs font-bold text-mh-ink">
                     {doc.file_name}
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-mh-ink-muted">
                     {doc.doc_type ? DOC_TYPE_LABELS[doc.doc_type] : "Otro"} ·{" "}
                     {doc.uploaded_at.slice(0, 10)}
                   </p>
@@ -157,7 +159,7 @@ export default function SupplierDocumentsGallery({
               <button
                 onClick={() => handleDelete(doc)}
                 disabled={removingId === doc.id}
-                className="absolute top-1.5 right-1.5 rounded-md bg-white/90 p-1.5 text-red-600 opacity-0 shadow-sm hover:bg-red-50 disabled:opacity-50 group-hover:opacity-100"
+                className="absolute top-1.5 right-1.5 rounded-lg bg-white/90 p-1.5 text-red-600 opacity-0 shadow-sm hover:bg-red-50 disabled:opacity-50 group-hover:opacity-100"
               >
                 <Trash2 size={14} />
               </button>

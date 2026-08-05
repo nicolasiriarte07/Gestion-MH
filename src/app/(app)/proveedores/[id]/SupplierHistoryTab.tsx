@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { SupplierHistoryEntry } from "@/lib/types";
+import Card from "@/components/ds/Card";
 
 function formatDateTime(iso: string): string {
   const d = new Date(iso);
@@ -28,25 +29,25 @@ export default async function SupplierHistoryTab({
 
   if (entries.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center text-sm text-slate-500 shadow-sm">
+      <div className="font-inter rounded-2xl border border-dashed border-mh-border bg-mh-surface p-12 text-center text-sm text-mh-ink-muted">
         Todavía no hay eventos registrados para este proveedor.
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <ol className="space-y-4 border-l-2 border-slate-100 pl-4">
+    <Card padding="sm" className="font-inter">
+      <ol className="space-y-4 border-l-2 border-mh-border pl-4">
         {entries.map((entry) => (
           <li key={entry.id} className="relative">
-            <span className="absolute top-1 -left-[21px] h-2.5 w-2.5 rounded-full bg-brand" />
-            <p className="text-sm text-slate-900">{entry.description}</p>
-            <p className="text-xs text-slate-500">
+            <span className="absolute top-1 -left-[21px] h-2.5 w-2.5 rounded-full bg-mh-pink" />
+            <p className="text-sm font-medium text-mh-ink">{entry.description}</p>
+            <p className="text-xs text-mh-ink-muted">
               {formatDateTime(entry.occurred_at)}
             </p>
           </li>
         ))}
       </ol>
-    </div>
+    </Card>
   );
 }

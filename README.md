@@ -321,20 +321,41 @@ Implementado:
       paleta del sistema nuevo. El gráfico de evolución de ventas sumó
       líneas de grilla, valores en el eje Y y relleno de área (mejora
       visual del mismo gráfico, no es un widget nuevo).
-- [x] Proveedores: CRM completo. Listado con KPIs del módulo (cantidad,
-      activos, saldo total pendiente, compras del mes, sin compras hace
-      +90 días), buscador y filtros (categoría, marca, estado), orden por
-      nombre/deuda/última compra; alta y edición con formulario completo
-      (datos generales, contacto, datos comerciales, marcas, condiciones
-      de pago, estado); ficha con 6 pestañas — Resumen (KPIs, gráfico de
-      compras por mes, observaciones internas), Productos (costo/precio/
-      margen/stock, agregar producto existente del catálogo), Cuenta
-      Corriente (movimientos con saldo corrido), Pagos (registro de
-      pagos), Documentos (subida de facturas/listas de precios/imágenes a
-      Supabase Storage, vista en galería) e Historial (timeline
-      automático de altas, compras, pagos y cambios). No depende de un
-      módulo de Compras — es autónomo, y un futuro módulo de Compras se
-      apoyaría en este.
+- [x] Proveedores: CRM completo, migrado al sistema de diseño nuevo (mismo
+      Sidebar/tipografía/colores/radios que Inicio, Inventario y Ventas).
+      Header con buscador de la barra de filtros, campanita de
+      notificaciones y "+ Nuevo proveedor"; 5 KPIs (cantidad de
+      proveedores, activos, saldo total pendiente, compras del mes, sin
+      compras hace +90 días) — mismas métricas que antes, con
+      "Órdenes abiertas" y "Tiempo promedio de entrega" pedidos en el
+      brief pero descartados porque no existe todavía un módulo de
+      Compras/OC que los respalde con datos reales; barra de acciones
+      rápidas (Nueva compra y Registrar pago con selector de proveedor,
+      Exportar CSV, Imprimir — "Importar" queda visualmente listo pero
+      deshabilitado, es una funcionalidad nueva por sí misma); buscador y
+      filtros (marca, categoría, estado —incluye "Con deuda"/"Al día"
+      derivados del saldo, además de Activo/Inactivo—, localidad, orden)
+      — se descartó el filtro "Vendedor asignado" del brief por la misma
+      razón que las dos KPIs de arriba: no hay ese dato en la base;
+      tabla estilo Shopify (avatar con iniciales — no hay campo de logo
+      real —, nombre + razón social apilados, CUIT/ciudad/teléfono/email,
+      compras acumuladas históricas, saldo, última compra, badge de
+      estado, selección múltiple con eliminar en lote) — un clic en una
+      fila abre un Drawer lateral con el detalle rápido (contacto,
+      dirección, condición de IVA, marcas, condiciones de pago, saldo,
+      últimas 5 compras/productos/pagos, observaciones, y accesos a
+      Nueva compra/Registrar pago/Editar/"Ver historial completo") en vez
+      de navegar a otra página; grilla final de 4 tarjetas (compras por
+      proveedor y por categoría en barras horizontales, proveedores con
+      saldo pendiente, y últimos movimientos en timeline global — mismo
+      timeline de altas/compras/pagos/cambios que ya existía por
+      proveedor, acá agregado entre todos). La ficha completa de cada
+      proveedor (con sus 6 pestañas — Resumen, Productos, Cuenta
+      Corriente, Pagos, Documentos, Historial) sigue existiendo igual que
+      antes, solo restyleada, y es donde llevan "Ver historial completo"
+      y "Editar producto/movimiento/pago/documento" de cada pestaña. No
+      depende de un módulo de Compras — es autónomo, y un futuro módulo
+      de Compras se apoyaría en este.
 - [x] Simulador Web: simula la rentabilidad de una venta por la web.
       Precio de venta y COGS (%, precargado con el COGS promedio del
       catálogo) editables; Comisión Tiendanube (1%) e IIBB (3%) fijos;

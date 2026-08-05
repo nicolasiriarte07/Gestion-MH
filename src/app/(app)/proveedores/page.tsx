@@ -1,30 +1,20 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { formatCurrency } from "@/lib/currency";
-import type { Brand, Supplier, SupplierBalance } from "@/lib/types";
-import SupplierFilterBar from "./SupplierFilterBar";
-import SuppliersTable, { type SupplierRow } from "./SuppliersTable";
+import { fetchAllRows } from "@/lib/supabase/fetchAll";
+import type { Brand, Supplier, SupplierBalance, SupplierHistoryEntry } from "@/lib/types";
+import type { SupplierRow } from "./SuppliersTable";
+import ProveedoresView from "./ProveedoresView";
 
 const INACTIVE_PURCHASE_DAYS = 90;
+const MOVEMENTS_LIMIT = 12;
 
 type SearchParams = {
   q?: string;
   cat?: string;
   brand?: string;
+  city?: string;
   status?: string;
   sort?: string;
 };
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-        {label}
-      </p>
-      <p className="mt-1 text-2xl font-semibold text-slate-900">{value}</p>
-    </div>
-  );
-}
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
@@ -41,7 +31,7 @@ export default async function ProveedoresPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { q, cat, brand, status, sort } = await searchParams;
+  const { q, cat, brand, city, status, sort } = await searchParams;
   const supabase = await createClient();
 
   const firstOfMonth = `${todayISO().slice(0, 7)}-01`;
@@ -52,6 +42,8 @@ export default async function ProveedoresPage({
     { data: supplierBrands },
     { data: brands },
     { data: monthPurchases },
+    { data: allPurchases },
+    { data: history },
   ] = await Promise.all([
     supabase.from("suppliers").select("*").order("trade_name"),
     supabase.from("supplier_balances").select("*"),
@@ -63,6 +55,18 @@ export default async function ProveedoresPage({
       .eq("kind", "compra")
       .gte("entry_date", firstOfMonth)
       .lte("entry_date", todayISO()),
+    fetchAllRows<{ supplier_id: string; debit: number }>((from, to) =>
+      supabase
+        .from("supplier_ledger_entries")
+        .select("supplier_id, debit")
+        .eq("kind", "compra")
+        .range(from, to)
+    ),
+    supabase
+      .from("supplier_history")
+      .select("*")
+      .order("occurred_at", { ascending: false })
+      .limit(MOVEMENTS_LIMIT),
   ]);
 
   const allSuppliers = (suppliers ?? []) as Supplier[];
@@ -85,8 +89,22 @@ export default async function ProveedoresPage({
     brandIdsBySupplier.set(sb.supplier_id, ids);
   }
 
+  // Total histórico comprado por proveedor: base de la columna "Compras
+  // acum." de la tabla y de los dos gráficos del dashboard inferior
+  // (top proveedores / por categoría).
+  const purchasedBySupplier = new Map<string, number>();
+  for (const entry of allPurchases ?? []) {
+    purchasedBySupplier.set(
+      entry.supplier_id,
+      (purchasedBySupplier.get(entry.supplier_id) ?? 0) + entry.debit
+    );
+  }
+
   const categories = [
     ...new Set(allSuppliers.map((s) => s.category).filter((c): c is string => !!c)),
+  ].sort();
+  const cities = [
+    ...new Set(allSuppliers.map((s) => s.city).filter((c): c is string => !!c)),
   ].sort();
 
   let rows: SupplierRow[] = allSuppliers.map((s) => ({
@@ -94,6 +112,7 @@ export default async function ProveedoresPage({
     balance: balanceBySupplier.get(s.id)?.balance ?? 0,
     last_purchase_date: balanceBySupplier.get(s.id)?.last_purchase_date ?? null,
     brandNames: brandsBySupplier.get(s.id) ?? [],
+    totalPurchased: purchasedBySupplier.get(s.id) ?? 0,
   }));
 
   if (q) {
@@ -107,8 +126,11 @@ export default async function ProveedoresPage({
   }
   if (cat) rows = rows.filter((r) => r.category === cat);
   if (brand) rows = rows.filter((r) => brandIdsBySupplier.get(r.id)?.has(brand));
+  if (city) rows = rows.filter((r) => r.city === city);
   if (status === "active") rows = rows.filter((r) => r.is_active);
   if (status === "inactive") rows = rows.filter((r) => !r.is_active);
+  if (status === "con_deuda") rows = rows.filter((r) => r.balance > 0);
+  if (status === "al_dia") rows = rows.filter((r) => r.balance <= 0);
 
   if (sort === "deuda") {
     rows = [...rows].sort((a, b) => b.balance - a.balance);
@@ -139,43 +161,59 @@ export default async function ProveedoresPage({
     return !lastPurchase || lastPurchase < staleThreshold;
   }).length;
 
+  // Dashboard inferior.
+  const topSuppliers = [...purchasedBySupplier.entries()]
+    .map(([id, total]) => ({
+      label: allSuppliers.find((s) => s.id === id)?.trade_name ?? "—",
+      value: total,
+    }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 10);
+
+  const purchasedByCategory = new Map<string, number>();
+  for (const [supplierId, total] of purchasedBySupplier.entries()) {
+    const cat = allSuppliers.find((s) => s.id === supplierId)?.category ?? "Sin categoría";
+    purchasedByCategory.set(cat, (purchasedByCategory.get(cat) ?? 0) + total);
+  }
+  const byCategory = [...purchasedByCategory.entries()]
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 10);
+
+  const pendingBalances = allSuppliers
+    .map((s) => ({
+      id: s.id,
+      trade_name: s.trade_name,
+      balance: balanceBySupplier.get(s.id)?.balance ?? 0,
+      last_purchase_date: balanceBySupplier.get(s.id)?.last_purchase_date ?? null,
+    }))
+    .filter((s) => s.balance > 0)
+    .sort((a, b) => b.balance - a.balance)
+    .slice(0, 8);
+
+  const supplierNameById = new Map(allSuppliers.map((s) => [s.id, s.trade_name]));
+  const movements = ((history ?? []) as SupplierHistoryEntry[]).map((h) => ({
+    id: h.id,
+    supplierName: supplierNameById.get(h.supplier_id) ?? "—",
+    description: h.description,
+    occurred_at: h.occurred_at,
+  }));
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900">Proveedores</h1>
-          <p className="text-sm text-slate-500">
-            {rows.length} proveedor(es)
-          </p>
-        </div>
-        <Link
-          href="/proveedores/nuevo"
-          className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
-        >
-          + Nuevo proveedor
-        </Link>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <StatCard label="Cantidad de proveedores" value={String(totalCount)} />
-        <StatCard label="Activos" value={String(activeCount)} />
-        <StatCard
-          label="Saldo total pendiente"
-          value={formatCurrency(totalBalance)}
-        />
-        <StatCard
-          label="Compras del mes"
-          value={formatCurrency(monthPurchasesTotal)}
-        />
-        <StatCard
-          label="Sin compras hace +90 días"
-          value={String(staleCount)}
-        />
-      </div>
-
-      <SupplierFilterBar categories={categories} brands={(brands ?? []) as Brand[]} />
-
-      <SuppliersTable rows={rows} />
-    </div>
+    <ProveedoresView
+      rows={rows}
+      totalCount={totalCount}
+      activeCount={activeCount}
+      totalBalance={totalBalance}
+      monthPurchasesTotal={monthPurchasesTotal}
+      staleCount={staleCount}
+      categories={categories}
+      brands={(brands ?? []) as Brand[]}
+      cities={cities}
+      topSuppliers={topSuppliers}
+      byCategory={byCategory}
+      pendingBalances={pendingBalances}
+      movements={movements}
+    />
   );
 }

@@ -1,41 +1,38 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
 import Link from "next/link";
-import type { Supplier } from "@/lib/types";
+import {
+  Pencil,
+  Trash2,
+  MoreHorizontal,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import Card from "@/components/ds/Card";
+import Badge from "@/components/ds/Badge";
+import Avatar from "@/components/ds/Avatar";
 import { formatCurrency } from "@/lib/currency";
+import type { Supplier } from "@/lib/types";
 import { deleteSupplier } from "./actions";
+import SupplierDrawer from "./SupplierDrawer";
 
 export type SupplierRow = Supplier & {
   balance: number;
   last_purchase_date: string | null;
   brandNames: string[];
+  totalPurchased: number;
 };
 
 const ROWS_PER_PAGE = 50;
 
-const COLUMNS = [
-  { key: "trade_name", label: "Nombre", width: 180 },
-  { key: "legal_name", label: "Razón Social", width: 160 },
-  { key: "cuit", label: "CUIT", width: 130 },
-  { key: "category", label: "Categoría", width: 140 },
-  { key: "brands", label: "Marca(s)", width: 160 },
-  { key: "phone", label: "Teléfono", width: 120 },
-  { key: "email", label: "Email", width: 180 },
-  { key: "city", label: "Ciudad", width: 120 },
-  { key: "balance", label: "Saldo", width: 120 },
-  { key: "status", label: "Estado", width: 90 },
-  { key: "last_purchase", label: "Última compra", width: 120 },
-  { key: "actions", label: "", width: 130 },
-] as const;
-
-const totalWidth = COLUMNS.reduce((sum, c) => sum + c.width, 0);
-
 export default function SuppliersTable({ rows }: { rows: SupplierRow[] }) {
-  const router = useRouter();
   const [page, setPage] = useState(1);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [viewingSupplier, setViewingSupplier] = useState<SupplierRow | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const totalPages = Math.max(1, Math.ceil(rows.length / ROWS_PER_PAGE));
   const currentPage = Math.min(page, totalPages);
@@ -44,170 +41,218 @@ export default function SuppliersTable({ rows }: { rows: SupplierRow[] }) {
     currentPage * ROWS_PER_PAGE
   );
 
-  async function handleDelete(e: React.MouseEvent, row: SupplierRow) {
-    e.stopPropagation();
+  const allPageSelected = pagedRows.length > 0 && pagedRows.every((r) => selectedIds.has(r.id));
+
+  function toggleSelectAllPage() {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allPageSelected) {
+        pagedRows.forEach((r) => next.delete(r.id));
+      } else {
+        pagedRows.forEach((r) => next.add(r.id));
+      }
+      return next;
+    });
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleDeleteOne(row: SupplierRow) {
     if (!confirm(`¿Eliminar el proveedor "${row.trade_name}"?`)) return;
-
-    setDeletingId(row.id);
     const result = await deleteSupplier(row.id);
-    setDeletingId(null);
-
     if (result.error) {
       alert(result.error);
+      return;
     }
+    setOpenMenuId(null);
+    setViewingSupplier(null);
+  }
+
+  async function handleDeleteSelected() {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`¿Eliminar ${selectedIds.size} proveedor(es) seleccionado(s)?`)) return;
+    setDeleting(true);
+    const ids = [...selectedIds];
+    const results = await Promise.all(ids.map((id) => deleteSupplier(id)));
+    const failed = results.filter((r) => r.error).length;
+    setSelectedIds(new Set());
+    setDeleting(false);
+    if (failed > 0) alert(`${failed} proveedor(es) no se pudieron eliminar.`);
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <table
-        className="text-xs"
-        style={{ tableLayout: "fixed", width: totalWidth }}
-      >
-        <colgroup>
-          {COLUMNS.map((col) => (
-            <col key={col.key} style={{ width: col.width }} />
-          ))}
-        </colgroup>
-        <thead>
-          <tr className="border-b border-slate-200 bg-slate-50 text-left uppercase tracking-wide text-slate-500">
-            {COLUMNS.map((col) => (
-              <th key={col.key} className="px-3 py-2 font-medium">
-                {col.label}
+    <Card padding="none" className="font-inter overflow-hidden">
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between gap-3 border-b border-mh-border px-6 py-3">
+          <span className="text-sm font-semibold text-mh-pink">
+            {selectedIds.size} seleccionado(s)
+          </span>
+          <button
+            onClick={handleDeleteSelected}
+            disabled={deleting}
+            className="flex items-center gap-1.5 rounded-lg border border-mh-border px-3 py-1.5 text-xs font-semibold text-red-600 hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Trash2 size={14} />
+            Eliminar
+          </button>
+        </div>
+      )}
+
+      <div className="max-h-[640px] overflow-auto">
+        <table className="w-full min-w-[1000px] text-sm">
+          <thead className="sticky top-0 z-10 bg-mh-bg">
+            <tr className="border-b border-mh-border text-left text-xs font-semibold text-mh-ink-muted uppercase">
+              <th className="w-11 px-4 py-3">
+                <input
+                  type="checkbox"
+                  className="accent-mh-pink"
+                  checked={allPageSelected}
+                  onChange={toggleSelectAllPage}
+                />
               </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {pagedRows.map((row) => (
-            <tr
-              key={row.id}
-              onClick={() => router.push(`/proveedores/${row.id}`)}
-              className="cursor-pointer border-b border-slate-100 align-top last:border-0 hover:bg-slate-50"
-            >
-              <td className="overflow-hidden px-3 py-2">
-                <div className="truncate font-medium text-slate-900">
-                  {row.trade_name}
-                </div>
-              </td>
-              <td className="overflow-hidden px-3 py-2">
-                <div className="truncate text-slate-600">
-                  {row.legal_name ?? "—"}
-                </div>
-              </td>
-              <td className="overflow-hidden px-3 py-2">
-                <div className="truncate text-slate-600">{row.cuit ?? "—"}</div>
-              </td>
-              <td className="overflow-hidden px-3 py-2">
-                <div className="truncate text-slate-600">
-                  {row.category ?? "—"}
-                </div>
-              </td>
-              <td className="overflow-hidden px-3 py-2">
-                <div className="truncate text-slate-600">
-                  {row.brandNames.length > 0 ? row.brandNames.join(", ") : "—"}
-                </div>
-              </td>
-              <td className="overflow-hidden px-3 py-2">
-                <div className="truncate text-slate-600">
-                  {row.phone ?? "—"}
-                </div>
-              </td>
-              <td className="overflow-hidden px-3 py-2">
-                <div className="truncate text-slate-600">
-                  {row.email ?? "—"}
-                </div>
-              </td>
-              <td className="overflow-hidden px-3 py-2">
-                <div className="truncate text-slate-600">
-                  {row.city ?? "—"}
-                </div>
-              </td>
-              <td className="overflow-hidden px-3 py-2">
-                <div
-                  className={`truncate font-medium ${row.balance > 0 ? "text-red-600" : "text-slate-600"}`}
-                >
-                  {formatCurrency(row.balance)}
-                </div>
-              </td>
-              <td className="overflow-hidden px-3 py-2">
-                <span
-                  className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                    row.is_active
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-slate-100 text-slate-500"
-                  }`}
-                >
-                  {row.is_active ? "Activo" : "Inactivo"}
-                </span>
-              </td>
-              <td className="overflow-hidden px-3 py-2">
-                <div className="truncate text-slate-600">
-                  {row.last_purchase_date ?? "—"}
-                </div>
-              </td>
-              <td className="overflow-hidden px-3 py-2">
-                <div
-                  className="flex items-center gap-2"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Link
-                    href={`/proveedores/${row.id}/editar`}
-                    className="rounded px-2 py-1 text-xs font-medium text-brand hover:bg-brand-light"
-                  >
-                    Editar
-                  </Link>
-                  <button
-                    onClick={(e) => handleDelete(e, row)}
-                    disabled={deletingId === row.id}
-                    className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </td>
+              <th className="w-14 px-2 py-3" />
+              <th className="px-3 py-3 font-semibold">Proveedor</th>
+              <th className="px-3 py-3 font-semibold">CUIT</th>
+              <th className="px-3 py-3 font-semibold">Ciudad</th>
+              <th className="px-3 py-3 font-semibold">Teléfono</th>
+              <th className="px-3 py-3 font-semibold">Email</th>
+              <th className="px-3 py-3 font-semibold">Compras acum.</th>
+              <th className="px-3 py-3 font-semibold">Saldo</th>
+              <th className="px-3 py-3 font-semibold">Última compra</th>
+              <th className="px-3 py-3 font-semibold">Estado</th>
+              <th className="w-12 px-3 py-3" />
             </tr>
-          ))}
-          {rows.length === 0 && (
-            <tr>
-              <td
-                colSpan={COLUMNS.length}
-                className="px-3 py-8 text-center text-slate-400"
+          </thead>
+          <tbody>
+            {pagedRows.map((row) => (
+              <tr
+                key={row.id}
+                onClick={() => setViewingSupplier(row)}
+                className="cursor-pointer border-b border-mh-border/70 transition-colors last:border-0 hover:bg-mh-pink-light/40"
               >
-                No hay proveedores que coincidan con los filtros.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    className="accent-mh-pink"
+                    checked={selectedIds.has(row.id)}
+                    onChange={() => toggleSelect(row.id)}
+                  />
+                </td>
+                <td className="px-2 py-3">
+                  <Avatar name={row.trade_name} size={36} />
+                </td>
+                <td className="overflow-hidden px-3 py-3">
+                  <p className="truncate font-bold text-mh-ink">{row.trade_name}</p>
+                  <p className="truncate text-xs text-mh-ink-muted">
+                    {row.legal_name ?? "Sin razón social"}
+                  </p>
+                </td>
+                <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
+                  <p className="truncate">{row.cuit ?? "—"}</p>
+                </td>
+                <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
+                  <p className="truncate">{row.city ?? "—"}</p>
+                </td>
+                <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
+                  <p className="truncate">{row.phone ?? "—"}</p>
+                </td>
+                <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
+                  <p className="truncate">{row.email ?? "—"}</p>
+                </td>
+                <td className="overflow-hidden px-3 py-3 font-medium text-mh-ink">
+                  <p className="truncate">{formatCurrency(row.totalPurchased)}</p>
+                </td>
+                <td className="overflow-hidden px-3 py-3">
+                  <p className={`truncate font-bold ${row.balance > 0 ? "text-red-600" : "text-mh-ink"}`}>
+                    {formatCurrency(row.balance)}
+                  </p>
+                </td>
+                <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
+                  <p className="truncate">{row.last_purchase_date ?? "—"}</p>
+                </td>
+                <td className="overflow-hidden px-3 py-3">
+                  <Badge tone={row.is_active ? "green" : "gray"}>
+                    {row.is_active ? "Activo" : "Inactivo"}
+                  </Badge>
+                </td>
+                <td className="relative px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => setOpenMenuId((id) => (id === row.id ? null : row.id))}
+                    className="rounded-lg p-1.5 text-mh-ink-muted hover:bg-slate-100 hover:text-mh-ink"
+                  >
+                    <MoreHorizontal size={16} />
+                  </button>
+                  {openMenuId === row.id && (
+                    <div
+                      ref={menuRef}
+                      className="absolute top-full right-3 z-20 w-40 rounded-xl border border-mh-border bg-white py-1 shadow-lg"
+                    >
+                      <Link
+                        href={`/proveedores/${row.id}/editar`}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-mh-ink hover:bg-slate-50"
+                      >
+                        <Pencil size={15} />
+                        Editar
+                      </Link>
+                      <button
+                        onClick={() => handleDeleteOne(row)}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-red-600 hover:bg-slate-50"
+                      >
+                        <Trash2 size={15} />
+                        Eliminar
+                      </button>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))}
+            {pagedRows.length === 0 && (
+              <tr>
+                <td colSpan={12} className="px-6 py-16 text-center text-mh-ink-muted">
+                  No hay proveedores que coincidan con los filtros.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {rows.length > 0 && (
-        <div className="flex items-center justify-between border-t border-slate-200 px-3 py-2 text-xs text-slate-500">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-mh-border px-6 py-4 text-sm text-mh-ink-muted">
           <span>
             Mostrando {(currentPage - 1) * ROWS_PER_PAGE + 1}–
-            {Math.min(currentPage * ROWS_PER_PAGE, rows.length)} de{" "}
-            {rows.length} proveedor(es)
+            {Math.min(currentPage * ROWS_PER_PAGE, rows.length)} de {rows.length} proveedor(es)
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={currentPage <= 1}
-              className="rounded-md border border-slate-300 px-2.5 py-1 font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-lg p-1.5 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
             >
-              Anterior
+              <ChevronLeft size={16} />
             </button>
-            <span>
-              Página {currentPage} de {totalPages}
+            <span className="px-2 text-sm font-semibold text-mh-ink">
+              {currentPage} / {totalPages}
             </span>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage >= totalPages}
-              className="rounded-md border border-slate-300 px-2.5 py-1 font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-lg p-1.5 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
             >
-              Siguiente
+              <ChevronRight size={16} />
             </button>
           </div>
         </div>
       )}
-    </div>
+
+      <SupplierDrawer supplier={viewingSupplier} onClose={() => setViewingSupplier(null)} />
+    </Card>
   );
 }

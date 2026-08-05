@@ -3,8 +3,10 @@ import { rowValue, formatValue, type BreakdownRow } from "./BreakdownCard";
 
 // Versión con el sistema de diseño nuevo del mismo componente que
 // BreakdownCard.tsx (misma lógica/datos: reusa sus helpers puros). No se
-// tocó BreakdownCard.tsx porque Proveedores lo sigue usando con el
-// estilo anterior; este archivo es solo para Ventas.
+// tocó BreakdownCard.tsx: su export JSX quedó sin uso una vez que
+// Proveedores también migró a esta versión, pero el archivo se deja
+// intacto porque varios módulos siguen importando sus tipos/helpers
+// puros (rowValue, formatValue, BreakdownRow).
 const SEQUENTIAL_COLOR = "#2a78d6";
 
 export function VentasBreakdownCard({

@@ -15,13 +15,16 @@ export default function Card({
   children,
   className = "",
   padding = "md",
+  title,
 }: {
   children: ReactNode;
   className?: string;
   padding?: keyof typeof PADDING_CLASSES;
+  title?: string;
 }) {
   return (
     <div
+      title={title}
       className={`min-w-0 rounded-2xl border border-mh-border bg-mh-surface shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${PADDING_CLASSES[padding]} ${className}`}
     >
       {children}
