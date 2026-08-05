@@ -22,7 +22,7 @@ import Card from "@/components/ds/Card";
 import Badge from "@/components/ds/Badge";
 import { formatCurrency } from "@/lib/currency";
 import type { BusinessUnit, Category, Subcategory, Brand, Product } from "@/lib/types";
-import { deleteProduct } from "./actions";
+import { deleteProduct, updateProduct } from "./actions";
 import { stockTone, stockLabel, stockTextClass } from "./stockStatus";
 import InventarioDrawer from "./InventarioDrawer";
 import ProductFormModal from "./ProductFormModal";
@@ -32,6 +32,7 @@ type ColumnKey =
   | "description"
   | "sku"
   | "brand"
+  | "business_unit"
   | "category"
   | "stock"
   | "cost"
@@ -45,6 +46,7 @@ const COLUMN_DEFS: { key: ColumnKey; label: string; width: number }[] = [
   { key: "description", label: "Producto", width: 240 },
   { key: "sku", label: "SKU", width: 120 },
   { key: "brand", label: "Marca", width: 120 },
+  { key: "business_unit", label: "Unidad de Negocio", width: 170 },
   { key: "category", label: "Categoría", width: 160 },
   { key: "stock", label: "Stock", width: 80 },
   { key: "cost", label: "Costo", width: 100 },
@@ -202,6 +204,8 @@ export default function InventarioTable({
           return p.sku.toLowerCase();
         case "brand":
           return brandName(p.brand_id).toLowerCase();
+        case "business_unit":
+          return businessUnitName(p.business_unit_id).toLowerCase();
         case "category":
           return categoryName(p.category_id).toLowerCase();
         case "stock":
@@ -228,7 +232,7 @@ export default function InventarioTable({
       if (va > vb) return sort.dir === "asc" ? 1 : -1;
       return 0;
     });
-  }, [rows, sort, brandName, categoryName, markupBasis]);
+  }, [rows, sort, brandName, categoryName, businessUnitName, markupBasis]);
 
   const totalPages = Math.max(1, Math.ceil(sortedRows.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -255,6 +259,18 @@ export default function InventarioTable({
       else next.add(id);
       return next;
     });
+  }
+
+  async function handleQuickEdit(
+    product: Product,
+    patch: { business_unit_id: string | null } | { category_id: string | null }
+  ) {
+    setRows((prev) => prev.map((p) => (p.id === product.id ? { ...p, ...patch } : p)));
+    const result = await updateProduct(product.id, patch);
+    if (result.error) {
+      alert(result.error);
+      setRows((prev) => prev.map((p) => (p.id === product.id ? product : p)));
+    }
   }
 
   function handleSaved(product: Product) {
@@ -446,12 +462,37 @@ export default function InventarioTable({
                   <td className="overflow-hidden px-3 py-3 text-mh-ink">
                     <p className="truncate">{brandName(p.brand_id) || "—"}</p>
                   </td>
-                  <td className="overflow-hidden px-3 py-3">
-                    {p.category_id ? (
-                      <Badge tone="pink">{categoryName(p.category_id)}</Badge>
-                    ) : (
-                      <span className="text-mh-ink-muted">—</span>
-                    )}
+                  <td className="overflow-hidden px-2 py-3" onClick={(e) => e.stopPropagation()}>
+                    <select
+                      value={p.business_unit_id ?? ""}
+                      onChange={(e) =>
+                        handleQuickEdit(p, { business_unit_id: e.target.value || null })
+                      }
+                      className="w-full cursor-pointer truncate rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-sm text-mh-ink hover:border-mh-border focus:border-mh-pink focus:outline-none"
+                    >
+                      <option value="">Sin asignar</option>
+                      {businessUnits.map((bu) => (
+                        <option key={bu.id} value={bu.id}>
+                          {bu.name}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="overflow-hidden px-2 py-3" onClick={(e) => e.stopPropagation()}>
+                    <select
+                      value={p.category_id ?? ""}
+                      onChange={(e) =>
+                        handleQuickEdit(p, { category_id: e.target.value || null })
+                      }
+                      className="w-full cursor-pointer truncate rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-sm text-mh-ink hover:border-mh-border focus:border-mh-pink focus:outline-none"
+                    >
+                      <option value="">Sin categoría</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                   <td className={`overflow-hidden px-3 py-3 font-bold ${stockTextClass(p.stock)}`}>{p.stock}</td>
                   <td className="overflow-hidden px-3 py-3 text-mh-ink">
