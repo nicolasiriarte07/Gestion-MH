@@ -36,7 +36,9 @@ type ColumnKey =
   | "stock"
   | "cost"
   | "price_cash"
-  | "margin"
+  | "price_web"
+  | "markup"
+  | "cogs"
   | "estado";
 
 const COLUMN_DEFS: { key: ColumnKey; label: string; width: number }[] = [
@@ -46,8 +48,10 @@ const COLUMN_DEFS: { key: ColumnKey; label: string; width: number }[] = [
   { key: "category", label: "Categoría", width: 160 },
   { key: "stock", label: "Stock", width: 80 },
   { key: "cost", label: "Costo", width: 100 },
-  { key: "price_cash", label: "Precio", width: 100 },
-  { key: "margin", label: "Margen", width: 90 },
+  { key: "price_cash", label: "P.Contado", width: 100 },
+  { key: "price_web", label: "P.Web", width: 95 },
+  { key: "markup", label: "M.UP", width: 80 },
+  { key: "cogs", label: "COGS", width: 80 },
   { key: "estado", label: "Estado", width: 120 },
 ];
 
@@ -58,8 +62,27 @@ const MIN_COLUMN_WIDTH = 60;
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
 
-function marginOf(p: Product): number | null {
-  return p.price_cash > 0 ? (p.price_cash - p.cost) / p.price_cash : null;
+// Markup = cuánto se suma sobre el costo para llegar al precio de venta.
+// COGS % = qué porción del precio de venta representa el costo. Son
+// valores calculados, no se guardan en la base. El precio de venta usado
+// (Web o Contado) es elegible por el usuario, ver `MarkupBasis`.
+type MarkupBasis = "price_web" | "price_cash";
+
+const MARKUP_BASIS_LABEL: Record<MarkupBasis, string> = {
+  price_web: "P. Web",
+  price_cash: "P. Contado",
+};
+
+function markupRatio(cost: number, price: number): number | null {
+  return cost > 0 ? (price - cost) / cost : null;
+}
+
+function cogsRatio(cost: number, price: number): number | null {
+  return price > 0 ? cost / price : null;
+}
+
+function formatPercent(ratio: number | null): string {
+  return ratio === null ? "—" : `${(ratio * 100).toFixed(0)}%`;
 }
 
 function csvCell(value: string | number): string {
@@ -95,6 +118,7 @@ export default function InventarioTable({
   const [sort, setSort] = useState<{ key: ColumnKey; dir: "asc" | "desc" } | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const [markupBasis, setMarkupBasis] = useState<MarkupBasis>("price_web");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
@@ -187,8 +211,12 @@ export default function InventarioTable({
           return p.cost;
         case "price_cash":
           return p.price_cash;
-        case "margin":
-          return marginOf(p) ?? -Infinity;
+        case "price_web":
+          return p.price_web;
+        case "markup":
+          return markupRatio(p.cost, p[markupBasis]) ?? -Infinity;
+        case "cogs":
+          return cogsRatio(p.cost, p[markupBasis]) ?? -Infinity;
         default:
           return "";
       }
@@ -200,7 +228,7 @@ export default function InventarioTable({
       if (va > vb) return sort.dir === "asc" ? 1 : -1;
       return 0;
     });
-  }, [rows, sort, brandName, categoryName]);
+  }, [rows, sort, brandName, categoryName, markupBasis]);
 
   const totalPages = Math.max(1, Math.ceil(sortedRows.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -267,18 +295,21 @@ export default function InventarioTable({
   }
 
   function exportCsv() {
+    const basisLabel = MARKUP_BASIS_LABEL[markupBasis];
     const header = [
       "Código", "Descripción", "Marca", "Categoría", "Unidad de negocio",
-      "Stock", "Costo", "P. Contado", "P. Web", "Margen", "Estado", "Publicado",
+      "Stock", "Costo", "P. Contado", "P. Web",
+      `Markup (sobre ${basisLabel})`, `COGS (sobre ${basisLabel})`,
+      "Estado", "Publicado",
     ];
     const dataRows = sortedRows.map((p) => {
-      const margin = marginOf(p);
       return [
         p.sku, p.description, brandName(p.brand_id) || "Sin marca",
         categoryName(p.category_id) || "Sin categoría",
         businessUnitName(p.business_unit_id) || "Sin asignar",
         p.stock, p.cost, p.price_cash, p.price_web,
-        margin === null ? "—" : `${(margin * 100).toFixed(0)}%`,
+        formatPercent(markupRatio(p.cost, p[markupBasis])),
+        formatPercent(cogsRatio(p.cost, p[markupBasis])),
         stockLabel(p.stock), p.is_web ? "Sí" : "No",
       ];
     });
@@ -313,11 +344,33 @@ export default function InventarioTable({
             onClick={handleDeleteSelected}
           />
         </div>
-        {selectedIds.size > 0 && (
-          <span className="text-sm font-semibold text-mh-pink">
-            {selectedIds.size} seleccionado(s)
-          </span>
-        )}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-mh-ink-muted">
+            <span>M.UP / COGS sobre:</span>
+            <div className="flex items-center gap-1 rounded-lg border border-mh-border bg-mh-bg p-0.5">
+              {(Object.entries(MARKUP_BASIS_LABEL) as [MarkupBasis, string][]).map(
+                ([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => setMarkupBasis(key)}
+                    className={`rounded-md px-2 py-1 font-semibold transition-colors ${
+                      markupBasis === key
+                        ? "bg-white text-mh-pink shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+                        : "text-mh-ink-muted hover:text-mh-ink"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+          {selectedIds.size > 0 && (
+            <span className="text-sm font-semibold text-mh-pink">
+              {selectedIds.size} seleccionado(s)
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="max-h-[640px] overflow-auto">
@@ -362,7 +415,8 @@ export default function InventarioTable({
           </thead>
           <tbody>
             {pagedRows.map((p) => {
-              const margin = marginOf(p);
+              const markup = markupRatio(p.cost, p[markupBasis]);
+              const cogs = cogsRatio(p.cost, p[markupBasis]);
               return (
                 <tr
                   key={p.id}
@@ -406,7 +460,11 @@ export default function InventarioTable({
                   <td className="overflow-hidden px-3 py-3 font-semibold text-mh-ink">
                     <p className="truncate">{formatCurrency(p.price_cash)}</p>
                   </td>
-                  <td className="overflow-hidden px-3 py-3 text-mh-ink">{margin === null ? "—" : `${(margin * 100).toFixed(0)}%`}</td>
+                  <td className="overflow-hidden px-3 py-3 text-mh-ink">
+                    <p className="truncate">{formatCurrency(p.price_web)}</p>
+                  </td>
+                  <td className="overflow-hidden px-3 py-3 text-mh-ink">{formatPercent(markup)}</td>
+                  <td className="overflow-hidden px-3 py-3 text-mh-ink">{formatPercent(cogs)}</td>
                   <td className="overflow-hidden px-3 py-3">
                     <Badge tone={stockTone(p.stock)}>{stockLabel(p.stock)}</Badge>
                   </td>
