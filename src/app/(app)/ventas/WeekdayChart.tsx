@@ -53,15 +53,15 @@ export function WeekdayChart({
   const hasData = sorted.some((r) => rowValue(r, metric, currency) > 0);
 
   return (
-    <div className="rounded-2xl border border-slate-200 shadow-sm bg-white p-4">
-      <p className="mb-3 text-sm font-medium text-slate-700">
+    <div className="font-inter min-w-0 rounded-2xl border border-mh-border bg-mh-surface p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <p className="mb-4 text-sm font-bold text-mh-ink">
         Ventas por día de la semana
       </p>
       {!hasData ? (
-        <p className="text-sm text-slate-400">Sin datos en este período.</p>
+        <p className="text-sm text-mh-ink-muted">Sin datos en este período.</p>
       ) : (
         <div
-          className="flex items-end gap-2"
+          className="flex items-end gap-2.5"
           style={{ height: MAX_BAR_HEIGHT + 24 }}
         >
           {sorted.map((row) => {
@@ -70,12 +70,12 @@ export function WeekdayChart({
             return (
               <div
                 key={row.weekday_label}
-                className="flex flex-1 flex-col items-center justify-end gap-1"
+                className="flex flex-1 flex-col items-center justify-end gap-2"
                 style={{ height: MAX_BAR_HEIGHT + 24 }}
                 title={`${shortLabel(row.weekday_label)}: ${formatValue(value, metric, currency)}`}
               >
-                <div className="w-full rounded-t bg-brand" style={{ height }} />
-                <span className="whitespace-nowrap text-[10px] text-slate-400">
+                <div className="w-full rounded-md bg-mh-pink" style={{ height }} />
+                <span className="text-[11px] font-medium whitespace-nowrap text-mh-ink-muted">
                   {shortLabel(row.weekday_label)}
                 </span>
               </div>

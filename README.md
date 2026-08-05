@@ -304,6 +304,23 @@ Implementado:
       por tipo de comprobante y por unidad de negocio en dona, por día
       de la semana en barras, y accesos rápidos a Nueva venta/Nuevo
       cliente/Ingresar stock/Ver inventario/Ver reportes)
+- [x] Ventas, migrado al sistema de diseño nuevo (tercer módulo, después de
+      Inicio e Inventario). Cambio puramente visual: mismo Sidebar, misma
+      tipografía/colores/radios/sombras del sistema nuevo — sin tocar
+      datos, métricas, consultas ni la distribución de secciones. Se
+      mantienen exactamente los mismos KPIs (Total vendido, Cantidad de
+      ventas, Ticket promedio, Unidades vendidas, Clientes únicos), los
+      mismos filtros (período, métrica/moneda, comparación de períodos) y
+      los mismos gráficos en el mismo orden (evolución de ventas, por tipo
+      de comprobante, por día de la semana, por unidad de negocio, por
+      categoría, por producto, por forma de pago, Top 10 clientes). La
+      paleta de colores de los gráficos categóricos (torta de comprobante
+      y de forma de pago) se redujo a 5 colores validados por contraste y
+      daltonismo: azul, rosa, verde, ámbar y rojo, siempre en ese orden;
+      "EQUIPAMIENTOS MH" pasó de violeta a azul MH para no salirse de la
+      paleta del sistema nuevo. El gráfico de evolución de ventas sumó
+      líneas de grilla, valores en el eje Y y relleno de área (mejora
+      visual del mismo gráfico, no es un widget nuevo).
 - [x] Proveedores: CRM completo. Listado con KPIs del módulo (cantidad,
       activos, saldo total pendiente, compras del mes, sin compras hace
       +90 días), buscador y filtros (categoría, marca, estado), orden por

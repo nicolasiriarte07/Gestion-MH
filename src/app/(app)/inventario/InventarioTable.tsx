@@ -293,7 +293,7 @@ export default function InventarioTable({
     ACTIONS_COL_WIDTH;
 
   return (
-    <Card padded={false} className="font-inter overflow-hidden">
+    <Card padding="none" className="font-inter overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-mh-border px-6 py-4">
         <div className="flex flex-wrap items-center gap-2">
           <ToolbarButton icon={Download} label="Exportar" onClick={exportCsv} />

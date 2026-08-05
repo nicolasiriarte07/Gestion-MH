@@ -1,15 +1,28 @@
 import Link from "next/link";
-import { ArrowUp, ArrowDown } from "lucide-react";
+import {
+  ArrowUp,
+  ArrowDown,
+  Wallet,
+  ShoppingBag,
+  Receipt,
+  Package,
+  Users,
+  Upload,
+  ListChecks,
+  type LucideIcon,
+} from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import { BUSINESS_UNIT_COLORS } from "@/lib/businessUnitColors";
+import IconTile, { type IconTone } from "@/components/ds/IconTile";
 import PeriodFilter from "./PeriodFilter";
 import MetricControls, { type Metric, type Currency } from "./MetricControls";
 import CompareControls, { type CompareMode } from "./CompareControls";
-import { BreakdownCard, type BreakdownRow } from "./BreakdownCard";
+import { VentasBreakdownCard } from "./VentasBreakdownCard";
 import { PieChart } from "./PieChart";
 import { WeekdayChart, type WeekdayRow } from "./WeekdayChart";
 import { TimeSeriesChart, type TimeSeriesRow } from "./TimeSeriesChart";
 import { TopCustomersCard } from "./TopCustomersCard";
+import type { BreakdownRow } from "./BreakdownCard";
 
 export type Bucket = "day" | "week" | "month";
 
@@ -37,37 +50,48 @@ function DeltaBadge({ delta }: { delta: number | null | undefined }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-0.5 text-xs font-semibold ${
+      className={`inline-flex items-center gap-0.5 text-sm font-semibold ${
         isPositive
-          ? "text-green-600"
+          ? "text-emerald-600"
           : isNegative
-            ? "text-red-600"
-            : "text-slate-400"
+            ? "text-red-500"
+            : "text-mh-ink-muted"
       }`}
     >
-      {isPositive && <ArrowUp size={12} />}
-      {isNegative && <ArrowDown size={12} />}
+      {isPositive && <ArrowUp size={14} />}
+      {isNegative && <ArrowDown size={14} />}
       {Math.abs(rounded)}%
     </span>
   );
 }
 
 function StatTile({
+  icon,
+  tone,
   label,
   value,
   delta,
 }: {
+  icon: LucideIcon;
+  tone: IconTone;
   label: string;
   value: string;
   delta?: number | null;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 shadow-sm bg-white p-4">
-      <p className="text-2xl font-semibold text-slate-900">{value}</p>
-      <div className="flex items-center gap-1.5">
-        <p className="text-sm font-medium text-slate-700">{label}</p>
-        <DeltaBadge delta={delta} />
+    <div className="font-inter min-w-0 rounded-2xl border border-mh-border bg-mh-surface p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <div className="flex items-center gap-4">
+        <IconTile icon={icon} tone={tone} />
+        <p className="text-sm font-medium text-mh-ink-muted">{label}</p>
       </div>
+      <p className="mt-4 text-[2rem] leading-none font-extrabold tracking-tight text-mh-ink">
+        {value}
+      </p>
+      {(delta ?? null) !== null && delta !== undefined && (
+        <div className="mt-3">
+          <DeltaBadge delta={delta} />
+        </div>
+      )}
     </div>
   );
 }
@@ -147,70 +171,86 @@ export default function VentasDashboard({
     : null;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="font-inter space-y-10">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold text-slate-900">Ventas</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-[1.75rem] leading-tight font-extrabold tracking-tight text-mh-ink">
+            Ventas
+          </h1>
+          <p className="mt-1 text-sm font-medium text-mh-ink-muted">
             {totalLines} línea(s) de venta importadas
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
           <Link
             href="/ventas/revisar"
-            className="rounded-md border border-brand px-3 py-1.5 text-sm font-medium text-brand hover:bg-brand-light"
+            className="flex items-center gap-1.5 rounded-xl border border-mh-border bg-white px-4 py-2.5 text-sm font-semibold text-mh-ink shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-slate-50"
           >
+            <ListChecks size={16} />
             Revisar coincidencias
           </Link>
           <Link
             href="/ventas/import"
-            className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-dark"
+            className="flex items-center gap-1.5 rounded-xl bg-mh-pink px-4 py-2.5 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-mh-pink-dark"
           >
+            <Upload size={16} />
             Importar ventas
           </Link>
         </div>
       </div>
 
       {!totalLines ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
+        <div className="rounded-2xl border border-dashed border-mh-border bg-mh-surface p-10 text-center text-sm text-mh-ink-muted">
           Todavía no importaste ningún histórico de ventas.{" "}
-          <Link href="/ventas/import" className="text-brand underline">
+          <Link href="/ventas/import" className="font-semibold text-mh-pink hover:text-mh-pink-dark">
             Importar ahora
           </Link>
         </div>
       ) : (
         <>
-          <PeriodFilter from={from} to={to} />
-          <MetricControls metric={metric} currency={currency} />
-          <CompareControls
-            enabled={compareEnabled}
-            mode={compareMode}
-            compareFrom={compareFrom}
-            compareTo={compareTo}
-          />
+          <div className="space-y-4">
+            <PeriodFilter from={from} to={to} />
+            <MetricControls metric={metric} currency={currency} />
+            <CompareControls
+              enabled={compareEnabled}
+              mode={compareMode}
+              compareFrom={compareFrom}
+              compareTo={compareTo}
+            />
+          </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
             <StatTile
+              icon={Wallet}
+              tone="pink"
               label="Total vendido"
               value={formatCurrency(total, currency)}
               delta={deltas?.total}
             />
             <StatTile
+              icon={ShoppingBag}
+              tone="blue"
               label="Cantidad de ventas"
               value={String(summary.line_count)}
               delta={deltas?.lineCount}
             />
             <StatTile
+              icon={Receipt}
+              tone="blue-light"
               label="Ticket promedio"
               value={formatCurrency(avgTicket, currency)}
               delta={deltas?.avgTicket}
             />
             <StatTile
+              icon={Package}
+              tone="gray"
               label="Unidades vendidas"
               value={String(Math.round(summary.unit_count))}
               delta={deltas?.unitCount}
             />
             <StatTile
+              icon={Users}
+              tone="pink"
               label="Clientes únicos"
               value={String(summary.unique_customers)}
               delta={deltas?.uniqueCustomers}
@@ -224,7 +264,7 @@ export default function VentasDashboard({
             currency={currency}
           />
 
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <PieChart
               title="Por tipo de comprobante"
               rows={byLetterRows}
@@ -239,17 +279,15 @@ export default function VentasDashboard({
               currency={currency}
               colorMap={BUSINESS_UNIT_COLORS}
             />
-            <BreakdownCard
+            <VentasBreakdownCard
               title="Por categoría"
               rows={byCategoryRows}
-              colorMode="sequential"
               metric={metric}
               currency={currency}
             />
-            <BreakdownCard
+            <VentasBreakdownCard
               title="Por producto"
               rows={byProductRows}
-              colorMode="sequential"
               metric={metric}
               currency={currency}
             />
@@ -267,10 +305,10 @@ export default function VentasDashboard({
           </div>
 
           {pendingCount > 0 && (
-            <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-800">
               {pendingCount} línea(s) de venta todavía no están vinculadas a
               un producto del inventario.{" "}
-              <Link href="/ventas/revisar" className="underline">
+              <Link href="/ventas/revisar" className="font-semibold underline">
                 Revisar coincidencias
               </Link>
               .

@@ -2,18 +2,11 @@ import { formatCurrency } from "@/lib/currency";
 import type { Metric, Currency } from "./MetricControls";
 import type { BreakdownRow } from "./BreakdownCard";
 
-// Misma paleta categórica que BreakdownCard (ver skill de dataviz): orden
-// fijo, nunca ciclada arbitrariamente por fila.
-const CATEGORICAL_COLORS = [
-  "#2a78d6",
-  "#1baf7a",
-  "#eda100",
-  "#008300",
-  "#4a3aa7",
-  "#e34948",
-  "#e87ba4",
-  "#eb6834",
-];
+// Paleta categórica restringida a la marca (rosa/azul MH + verde/amarillo/
+// rojo), orden fijo validado con la skill de dataviz
+// (node scripts/validate_palette.js "azul,rosa,verde,amarillo,rojo"
+// --mode light → todos los checks en verde). Nunca se cicla arbitrario.
+const CATEGORICAL_COLORS = ["#2a78d6", "#f3437e", "#008300", "#eda100", "#e34948"];
 
 const SIZE = 160;
 const RADIUS = 70;
@@ -88,35 +81,35 @@ export function PieChart({
   });
 
   return (
-    <div className="rounded-2xl border border-slate-200 shadow-sm bg-white p-4">
-      <p className="mb-3 text-sm font-medium text-slate-700">{title}</p>
+    <div className="font-inter min-w-0 rounded-2xl border border-mh-border bg-mh-surface p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <p className="mb-4 text-sm font-bold text-mh-ink">{title}</p>
       {slices.length === 0 ? (
-        <p className="text-sm text-slate-400">Sin datos en este período.</p>
+        <p className="text-sm text-mh-ink-muted">Sin datos en este período.</p>
       ) : (
-        <div className="flex flex-wrap items-center gap-4">
-          <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
+        <div className="flex flex-wrap items-center gap-5">
+          <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} className="shrink-0">
             {slices.map((s) => (
               <path key={s.label} d={s.path} fill={s.color}>
                 <title>{`${s.label}: ${formatValue(s.value, metric, currency)} · ${s.pct.toFixed(0)}%`}</title>
               </path>
             ))}
           </svg>
-          <div className="min-w-[140px] flex-1 space-y-1.5">
+          <div className="min-w-[140px] flex-1 space-y-2">
             {slices.map((s) => (
               <div
                 key={s.label}
-                className="flex items-center justify-between gap-2 text-xs"
+                className="flex items-center justify-between gap-2 text-sm"
               >
-                <span className="flex items-center gap-1.5 truncate">
+                <span className="flex items-center gap-2 truncate">
                   <span
-                    className="h-2.5 w-2.5 shrink-0 rounded-sm"
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ backgroundColor: s.color }}
                   />
-                  <span className="truncate font-medium text-slate-700">
+                  <span className="truncate font-medium text-mh-ink">
                     {s.label}
                   </span>
                 </span>
-                <span className="whitespace-nowrap text-slate-500">
+                <span className="shrink-0 whitespace-nowrap text-mh-ink-muted">
                   {formatValue(s.value, metric, currency)} · {s.pct.toFixed(0)}%
                 </span>
               </div>

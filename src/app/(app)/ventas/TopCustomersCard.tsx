@@ -20,12 +20,12 @@ export function TopCustomersCard({
   const max = Math.max(...top.map((r) => rowValue(r, metric, currency)), 1);
 
   return (
-    <div className="rounded-2xl border border-slate-200 shadow-sm bg-white p-4">
-      <p className="mb-3 text-sm font-medium text-slate-700">Top 10 clientes</p>
+    <div className="font-inter min-w-0 rounded-2xl border border-mh-border bg-mh-surface p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <p className="mb-4 text-sm font-bold text-mh-ink">Top 10 clientes</p>
       {top.length === 0 ? (
-        <p className="text-sm text-slate-400">Sin datos en este período.</p>
+        <p className="text-sm text-mh-ink-muted">Sin datos en este período.</p>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {top.map((row, i) => {
             const value = rowValue(row, metric, currency);
             const widthPct = (value / max) * 100;
@@ -35,20 +35,20 @@ export function TopCustomersCard({
                 key={row.label}
                 title={`${row.label}: ${formatValue(value, metric, currency)} · ${row.line_count} línea(s)`}
               >
-                <div className="mb-0.5 flex items-center justify-between gap-2 text-xs">
-                  <span className="flex min-w-0 items-center gap-2 truncate font-medium text-slate-700">
-                    <span className="w-4 shrink-0 text-right text-slate-400">
+                <div className="mb-1 flex items-center justify-between gap-2 text-sm">
+                  <span className="flex min-w-0 items-center gap-2 truncate font-medium text-mh-ink">
+                    <span className="w-4 shrink-0 text-right text-mh-ink-muted">
                       {i + 1}
                     </span>
                     <span className="truncate">{row.label}</span>
                   </span>
-                  <span className="whitespace-nowrap text-slate-500">
+                  <span className="shrink-0 whitespace-nowrap text-mh-ink-muted">
                     {formatValue(value, metric, currency)}
                   </span>
                 </div>
-                <div className="ml-6 h-2 rounded-full bg-slate-100">
+                <div className="ml-6 h-1.5 rounded-full bg-mh-pink-light">
                   <div
-                    className="h-2 rounded-full"
+                    className="h-1.5 rounded-full"
                     style={{ width: `${widthPct}%`, backgroundColor: SEQUENTIAL_COLOR }}
                   />
                 </div>

@@ -31,13 +31,13 @@ export default function CompareControls({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="font-inter flex flex-wrap items-center gap-3">
       <button
         onClick={() => setParam("compare", enabled ? "off" : "on")}
-        className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+        className={`rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
           enabled
-            ? "bg-brand text-white"
-            : "border border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
+            ? "bg-mh-pink text-white"
+            : "border border-mh-border bg-mh-surface text-mh-ink-muted hover:bg-slate-50"
         }`}
       >
         Comparar períodos
@@ -45,7 +45,7 @@ export default function CompareControls({
 
       {enabled && (
         <>
-          <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+          <div className="flex items-center gap-1 rounded-xl border border-mh-border bg-mh-surface p-1 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
             {(
               [
                 { key: "previous", label: "Período anterior" },
@@ -55,10 +55,10 @@ export default function CompareControls({
               <button
                 key={opt.key}
                 onClick={() => setParam("compareMode", opt.key)}
-                className={`rounded px-3 py-1 text-sm font-medium ${
+                className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
                   mode === opt.key
-                    ? "bg-brand text-white"
-                    : "text-slate-600 hover:bg-slate-100"
+                    ? "bg-mh-pink text-white"
+                    : "text-mh-ink-muted hover:bg-slate-50"
                 }`}
               >
                 {opt.label}
@@ -66,7 +66,7 @@ export default function CompareControls({
             ))}
           </div>
           {compareFrom && compareTo && (
-            <span className="text-xs text-slate-500">
+            <span className="text-xs font-medium text-mh-ink-muted">
               vs {formatDisplayDate(compareFrom)} — {formatDisplayDate(compareTo)}
             </span>
           )}
