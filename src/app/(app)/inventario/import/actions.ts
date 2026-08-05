@@ -5,7 +5,6 @@ import { Readable } from "node:stream";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { resolveBusinessUnitId } from "@/lib/business-unit";
-import { fetchAllRows } from "@/lib/supabase/fetchAll";
 import {
   normalizeHeader,
   cellText,
@@ -257,24 +256,41 @@ export async function importMasterExcel(
   // viene del archivo).
   // ---------------------------------------------------------------------
   const skus = candidates.map((c) => c.sku);
-  // Con catálogos de más de 1000 productos, Supabase corta la respuesta a
-  // 1000 filas por consulta (aunque el filtro `.in()` pida más), así que
-  // esto se pagina para traer todos los existentes que coincidan.
-  const { data: existingProducts } = await fetchAllRows<{
+  // El filtro `.in("sku", skus)` va en la URL del pedido (GET): con
+  // catálogos grandes (miles de códigos) una sola consulta con todos los
+  // códigos juntos puede superar el largo máximo de URL y fallar. Por eso
+  // se pide en tandas chicas. IMPORTANTE: si alguna tanda falla, se corta
+  // la importación acá en vez de seguir con una lista de "productos
+  // existentes" incompleta — eso haría que productos que sí existen se
+  // traten como nuevos y les borre el costo/publicado/unidad de negocio/
+  // categoría que ya tenían (bug real: pasó exactamente esto).
+  const EXISTING_LOOKUP_CHUNK = 200;
+  const existingProducts: {
     sku: string;
     cost: number;
     is_web: boolean;
     business_unit_id: string | null;
     category_id: string | null;
     subcategory_id: string | null;
-  }>((from, to) =>
-    supabase
+  }[] = [];
+  for (let i = 0; i < skus.length; i += EXISTING_LOOKUP_CHUNK) {
+    const skuChunk = skus.slice(i, i + EXISTING_LOOKUP_CHUNK);
+    const { data, error } = await supabase
       .from("products")
       .select("sku, cost, is_web, business_unit_id, category_id, subcategory_id")
-      .in("sku", skus)
-      .order("sku")
-      .range(from, to)
-  );
+      .in("sku", skuChunk);
+    if (error) {
+      return {
+        ok: false,
+        message: `No se pudo verificar los productos existentes (para no borrar datos por error, se canceló la importación sin guardar nada): ${error.message}`,
+        totalRows,
+        created: 0,
+        updated: 0,
+        skipped,
+      };
+    }
+    existingProducts.push(...(data ?? []));
+  }
   const existingBySku = new Map(existingProducts.map((p) => [p.sku, p]));
 
   type UpsertRow = {
