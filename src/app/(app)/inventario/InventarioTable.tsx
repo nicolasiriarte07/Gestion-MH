@@ -274,6 +274,7 @@ export default function InventarioTable({
     patch:
       | { business_unit_id: string | null }
       | { category_id: string | null }
+      | { brand_id: string | null }
       | { is_web: boolean }
   ) {
     setRows((prev) => prev.map((p) => (p.id === product.id ? { ...p, ...patch } : p)));
@@ -484,8 +485,21 @@ export default function InventarioTable({
                   <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
                     <p className="truncate">{p.sku}</p>
                   </td>
-                  <td className="overflow-hidden px-3 py-3 text-mh-ink">
-                    <p className="truncate">{brandName(p.brand_id) || "—"}</p>
+                  <td className="overflow-hidden px-2 py-3" onClick={(e) => e.stopPropagation()}>
+                    <select
+                      value={p.brand_id ?? ""}
+                      onChange={(e) =>
+                        handleQuickEdit(p, { brand_id: e.target.value || null })
+                      }
+                      className="w-full cursor-pointer truncate rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-sm text-mh-ink hover:border-mh-border focus:border-mh-pink focus:outline-none"
+                    >
+                      <option value="">Sin marca</option>
+                      {brands.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.name}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                   <td className="overflow-hidden px-2 py-3" onClick={(e) => e.stopPropagation()}>
                     <select
