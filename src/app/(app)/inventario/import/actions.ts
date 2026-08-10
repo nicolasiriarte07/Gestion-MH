@@ -31,6 +31,7 @@ const COLUMN_MAP: Record<string, string> = {
   descricpion: "description",
   stock: "stock",
   costo: "cost",
+  "p costo": "cost",
   "p contado": "price_cash",
   "p web": "price_web",
   // "P. Venta" es el nombre viejo (de antes de separar contado/web); lo
@@ -347,10 +348,16 @@ export async function importMasterExcel(
           : null;
       }
 
+      // Un producto real nunca cuesta $0, así que una fila con Costo en 0
+      // se trata igual que una fila sin la columna: se preserva el costo
+      // que ya tenía el producto en vez de pisarlo con 0. Sin esto, un
+      // archivo que solo tiene el costo cargado para algunos productos (el
+      // resto en 0 porque nadie lo completó todavía) borraría el costo real
+      // de todos los demás al reimportarlo (bug real: pasó exactamente
+      // esto).
       const costText = record.cost?.trim();
-      const cost = costText
-        ? parseFlexibleNumber(costText)
-        : (existing?.cost ?? 0);
+      const parsedCost = costText ? parseFlexibleNumber(costText) : 0;
+      const cost = parsedCost > 0 ? parsedCost : (existing?.cost ?? 0);
 
       // Publicado es opcional igual que unidad de negocio/categoría: si el
       // archivo no trae la columna (o la fila la deja vacía), se preserva
