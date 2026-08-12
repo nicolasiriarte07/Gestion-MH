@@ -38,6 +38,7 @@ type ColumnKey =
   | "category"
   | "stock"
   | "cost"
+  | "cost_no_iva"
   | "price_cash"
   | "price_web"
   | "markup"
@@ -56,6 +57,7 @@ const COLUMN_DEFS: { key: ColumnKey; label: string; width: number }[] = [
   { key: "category", label: "Categoría", width: 160 },
   { key: "stock", label: "Stock", width: 80 },
   { key: "cost", label: "Costo", width: 100 },
+  { key: "cost_no_iva", label: "Costo S/IVA", width: 110 },
   { key: "price_cash", label: "P.Contado", width: 100 },
   { key: "price_web", label: "P.Web", width: 95 },
   { key: "markup", label: "M.UP", width: 80 },
@@ -87,6 +89,10 @@ function markupRatio(cost: number, price: number): number | null {
 
 function cogsRatio(cost: number, price: number): number | null {
   return price > 0 ? cost / price : null;
+}
+
+function costWithoutIva(cost: number, ivaRate: number): number {
+  return cost / (1 + ivaRate / 100);
 }
 
 function formatPercent(ratio: number | null): string {
@@ -221,6 +227,8 @@ export default function InventarioTable({
           return p.stock;
         case "cost":
           return p.cost;
+        case "cost_no_iva":
+          return costWithoutIva(p.cost, p.iva_rate);
         case "price_cash":
           return p.price_cash;
         case "price_web":
@@ -326,7 +334,7 @@ export default function InventarioTable({
     const basisLabel = MARKUP_BASIS_LABEL[markupBasis];
     const header = [
       "Código", "Descripción", "Marca", "Categoría", "Unidad de negocio",
-      "Stock", "Costo", "P. Contado", "P. Web",
+      "Stock", "Costo", "Costo S/IVA", "P. Contado", "P. Web",
       `Markup (sobre ${basisLabel})`, `COGS (sobre ${basisLabel})`,
       "Estado", "Publicado",
     ];
@@ -335,7 +343,7 @@ export default function InventarioTable({
         p.sku, p.description, brandName(p.brand_id) || "Sin marca",
         categoryName(p.category_id) || "Sin categoría",
         businessUnitName(p.business_unit_id) || "Sin asignar",
-        p.stock, p.cost, p.price_cash, p.price_web,
+        p.stock, p.cost, costWithoutIva(p.cost, p.iva_rate).toFixed(2), p.price_cash, p.price_web,
         formatPercent(markupRatio(p.cost, p[markupBasis])),
         formatPercent(cogsRatio(p.cost, p[markupBasis])),
         stockLabel(p.stock), p.is_web ? "Sí" : "No",
@@ -536,6 +544,9 @@ export default function InventarioTable({
                   <td className={`overflow-hidden px-3 py-3 font-bold ${stockTextClass(p.stock)}`}>{p.stock}</td>
                   <td className="overflow-hidden px-3 py-3 text-mh-ink">
                     <p className="truncate">{formatCurrency(p.cost)}</p>
+                  </td>
+                  <td className="overflow-hidden px-3 py-3 text-mh-ink">
+                    <p className="truncate">{formatCurrency(costWithoutIva(p.cost, p.iva_rate))}</p>
                   </td>
                   <td className="overflow-hidden px-3 py-3 font-semibold text-mh-ink">
                     <p className="truncate">{formatCurrency(p.price_cash)}</p>

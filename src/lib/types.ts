@@ -24,6 +24,7 @@ export type Product = {
   sku: string;
   description: string;
   cost: number;
+  iva_rate: number;
   price_cash: number;
   price_web: number;
   stock: number;

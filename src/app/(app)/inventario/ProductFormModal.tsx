@@ -16,6 +16,7 @@ function emptyInput(): ProductInput {
     sku: "",
     description: "",
     cost: 0,
+    iva_rate: 21,
     price_cash: 0,
     price_web: 0,
     stock: 0,
@@ -50,6 +51,7 @@ export default function ProductFormModal({
           sku: product.sku,
           description: product.description,
           cost: product.cost,
+          iva_rate: product.iva_rate,
           price_cash: product.price_cash,
           price_web: product.price_web,
           stock: product.stock,
@@ -184,7 +186,7 @@ export default function ProductFormModal({
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
           <div>
             <label className={labelClass}>Costo</label>
             <input
@@ -195,6 +197,17 @@ export default function ProductFormModal({
               onFocus={(e) => e.target.select()}
               onBlur={(e) => patch({ cost: parseFlexibleNumber(e.target.value) })}
             />
+          </div>
+          <div>
+            <label className={labelClass}>IVA</label>
+            <select
+              className={inputClass}
+              value={form.iva_rate}
+              onChange={(e) => patch({ iva_rate: Number(e.target.value) })}
+            >
+              <option value={21}>21%</option>
+              <option value={10.5}>10,5%</option>
+            </select>
           </div>
           <div>
             <label className={labelClass}>P. Contado</label>
