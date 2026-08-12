@@ -8,6 +8,7 @@ import {
   MoreHorizontal,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
 } from "lucide-react";
 import Card from "@/components/ds/Card";
 import Badge from "@/components/ds/Badge";
@@ -25,6 +26,10 @@ export type SupplierRow = Supplier & {
 };
 
 const ROWS_PER_PAGE = 50;
+
+function priceListHref(raw: string): string {
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+}
 
 export default function SuppliersTable({ rows }: { rows: SupplierRow[] }) {
   const [page, setPage] = useState(1);
@@ -106,7 +111,7 @@ export default function SuppliersTable({ rows }: { rows: SupplierRow[] }) {
       )}
 
       <div className="max-h-[640px] overflow-auto">
-        <table className="w-full min-w-[1000px] text-sm">
+        <table className="w-full min-w-[1120px] text-sm">
           <thead className="sticky top-0 z-10 bg-mh-bg">
             <tr className="border-b border-mh-border text-left text-xs font-semibold text-mh-ink-muted uppercase">
               <th className="w-11 px-4 py-3">
@@ -123,6 +128,7 @@ export default function SuppliersTable({ rows }: { rows: SupplierRow[] }) {
               <th className="px-3 py-3 font-semibold">Ciudad</th>
               <th className="px-3 py-3 font-semibold">Teléfono</th>
               <th className="px-3 py-3 font-semibold">Email</th>
+              <th className="px-3 py-3 font-semibold">Lista</th>
               <th className="px-3 py-3 font-semibold">Compras acum.</th>
               <th className="px-3 py-3 font-semibold">Saldo</th>
               <th className="px-3 py-3 font-semibold">Última compra</th>
@@ -165,6 +171,22 @@ export default function SuppliersTable({ rows }: { rows: SupplierRow[] }) {
                 </td>
                 <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
                   <p className="truncate">{row.email ?? "—"}</p>
+                </td>
+                <td className="overflow-hidden px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                  {row.price_list ? (
+                    <a
+                      href={priceListHref(row.price_list)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={row.price_list}
+                      className="flex items-center gap-1.5 text-xs font-bold text-mh-pink hover:underline"
+                    >
+                      <ExternalLink size={13} />
+                      Ver lista
+                    </a>
+                  ) : (
+                    <span className="text-mh-ink-muted">—</span>
+                  )}
                 </td>
                 <td className="overflow-hidden px-3 py-3 font-medium text-mh-ink">
                   <p className="truncate">{formatCurrency(row.totalPurchased)}</p>
@@ -215,7 +237,7 @@ export default function SuppliersTable({ rows }: { rows: SupplierRow[] }) {
             ))}
             {pagedRows.length === 0 && (
               <tr>
-                <td colSpan={12} className="px-6 py-16 text-center text-mh-ink-muted">
+                <td colSpan={13} className="px-6 py-16 text-center text-mh-ink-muted">
                   No hay proveedores que coincidan con los filtros.
                 </td>
               </tr>
