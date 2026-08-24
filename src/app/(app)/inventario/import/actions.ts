@@ -44,6 +44,12 @@ const COLUMN_MAP: Record<string, string> = {
   "en web": "is_web",
 };
 
+// IVA que se asume para un producto nuevo (el archivo no trae esa columna),
+// al convertir el Costo sin IVA del archivo a costo con IVA. Es la
+// alícuota general (21%); el usuario la puede ajustar después desde la
+// ficha del producto si corresponde 10,5%.
+const DEFAULT_IVA_RATE = 21;
+
 const TRUTHY_WEB_VALUES = new Set([
   "si",
   "s",
@@ -269,6 +275,7 @@ export async function importMasterExcel(
   const existingProducts: {
     sku: string;
     cost: number;
+    iva_rate: number;
     is_web: boolean;
     business_unit_id: string | null;
     category_id: string | null;
@@ -278,7 +285,7 @@ export async function importMasterExcel(
     const skuChunk = skus.slice(i, i + EXISTING_LOOKUP_CHUNK);
     const { data, error } = await supabase
       .from("products")
-      .select("sku, cost, is_web, business_unit_id, category_id, subcategory_id")
+      .select("sku, cost, iva_rate, is_web, business_unit_id, category_id, subcategory_id")
       .in("sku", skuChunk);
     if (error) {
       return {
@@ -348,6 +355,15 @@ export async function importMasterExcel(
           : null;
       }
 
+      // El Costo que traen estos archivos (columna Costo o P.Costo) viene
+      // SIN IVA (neto). El campo `cost` de la base guarda el costo CON IVA
+      // (de ahí se calcula "Costo S/IVA" en la tabla de Inventario,
+      // dividiendo por el IVA de cada producto). Por eso acá se hace la
+      // conversión inversa: costo con IVA = costo sin IVA * (1 +
+      // iva_rate/100), con el IVA que ya tiene el producto (21% si es
+      // nuevo, porque el archivo no trae esa columna). Así "Costo S/IVA"
+      // termina mostrando exactamente el valor que trae el archivo.
+      //
       // Un producto real nunca cuesta $0, así que una fila con Costo en 0
       // se trata igual que una fila sin la columna: se preserva el costo
       // que ya tenía el producto en vez de pisarlo con 0. Sin esto, un
@@ -355,9 +371,13 @@ export async function importMasterExcel(
       // resto en 0 porque nadie lo completó todavía) borraría el costo real
       // de todos los demás al reimportarlo (bug real: pasó exactamente
       // esto).
+      const ivaRate = existing?.iva_rate ?? DEFAULT_IVA_RATE;
       const costText = record.cost?.trim();
-      const parsedCost = costText ? parseFlexibleNumber(costText) : 0;
-      const cost = parsedCost > 0 ? parsedCost : (existing?.cost ?? 0);
+      const costWithoutIva = costText ? parseFlexibleNumber(costText) : 0;
+      const cost =
+        costWithoutIva > 0
+          ? costWithoutIva * (1 + ivaRate / 100)
+          : (existing?.cost ?? 0);
 
       // Publicado es opcional igual que unidad de negocio/categoría: si el
       // archivo no trae la columna (o la fila la deja vacía), se preserva
