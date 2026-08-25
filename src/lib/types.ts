@@ -180,3 +180,26 @@ export type SaleItem = {
   match_confidence: number | null;
   created_at: string;
 };
+
+export const CONTACT_CATEGORIES = [
+  "Carnicería",
+  "Panadería",
+  "Restaurant",
+  "Almacén",
+  "Supermercado",
+  "Otro",
+] as const;
+
+export type ContactCategory = (typeof CONTACT_CATEGORIES)[number];
+
+export type EquipamientoContact = {
+  id: string;
+  name: string;
+  business_name: string | null;
+  city: string | null;
+  phone: string | null;
+  category: ContactCategory;
+  last_contact_date: string | null;
+  created_at: string;
+  updated_at: string;
+};
