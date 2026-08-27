@@ -19,6 +19,7 @@ export default async function CrmEquipamientosPage() {
     supabase
       .from("equipamientos_contacts")
       .select("*")
+      .order("city", { ascending: true, nullsFirst: false })
       .order("name", { ascending: true })
       .range(from, to)
   );
