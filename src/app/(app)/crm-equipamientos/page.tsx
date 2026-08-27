@@ -29,29 +29,44 @@ export default async function CrmEquipamientosPage() {
         .order("name", { ascending: true })
         .range(from, to)
     ),
-    fetchAllRows<{ cliente: string; fecha: string | null }>((from, to) =>
-      supabase.from("equipamientos_sales").select("cliente, fecha").range(from, to)
+    fetchAllRows<{ cliente: string; fecha: string | null; monto: number }>((from, to) =>
+      supabase.from("equipamientos_sales").select("cliente, fecha, monto").range(from, to)
     ),
   ]);
 
-  // Última compra por cliente: el mayor `fecha` entre todas sus ventas
-  // (las fechas ISO "YYYY-MM-DD" comparan bien como texto). Se matchea
-  // por nombre normalizado porque "Cliente" en Ventas y "Nombre" en el
-  // CRM son campos de texto libre cargados a mano, no hay un ID en común.
-  const lastPurchaseByName = new Map<string, string>();
+  // Última compra, facturación total y cantidad de ventas por cliente,
+  // agregado en una sola pasada. Se matchea por nombre normalizado porque
+  // "Cliente" en Ventas y "Nombre" en el CRM son campos de texto libre
+  // cargados a mano, no hay un ID en común. Las fechas ISO "YYYY-MM-DD"
+  // comparan bien como texto.
+  const salesByName = new Map<
+    string,
+    { lastPurchaseDate: string | null; totalRevenue: number; salesCount: number }
+  >();
   for (const sale of sales ?? []) {
-    if (!sale.fecha) continue;
     const key = normalizeName(sale.cliente);
-    const current = lastPurchaseByName.get(key);
-    if (!current || sale.fecha > current) {
-      lastPurchaseByName.set(key, sale.fecha);
+    const agg = salesByName.get(key) ?? {
+      lastPurchaseDate: null,
+      totalRevenue: 0,
+      salesCount: 0,
+    };
+    agg.totalRevenue += sale.monto;
+    agg.salesCount += 1;
+    if (sale.fecha && (!agg.lastPurchaseDate || sale.fecha > agg.lastPurchaseDate)) {
+      agg.lastPurchaseDate = sale.fecha;
     }
+    salesByName.set(key, agg);
   }
 
-  const rows: ContactRow[] = (contacts ?? []).map((c) => ({
-    ...c,
-    lastPurchaseDate: lastPurchaseByName.get(normalizeName(c.name)) ?? null,
-  }));
+  const rows: ContactRow[] = (contacts ?? []).map((c) => {
+    const agg = salesByName.get(normalizeName(c.name));
+    return {
+      ...c,
+      lastPurchaseDate: agg?.lastPurchaseDate ?? null,
+      totalRevenue: agg?.totalRevenue ?? 0,
+      salesCount: agg?.salesCount ?? 0,
+    };
+  });
 
   const recentThreshold = daysAgoISO(RECENT_CONTACT_DAYS);
   const staleThreshold = daysAgoISO(STALE_CONTACT_DAYS);

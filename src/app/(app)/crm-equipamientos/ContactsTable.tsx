@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Pencil, Trash2, MoreHorizontal, ChevronLeft, ChevronRight, Phone } from "lucide-react";
 import Card from "@/components/ds/Card";
 import Badge, { type BadgeTone } from "@/components/ds/Badge";
+import { formatCurrency } from "@/lib/currency";
 import type { ContactCategory, EquipamientoContact } from "@/lib/types";
 import { deleteContact } from "./actions";
 import ContactFormModal from "./ContactFormModal";
@@ -26,7 +27,11 @@ function formatDate(iso: string | null): string {
   return `${d}/${m}/${y}`;
 }
 
-export type ContactRow = EquipamientoContact & { lastPurchaseDate: string | null };
+export type ContactRow = EquipamientoContact & {
+  lastPurchaseDate: string | null;
+  totalRevenue: number;
+  salesCount: number;
+};
 
 export default function ContactsTable({ rows }: { rows: ContactRow[] }) {
   const router = useRouter();
@@ -56,7 +61,7 @@ export default function ContactsTable({ rows }: { rows: ContactRow[] }) {
   return (
     <Card padding="none" className="font-inter overflow-hidden">
       <div className="max-h-[640px] overflow-auto">
-        <table className="w-full min-w-[980px] text-sm">
+        <table className="w-full min-w-[1180px] text-sm">
           <thead className="sticky top-0 z-10 bg-mh-bg">
             <tr className="border-b border-mh-border text-left text-xs font-semibold text-mh-ink-muted uppercase">
               <th className="px-4 py-3 font-semibold">Nombre</th>
@@ -66,6 +71,8 @@ export default function ContactsTable({ rows }: { rows: ContactRow[] }) {
               <th className="px-3 py-3 font-semibold">Rubro</th>
               <th className="px-3 py-3 font-semibold">Último contacto</th>
               <th className="px-3 py-3 font-semibold">Última compra</th>
+              <th className="px-3 py-3 font-semibold">Facturación total</th>
+              <th className="px-3 py-3 font-semibold">Cantidad de ventas</th>
               <th className="w-12 px-3 py-3" />
             </tr>
           </thead>
@@ -108,6 +115,12 @@ export default function ContactsTable({ rows }: { rows: ContactRow[] }) {
                 <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
                   <p className="truncate">{formatDate(row.lastPurchaseDate)}</p>
                 </td>
+                <td className="overflow-hidden px-3 py-3 font-semibold text-mh-ink">
+                  <p className="truncate">{formatCurrency(row.totalRevenue)}</p>
+                </td>
+                <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
+                  <p className="truncate">{row.salesCount}</p>
+                </td>
                 <td className="relative px-3 py-3" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => setOpenMenuId((id) => (id === row.id ? null : row.id))}
@@ -144,7 +157,7 @@ export default function ContactsTable({ rows }: { rows: ContactRow[] }) {
             ))}
             {pagedRows.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-6 py-16 text-center text-mh-ink-muted">
+                <td colSpan={10} className="px-6 py-16 text-center text-mh-ink-muted">
                   No hay contactos que coincidan con los filtros.
                 </td>
               </tr>
