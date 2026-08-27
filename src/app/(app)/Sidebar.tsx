@@ -13,6 +13,7 @@ import {
   Calculator,
   Percent,
   Contact,
+  Receipt,
   ChevronLeft,
   ChevronRight,
   CircleHelp,
@@ -29,6 +30,7 @@ const NAV_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/proveedores", label: "Proveedores", icon: Truck },
   { href: "/marketing", label: "Marketing", icon: Megaphone },
   { href: "/crm-equipamientos", label: "CRM Equipamientos", icon: Contact },
+  { href: "/ventas-equipamientos", label: "Ventas Equipamientos", icon: Receipt },
   { href: "/simulador-web", label: "Simulador Web", icon: Calculator },
   { href: "/descuentos", label: "Descuentos", icon: Percent },
 ];

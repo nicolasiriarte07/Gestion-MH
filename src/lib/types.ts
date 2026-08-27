@@ -203,3 +203,30 @@ export type EquipamientoContact = {
   created_at: string;
   updated_at: string;
 };
+
+export const SALE_PAYMENT_METHODS = [
+  "contado",
+  "pago semanal",
+  "tarjeta",
+  "cheque",
+] as const;
+
+export type SalePaymentMethod = (typeof SALE_PAYMENT_METHODS)[number];
+
+export type EquipamientoSale = {
+  id: string;
+  cliente: string;
+  comercio: string | null;
+  mes: string | null;
+  fecha: string | null;
+  producto: string;
+  categoria: string | null;
+  monto: number;
+  metodo_pago: SalePaymentMethod | null;
+  entrega_inicial: number;
+  cuota_semanal: number | null;
+  cobrado: boolean;
+  entregado: boolean;
+  created_at: string;
+  updated_at: string;
+};
