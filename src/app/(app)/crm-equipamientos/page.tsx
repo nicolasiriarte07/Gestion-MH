@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchAllRows } from "@/lib/supabase/fetchAll";
 import type { EquipamientoContact } from "@/lib/types";
 import ContactsView from "./ContactsView";
+import type { ContactRow } from "./ContactsTable";
 
 const RECENT_CONTACT_DAYS = 7;
 const STALE_CONTACT_DAYS = 30;
@@ -12,19 +13,45 @@ function daysAgoISO(days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+function normalizeName(name: string): string {
+  return name.trim().toLowerCase();
+}
+
 export default async function CrmEquipamientosPage() {
   const supabase = await createClient();
 
-  const { data: contacts } = await fetchAllRows<EquipamientoContact>((from, to) =>
-    supabase
-      .from("equipamientos_contacts")
-      .select("*")
-      .order("city", { ascending: true, nullsFirst: false })
-      .order("name", { ascending: true })
-      .range(from, to)
-  );
+  const [{ data: contacts }, { data: sales }] = await Promise.all([
+    fetchAllRows<EquipamientoContact>((from, to) =>
+      supabase
+        .from("equipamientos_contacts")
+        .select("*")
+        .order("city", { ascending: true, nullsFirst: false })
+        .order("name", { ascending: true })
+        .range(from, to)
+    ),
+    fetchAllRows<{ cliente: string; fecha: string | null }>((from, to) =>
+      supabase.from("equipamientos_sales").select("cliente, fecha").range(from, to)
+    ),
+  ]);
 
-  const rows = contacts ?? [];
+  // Última compra por cliente: el mayor `fecha` entre todas sus ventas
+  // (las fechas ISO "YYYY-MM-DD" comparan bien como texto). Se matchea
+  // por nombre normalizado porque "Cliente" en Ventas y "Nombre" en el
+  // CRM son campos de texto libre cargados a mano, no hay un ID en común.
+  const lastPurchaseByName = new Map<string, string>();
+  for (const sale of sales ?? []) {
+    if (!sale.fecha) continue;
+    const key = normalizeName(sale.cliente);
+    const current = lastPurchaseByName.get(key);
+    if (!current || sale.fecha > current) {
+      lastPurchaseByName.set(key, sale.fecha);
+    }
+  }
+
+  const rows: ContactRow[] = (contacts ?? []).map((c) => ({
+    ...c,
+    lastPurchaseDate: lastPurchaseByName.get(normalizeName(c.name)) ?? null,
+  }));
 
   const recentThreshold = daysAgoISO(RECENT_CONTACT_DAYS);
   const staleThreshold = daysAgoISO(STALE_CONTACT_DAYS);

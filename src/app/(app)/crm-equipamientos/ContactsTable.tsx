@@ -26,7 +26,9 @@ function formatDate(iso: string | null): string {
   return `${d}/${m}/${y}`;
 }
 
-export default function ContactsTable({ rows }: { rows: EquipamientoContact[] }) {
+export type ContactRow = EquipamientoContact & { lastPurchaseDate: string | null };
+
+export default function ContactsTable({ rows }: { rows: ContactRow[] }) {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -54,7 +56,7 @@ export default function ContactsTable({ rows }: { rows: EquipamientoContact[] })
   return (
     <Card padding="none" className="font-inter overflow-hidden">
       <div className="max-h-[640px] overflow-auto">
-        <table className="w-full min-w-[880px] text-sm">
+        <table className="w-full min-w-[980px] text-sm">
           <thead className="sticky top-0 z-10 bg-mh-bg">
             <tr className="border-b border-mh-border text-left text-xs font-semibold text-mh-ink-muted uppercase">
               <th className="px-4 py-3 font-semibold">Nombre</th>
@@ -63,6 +65,7 @@ export default function ContactsTable({ rows }: { rows: EquipamientoContact[] })
               <th className="px-3 py-3 font-semibold">Teléfono</th>
               <th className="px-3 py-3 font-semibold">Rubro</th>
               <th className="px-3 py-3 font-semibold">Último contacto</th>
+              <th className="px-3 py-3 font-semibold">Última compra</th>
               <th className="w-12 px-3 py-3" />
             </tr>
           </thead>
@@ -102,6 +105,9 @@ export default function ContactsTable({ rows }: { rows: EquipamientoContact[] })
                 <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
                   <p className="truncate">{formatDate(row.last_contact_date)}</p>
                 </td>
+                <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
+                  <p className="truncate">{formatDate(row.lastPurchaseDate)}</p>
+                </td>
                 <td className="relative px-3 py-3" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => setOpenMenuId((id) => (id === row.id ? null : row.id))}
@@ -138,7 +144,7 @@ export default function ContactsTable({ rows }: { rows: EquipamientoContact[] })
             ))}
             {pagedRows.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-6 py-16 text-center text-mh-ink-muted">
+                <td colSpan={8} className="px-6 py-16 text-center text-mh-ink-muted">
                   No hay contactos que coincidan con los filtros.
                 </td>
               </tr>

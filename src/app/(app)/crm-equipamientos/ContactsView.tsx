@@ -3,10 +3,10 @@
 import { useMemo, useState } from "react";
 import { Users, CalendarCheck, CalendarClock } from "lucide-react";
 import KpiCard from "@/components/ds/KpiCard";
-import type { ContactCategory, EquipamientoContact } from "@/lib/types";
+import type { ContactCategory } from "@/lib/types";
 import ContactsHeader from "./ContactsHeader";
 import ContactFilterBar from "./ContactFilterBar";
-import ContactsTable from "./ContactsTable";
+import ContactsTable, { type ContactRow } from "./ContactsTable";
 
 export default function ContactsView({
   rows,
@@ -14,7 +14,7 @@ export default function ContactsView({
   contactedThisWeek,
   staleCount,
 }: {
-  rows: EquipamientoContact[];
+  rows: ContactRow[];
   totalCount: number;
   contactedThisWeek: number;
   staleCount: number;
