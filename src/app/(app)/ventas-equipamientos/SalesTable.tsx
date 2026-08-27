@@ -7,7 +7,7 @@ import Card from "@/components/ds/Card";
 import Badge from "@/components/ds/Badge";
 import { formatCurrency } from "@/lib/currency";
 import type { EquipamientoSale } from "@/lib/types";
-import { deleteSale, updateSale } from "./actions";
+import { deleteSale } from "./actions";
 import SaleFormModal from "./SaleFormModal";
 
 const ROWS_PER_PAGE = 50;
@@ -36,15 +36,6 @@ export default function SalesTable({
     currentPage * ROWS_PER_PAGE
   );
 
-  async function handleToggle(sale: EquipamientoSale, field: "cobrado" | "entregado") {
-    const result = await updateSale(sale.id, { [field]: !sale[field] });
-    if (result.error) {
-      alert(result.error);
-      return;
-    }
-    router.refresh();
-  }
-
   async function handleDelete(sale: EquipamientoSale) {
     if (!confirm(`¿Eliminar la venta de "${sale.cliente}" (${sale.producto})?`)) return;
     const result = await deleteSale(sale.id);
@@ -58,7 +49,7 @@ export default function SalesTable({
   return (
     <Card padding="none" className="font-inter overflow-hidden">
       <div className="max-h-[640px] overflow-auto">
-        <table className="w-full min-w-[1200px] text-sm">
+        <table className="w-full min-w-[1080px] text-sm">
           <thead className="sticky top-0 z-10 bg-mh-bg">
             <tr className="border-b border-mh-border text-left text-xs font-semibold text-mh-ink-muted uppercase">
               <th className="px-4 py-3 font-semibold">Cliente</th>
@@ -70,7 +61,6 @@ export default function SalesTable({
               <th className="px-3 py-3 font-semibold">Método</th>
               <th className="px-3 py-3 font-semibold">Entrega inicial</th>
               <th className="px-3 py-3 font-semibold">Cuota semanal</th>
-              <th className="px-3 py-3 font-semibold">Estado</th>
               <th className="w-20 px-3 py-3" />
             </tr>
           </thead>
@@ -127,28 +117,6 @@ export default function SalesTable({
                     <p className="truncate text-xs">{row.semanas_pagadas} sem. pagadas</p>
                   )}
                 </td>
-                <td className="overflow-hidden px-3 py-3">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-mh-ink">
-                      <input
-                        type="checkbox"
-                        className="accent-mh-pink"
-                        checked={row.cobrado}
-                        onChange={() => handleToggle(row, "cobrado")}
-                      />
-                      Cobrado
-                    </label>
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-mh-ink">
-                      <input
-                        type="checkbox"
-                        className="accent-mh-pink"
-                        checked={row.entregado}
-                        onChange={() => handleToggle(row, "entregado")}
-                      />
-                      Entregado
-                    </label>
-                  </div>
-                </td>
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-1">
                     <button
@@ -171,7 +139,7 @@ export default function SalesTable({
             ))}
             {pagedRows.length === 0 && (
               <tr>
-                <td colSpan={11} className="px-6 py-16 text-center text-mh-ink-muted">
+                <td colSpan={10} className="px-6 py-16 text-center text-mh-ink-muted">
                   No hay ventas que coincidan con los filtros.
                 </td>
               </tr>
