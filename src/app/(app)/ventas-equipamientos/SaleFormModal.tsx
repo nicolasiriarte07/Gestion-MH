@@ -23,6 +23,8 @@ function emptyInput(): SaleInput {
     metodo_pago: null,
     entrega_inicial: 0,
     cuota_semanal: null,
+    semanas_pagadas: 0,
+    comentario: null,
     cobrado: false,
     entregado: false,
   };
@@ -52,6 +54,8 @@ export default function SaleFormModal({
           metodo_pago: sale.metodo_pago,
           entrega_inicial: sale.entrega_inicial,
           cuota_semanal: sale.cuota_semanal,
+          semanas_pagadas: sale.semanas_pagadas,
+          comentario: sale.comentario,
           cobrado: sale.cobrado,
           entregado: sale.entregado,
         }
@@ -210,6 +214,27 @@ export default function SaleFormModal({
               ))}
             </select>
           </div>
+        </div>
+
+        <div>
+          <label className={labelClass}>Semanas pagadas</label>
+          <input
+            type="number"
+            min={0}
+            className={inputClass}
+            value={form.semanas_pagadas}
+            onChange={(e) => patch({ semanas_pagadas: Number(e.target.value) || 0 })}
+          />
+        </div>
+
+        <div>
+          <label className={labelClass}>Comentario</label>
+          <textarea
+            rows={2}
+            className={inputClass}
+            value={form.comentario ?? ""}
+            onChange={(e) => patch({ comentario: e.target.value || null })}
+          />
         </div>
 
         <div className="flex items-center gap-6">

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Pencil, Trash2, ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
 import Card from "@/components/ds/Card";
 import Badge from "@/components/ds/Badge";
 import { formatCurrency } from "@/lib/currency";
@@ -90,7 +90,14 @@ export default function SalesTable({
                   <p className="truncate">{formatDate(row.fecha)}</p>
                 </td>
                 <td className="overflow-hidden px-3 py-3 text-mh-ink">
-                  <p className="truncate">{row.producto}</p>
+                  <p className="flex items-center gap-1.5 truncate">
+                    <span className="truncate">{row.producto}</span>
+                    {row.comentario && (
+                      <span title={row.comentario} className="shrink-0 text-mh-ink-muted">
+                        <MessageSquare size={13} />
+                      </span>
+                    )}
+                  </p>
                 </td>
                 <td className="overflow-hidden px-3 py-3">
                   {row.categoria ? (
@@ -116,6 +123,9 @@ export default function SalesTable({
                   <p className="truncate">
                     {row.cuota_semanal ? formatCurrency(row.cuota_semanal) : "—"}
                   </p>
+                  {row.semanas_pagadas > 0 && (
+                    <p className="truncate text-xs">{row.semanas_pagadas} sem. pagadas</p>
+                  )}
                 </td>
                 <td className="overflow-hidden px-3 py-3">
                   <div className="flex flex-col gap-1.5">

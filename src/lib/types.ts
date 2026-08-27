@@ -225,6 +225,8 @@ export type EquipamientoSale = {
   metodo_pago: SalePaymentMethod | null;
   entrega_inicial: number;
   cuota_semanal: number | null;
+  semanas_pagadas: number;
+  comentario: string | null;
   cobrado: boolean;
   entregado: boolean;
   created_at: string;
