@@ -17,5 +17,6 @@ export const CONTENT_TONE_CLASSES: Record<ContentType, string> = {
 
 export const VERTICAL_TONE_CLASSES: Record<string, string> = {
   "MUNDO HOGAR": "bg-mh-pink-light text-mh-pink",
-  "EQUIPAMIENTOS MH": "bg-mh-blue-light text-mh-blue",
+  "EQUIPAMIENTOS MH": "bg-violet-100 text-violet-700",
+  Ecommerce: "bg-mh-blue-light text-mh-blue",
 };

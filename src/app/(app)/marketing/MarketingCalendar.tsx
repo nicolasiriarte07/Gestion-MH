@@ -348,7 +348,7 @@ export default function MarketingCalendar({
                         </td>
                         <td className="overflow-hidden px-3 py-3">
                           <select
-                            className={`w-full rounded border border-transparent px-1.5 py-1.5 hover:border-mh-border focus:border-mh-pink focus:outline-none ${
+                            className={`w-full rounded border border-transparent px-1.5 py-1.5 uppercase hover:border-mh-border focus:border-mh-pink focus:outline-none ${
                               VERTICAL_TONE_CLASSES[businessUnitLabel] ?? ""
                             }`}
                             value={row.business_unit_id ?? ""}
