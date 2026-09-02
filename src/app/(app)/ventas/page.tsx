@@ -87,6 +87,21 @@ type CustomerRow = {
   line_count: number;
 };
 
+// De un `sales_timeseries` con bucket "month" para un año, arma un array
+// de 12 posiciones (Ene=0..Dic=11) en USD; los meses sin ventas (no
+// vienen en el resultado del RPC) quedan en 0.
+function monthlyUsdSeries(
+  rows: { bucket_start: string; total_usd: number }[],
+  year: number
+): number[] {
+  const byMonth = new Map<number, number>();
+  for (const r of rows) {
+    const d = new Date(`${r.bucket_start}T00:00:00Z`);
+    if (d.getUTCFullYear() === year) byMonth.set(d.getUTCMonth(), r.total_usd);
+  }
+  return Array.from({ length: 12 }, (_, i) => byMonth.get(i) ?? 0);
+}
+
 export default async function VentasPage({
   searchParams,
 }: {
@@ -112,6 +127,12 @@ export default async function VentasPage({
     ? computeCompareRange(from, to, compareMode)
     : null;
 
+  // "Comparación Interanual": fijo al año calendario actual vs el
+  // anterior completo, en USD — independiente del filtro de período de
+  // arriba (que puede ser cualquier rango de fechas).
+  const currentYear = new Date().getUTCFullYear();
+  const previousYear = currentYear - 1;
+
   const supabase = await createClient();
 
   const [
@@ -128,6 +149,8 @@ export default async function VentasPage({
     { data: businessUnits },
     { count: totalLines },
     { count: pendingCount },
+    { data: currentYearTimeseries },
+    { data: previousYearTimeseries },
   ] = await Promise.all([
     supabase.rpc("sales_summary", { from_date: from, to_date: to }),
     compareRange
@@ -154,6 +177,16 @@ export default async function VentasPage({
       .from("sale_items")
       .select("id", { count: "exact", head: true })
       .eq("match_status", "pending"),
+    supabase.rpc("sales_timeseries", {
+      from_date: `${currentYear}-01-01`,
+      to_date: `${currentYear}-12-31`,
+      bucket: "month",
+    }),
+    supabase.rpc("sales_timeseries", {
+      from_date: `${previousYear}-01-01`,
+      to_date: `${previousYear}-12-31`,
+      bucket: "month",
+    }),
   ]);
 
   const summary: SalesSummary = summaryData?.[0] ?? {
@@ -258,6 +291,10 @@ export default async function VentasPage({
       byWeekdayRows={byWeekdayRows}
       byCustomerRows={byCustomerRows}
       timeseries={(timeseriesData ?? []) as TimeSeriesRow[]}
+      currentYear={currentYear}
+      previousYear={previousYear}
+      currentYearMonthly={monthlyUsdSeries(currentYearTimeseries ?? [], currentYear)}
+      previousYearMonthly={monthlyUsdSeries(previousYearTimeseries ?? [], previousYear)}
     />
   );
 }
