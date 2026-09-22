@@ -19,6 +19,7 @@ type SearchParams = {
   q?: string;
   stockMin?: string;
   stockMax?: string;
+  stockAll?: string;
   priceWebMin?: string;
   priceWebMax?: string;
 };
@@ -57,7 +58,7 @@ export default async function InventarioPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { bu, cat, brand, web, q, stockMin, stockMax, priceWebMin, priceWebMax } =
+  const { bu, cat, brand, web, q, stockMin, stockMax, stockAll, priceWebMin, priceWebMax } =
     await searchParams;
   const supabase = await createClient();
 
@@ -96,7 +97,12 @@ export default async function InventarioPage({
     if (web === "yes") query = query.eq("is_web", true);
     if (web === "no") query = query.eq("is_web", false);
     if (q) query = query.or(`description.ilike.%${q}%,sku.ilike.%${q}%`);
-    if (stockMin) query = query.gte("stock", Number(stockMin));
+    // Por defecto (sin filtro de stock elegido a mano) se ocultan los
+    // productos con 0 de stock: hay que elegir "Sin stock" o "Todos" en el
+    // filtro Estado (o poner un "desde" propio) para verlos.
+    if (stockAll !== "1") {
+      query = query.gte("stock", stockMin ? Number(stockMin) : 1);
+    }
     if (stockMax) query = query.lte("stock", Number(stockMax));
     if (priceWebMin) query = query.gte("price_web", Number(priceWebMin));
     if (priceWebMax) query = query.lte("price_web", Number(priceWebMax));
@@ -192,7 +198,7 @@ export default async function InventarioPage({
       )}
 
       <InventarioTable
-        key={`${bu ?? ""}|${cat ?? ""}|${brand ?? ""}|${web ?? ""}|${q ?? ""}|${stockMin ?? ""}|${stockMax ?? ""}|${priceWebMin ?? ""}|${priceWebMax ?? ""}`}
+        key={`${bu ?? ""}|${cat ?? ""}|${brand ?? ""}|${web ?? ""}|${q ?? ""}|${stockMin ?? ""}|${stockMax ?? ""}|${stockAll ?? ""}|${priceWebMin ?? ""}|${priceWebMax ?? ""}`}
         initialProducts={filteredProducts}
         businessUnits={(businessUnits ?? []) as BusinessUnit[]}
         categories={(categories ?? []) as Category[]}

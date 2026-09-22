@@ -5,17 +5,24 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import type { BusinessUnit, Category, Brand } from "@/lib/types";
 
+// Por defecto (sin nada elegido) la tabla ya solo muestra productos con
+// stock >= 1 (ver page.tsx); para ver los de 0 hay que elegir "Sin stock"
+// o "Todos" a propósito acá.
 const ESTADO_OPTIONS = [
-  { value: "", label: "Estado: todos" },
-  { value: "en_stock", label: "En stock" },
-  { value: "bajo", label: "Stock bajo" },
+  { value: "", label: "Estado: con stock" },
+  { value: "en_stock", label: "En stock (2+)" },
+  { value: "bajo", label: "Stock bajo (1)" },
   { value: "sin_stock", label: "Sin stock" },
+  { value: "todos", label: "Todos (incluye sin stock)" },
 ];
 
 // El filtro "Estado" es una traducción amigable de los mismos
 // stockMin/stockMax que ya entiende la tabla (no es un campo nuevo en la
-// base): sin stock = 0, stock bajo = 1 unidad, en stock = 2 o más.
+// base): sin stock = 0, stock bajo = 1 unidad, en stock = 2 o más, todos =
+// sin filtro de stock (stockAll=1, la única forma de ver los de 0 junto
+// con el resto).
 function estadoFromParams(searchParams: URLSearchParams): string {
+  if (searchParams.get("stockAll") === "1") return "todos";
   const min = searchParams.get("stockMin");
   const max = searchParams.get("stockMax");
   if (min === "0" && max === "0") return "sin_stock";
@@ -24,16 +31,20 @@ function estadoFromParams(searchParams: URLSearchParams): string {
   return "";
 }
 
-function paramsForEstado(value: string): { stockMin: string; stockMax: string } {
+function paramsForEstado(
+  value: string
+): { stockMin: string; stockMax: string; stockAll: string } {
   switch (value) {
     case "sin_stock":
-      return { stockMin: "0", stockMax: "0" };
+      return { stockMin: "0", stockMax: "0", stockAll: "" };
     case "bajo":
-      return { stockMin: "1", stockMax: "1" };
+      return { stockMin: "1", stockMax: "1", stockAll: "" };
     case "en_stock":
-      return { stockMin: "2", stockMax: "" };
+      return { stockMin: "2", stockMax: "", stockAll: "" };
+    case "todos":
+      return { stockMin: "", stockMax: "", stockAll: "1" };
     default:
-      return { stockMin: "", stockMax: "" };
+      return { stockMin: "", stockMax: "", stockAll: "" };
   }
 }
 
@@ -76,7 +87,7 @@ export default function InventarioFilterBar({
   }
 
   const hasFilters = [...searchParams.keys()].some((k) =>
-    ["q", "bu", "cat", "brand", "web", "stockMin", "stockMax", "priceWebMin", "priceWebMax"].includes(k)
+    ["q", "bu", "cat", "brand", "web", "stockMin", "stockMax", "stockAll", "priceWebMin", "priceWebMax"].includes(k)
   );
 
   return (
