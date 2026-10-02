@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { fetchAllRows } from "@/lib/supabase/fetchAll";
-import type { EquipamientoContact } from "@/lib/types";
-import ContactsView from "./ContactsView";
+import type { EquipamientoContact, EquipamientoSale } from "@/lib/types";
+import CrmEquipamientosView from "./CrmEquipamientosView";
 import type { ContactRow } from "./ContactsTable";
 
 const RECENT_CONTACT_DAYS = 7;
@@ -29,8 +29,12 @@ export default async function CrmEquipamientosPage() {
         .order("name", { ascending: true })
         .range(from, to)
     ),
-    fetchAllRows<{ cliente: string; fecha: string | null; monto: number }>((from, to) =>
-      supabase.from("equipamientos_sales").select("cliente, fecha, monto").range(from, to)
+    fetchAllRows<EquipamientoSale>((from, to) =>
+      supabase
+        .from("equipamientos_sales")
+        .select("*")
+        .order("fecha", { ascending: false })
+        .range(from, to)
     ),
   ]);
 
@@ -79,12 +83,19 @@ export default async function CrmEquipamientosPage() {
     (c) => !c.last_contact_date || c.last_contact_date < staleThreshold
   ).length;
 
+  const salesRows = sales ?? [];
+  const salesCategoryOptions = [
+    ...new Set(salesRows.map((s) => s.categoria).filter((c): c is string => !!c)),
+  ].sort();
+
   return (
-    <ContactsView
-      rows={rows}
+    <CrmEquipamientosView
+      contactRows={rows}
       totalCount={totalCount}
       contactedThisWeek={contactedThisWeek}
       staleCount={staleCount}
+      salesRows={salesRows}
+      salesCategoryOptions={salesCategoryOptions}
     />
   );
 }
