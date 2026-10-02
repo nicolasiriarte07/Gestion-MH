@@ -21,7 +21,7 @@ import { VentasBreakdownCard } from "./VentasBreakdownCard";
 import { PieChart } from "./PieChart";
 import { WeekdayChart, type WeekdayRow } from "./WeekdayChart";
 import { TimeSeriesChart, type TimeSeriesRow } from "./TimeSeriesChart";
-import YearComparisonChart from "./YearComparisonChart";
+import YearComparisonChart, { type YearSeries } from "./YearComparisonChart";
 import { TopCustomersCard } from "./TopCustomersCard";
 import type { BreakdownRow } from "./BreakdownCard";
 
@@ -119,10 +119,7 @@ export default function VentasDashboard({
   byWeekdayRows,
   byCustomerRows,
   timeseries,
-  currentYear,
-  previousYear,
-  currentYearMonthly,
-  previousYearMonthly,
+  yearComparisonSeries,
 }: {
   totalLines: number;
   pendingCount: number;
@@ -145,10 +142,7 @@ export default function VentasDashboard({
   byWeekdayRows: WeekdayRow[];
   byCustomerRows: BreakdownRow[];
   timeseries: TimeSeriesRow[];
-  currentYear: number;
-  previousYear: number;
-  currentYearMonthly: number[];
-  previousYearMonthly: number[];
+  yearComparisonSeries: YearSeries[];
 }) {
   const total = currency === "usd" ? summary.total_usd : summary.total_ars;
   const avgTicket = summary.line_count > 0 ? total / summary.line_count : 0;
@@ -273,12 +267,7 @@ export default function VentasDashboard({
             currency={currency}
           />
 
-          <YearComparisonChart
-            currentYear={currentYear}
-            previousYear={previousYear}
-            currentYearMonthly={currentYearMonthly}
-            previousYearMonthly={previousYearMonthly}
-          />
+          <YearComparisonChart series={yearComparisonSeries} />
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <PieChart

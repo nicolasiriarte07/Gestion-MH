@@ -6,6 +6,7 @@ import type { Metric, Currency } from "./MetricControls";
 import type { CompareMode } from "./CompareControls";
 import type { WeekdayRow } from "./WeekdayChart";
 import type { TimeSeriesRow } from "./TimeSeriesChart";
+import type { YearSeries } from "./YearComparisonChart";
 import VentasDashboard, { type Bucket, type SalesSummary } from "./VentasDashboard";
 
 // "previous": mismo largo de días, inmediatamente antes del período
@@ -127,11 +128,12 @@ export default async function VentasPage({
     ? computeCompareRange(from, to, compareMode)
     : null;
 
-  // "Comparación Interanual": fijo al año calendario actual vs el
-  // anterior completo, en USD — independiente del filtro de período de
-  // arriba (que puede ser cualquier rango de fechas).
+  // "Comparación Interanual": fijo a los 3 años calendario más recientes
+  // (actual y los 2 anteriores) completos, en USD — independiente del
+  // filtro de período de arriba (que puede ser cualquier rango de
+  // fechas).
   const currentYear = new Date().getUTCFullYear();
-  const previousYear = currentYear - 1;
+  const comparisonYears = [currentYear - 2, currentYear - 1, currentYear];
 
   const supabase = await createClient();
 
@@ -149,8 +151,6 @@ export default async function VentasPage({
     { data: businessUnits },
     { count: totalLines },
     { count: pendingCount },
-    { data: currentYearTimeseries },
-    { data: previousYearTimeseries },
   ] = await Promise.all([
     supabase.rpc("sales_summary", { from_date: from, to_date: to }),
     compareRange
@@ -177,17 +177,21 @@ export default async function VentasPage({
       .from("sale_items")
       .select("id", { count: "exact", head: true })
       .eq("match_status", "pending"),
-    supabase.rpc("sales_timeseries", {
-      from_date: `${currentYear}-01-01`,
-      to_date: `${currentYear}-12-31`,
-      bucket: "month",
-    }),
-    supabase.rpc("sales_timeseries", {
-      from_date: `${previousYear}-01-01`,
-      to_date: `${previousYear}-12-31`,
-      bucket: "month",
-    }),
   ]);
+
+  const yearlyTimeseries = await Promise.all(
+    comparisonYears.map((year) =>
+      supabase.rpc("sales_timeseries", {
+        from_date: `${year}-01-01`,
+        to_date: `${year}-12-31`,
+        bucket: "month",
+      })
+    )
+  );
+  const yearComparisonSeries: YearSeries[] = comparisonYears.map((year, i) => ({
+    year,
+    monthly: monthlyUsdSeries(yearlyTimeseries[i].data ?? [], year),
+  }));
 
   const summary: SalesSummary = summaryData?.[0] ?? {
     total_ars: 0,
@@ -291,10 +295,7 @@ export default async function VentasPage({
       byWeekdayRows={byWeekdayRows}
       byCustomerRows={byCustomerRows}
       timeseries={(timeseriesData ?? []) as TimeSeriesRow[]}
-      currentYear={currentYear}
-      previousYear={previousYear}
-      currentYearMonthly={monthlyUsdSeries(currentYearTimeseries ?? [], currentYear)}
-      previousYearMonthly={monthlyUsdSeries(previousYearTimeseries ?? [], previousYear)}
+      yearComparisonSeries={yearComparisonSeries}
     />
   );
 }

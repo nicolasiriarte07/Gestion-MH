@@ -11,8 +11,17 @@ const MONTH_LABELS = [
   "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
 ];
 
-const CURRENT_YEAR_COLOR = "#f3437e";
-const PREVIOUS_YEAR_COLOR = "#f7b8d1";
+export type YearSeries = { year: number; monthly: number[] };
+
+// Rampa secuencial de un solo hue (rosa MH), de más clara (año más
+// viejo) a más oscura/saturada (año más reciente) — recencia = más
+// énfasis visual. Si hay menos de 3 series se usan los últimos N tonos,
+// así 2 series quedan igual que antes (claro + rosa de marca).
+const COLOR_RAMP = ["#fcd3e4", "#f7b8d1", "#f3437e"];
+
+function colorsFor(count: number): string[] {
+  return COLOR_RAMP.slice(Math.max(0, COLOR_RAMP.length - count));
+}
 
 function formatScaled(value: number, divisor: number, suffix: string): string {
   const scaled = value / divisor;
@@ -46,23 +55,20 @@ function buildPath(
     .join(" ");
 }
 
-export default function YearComparisonChart({
-  currentYear,
-  previousYear,
-  currentYearMonthly,
-  previousYearMonthly,
-}: {
-  currentYear: number;
-  previousYear: number;
-  currentYearMonthly: number[];
-  previousYearMonthly: number[];
-}) {
-  const max = Math.max(...currentYearMonthly, ...previousYearMonthly, 1);
+export default function YearComparisonChart({ series }: { series: YearSeries[] }) {
+  const colors = colorsFor(series.length);
+  const allValues = series.flatMap((s) => s.monthly);
+  const max = Math.max(...allValues, 1);
   const plotWidth = Math.max(MONTH_LABELS.length * POINT_SPACING, 300);
   const width = plotWidth + LEFT_PADDING;
   const svgHeight = CHART_HEIGHT + TOP_PADDING;
 
   const gridValues = Array.from({ length: GRID_STEPS + 1 }, (_, i) => (max / GRID_STEPS) * i);
+  const years = series.map((s) => s.year);
+  const yearsLabel =
+    years.length > 1
+      ? `${years.slice(0, -1).join(", ")} y ${years[years.length - 1]}`
+      : String(years[0] ?? "");
 
   function pointX(i: number): number {
     return (
@@ -80,7 +86,7 @@ export default function YearComparisonChart({
     <div className="font-inter min-w-0 rounded-2xl border border-mh-border bg-mh-surface p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
       <p className="text-sm font-bold text-mh-ink">Comparación Interanual</p>
       <p className="mb-4 text-xs font-medium text-mh-ink-muted">
-        Comparación de facturación mensual en USD entre {previousYear} y {currentYear}
+        Comparación de facturación mensual en USD entre {yearsLabel}
       </p>
 
       <div className="overflow-x-auto">
@@ -104,45 +110,33 @@ export default function YearComparisonChart({
             );
           })}
 
-          <path
-            d={buildPath(previousYearMonthly, max, plotWidth, svgHeight)}
-            fill="none"
-            stroke={PREVIOUS_YEAR_COLOR}
-            strokeWidth={2.5}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-          <path
-            d={buildPath(currentYearMonthly, max, plotWidth, svgHeight)}
-            fill="none"
-            stroke={CURRENT_YEAR_COLOR}
-            strokeWidth={2.5}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
+          {/* Líneas: la más vieja primero (atrás), la más reciente al
+              final (arriba y más oscura), para que quede más visible. */}
+          {series.map((s, idx) => (
+            <path
+              key={`line-${s.year}`}
+              d={buildPath(s.monthly, max, plotWidth, svgHeight)}
+              fill="none"
+              stroke={colors[idx]}
+              strokeWidth={2.5}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+          ))}
 
-          {previousYearMonthly.map((value, i) => (
-            <circle
-              key={`prev-${i}`}
-              cx={pointX(i)}
-              cy={pointY(value)}
-              r={3}
-              fill={PREVIOUS_YEAR_COLOR}
-            >
-              <title>{`${MONTH_LABELS[i]} ${previousYear}: ${formatCurrency(value, "usd")}`}</title>
-            </circle>
-          ))}
-          {currentYearMonthly.map((value, i) => (
-            <circle
-              key={`cur-${i}`}
-              cx={pointX(i)}
-              cy={pointY(value)}
-              r={3}
-              fill={CURRENT_YEAR_COLOR}
-            >
-              <title>{`${MONTH_LABELS[i]} ${currentYear}: ${formatCurrency(value, "usd")}`}</title>
-            </circle>
-          ))}
+          {series.map((s, idx) =>
+            s.monthly.map((value, i) => (
+              <circle
+                key={`pt-${s.year}-${i}`}
+                cx={pointX(i)}
+                cy={pointY(value)}
+                r={3}
+                fill={colors[idx]}
+              >
+                <title>{`${MONTH_LABELS[i]} ${s.year}: ${formatCurrency(value, "usd")}`}</title>
+              </circle>
+            ))
+          )}
 
           {MONTH_LABELS.map((label, i) => (
             <text
@@ -160,20 +154,12 @@ export default function YearComparisonChart({
       </div>
 
       <div className="mt-3 flex items-center justify-center gap-6 text-xs font-semibold text-mh-ink-muted">
-        <span className="flex items-center gap-1.5">
-          <span
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: PREVIOUS_YEAR_COLOR }}
-          />
-          {previousYear}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: CURRENT_YEAR_COLOR }}
-          />
-          {currentYear}
-        </span>
+        {series.map((s, idx) => (
+          <span key={s.year} className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: colors[idx] }} />
+            {s.year}
+          </span>
+        ))}
       </div>
     </div>
   );
