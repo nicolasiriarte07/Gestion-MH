@@ -30,10 +30,13 @@ function formatScaled(value: number, divisor: number, suffix: string): string {
   return `${text}${suffix}`;
 }
 
+// El título ya dice "en USD", así que no hace falta repetir "US$" en
+// cada marca del eje — "$100k" en vez de "US$100K" (más limpio, igual
+// que el resto de los charts del módulo).
 function formatAxisValue(value: number): string {
-  if (value >= 1_000_000) return `US$${formatScaled(value, 1_000_000, "M")}`;
-  if (value >= 1_000) return `US$${formatScaled(value, 1_000, "K")}`;
-  return formatCurrency(value, "usd");
+  if (value >= 1_000_000) return `$${formatScaled(value, 1_000_000, "M")}`;
+  if (value >= 1_000) return `$${formatScaled(value, 1_000, "k")}`;
+  return `$${Math.round(value)}`;
 }
 
 function buildPath(
