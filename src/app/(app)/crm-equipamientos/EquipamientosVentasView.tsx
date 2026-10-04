@@ -6,6 +6,7 @@ import Card from "@/components/ds/Card";
 import { formatCurrency, type Currency } from "@/lib/currency";
 import type { SaleItem } from "@/lib/types";
 import EquipamientosVentasTable from "./EquipamientosVentasTable";
+import EquipamientosMonthlyChart from "./EquipamientosMonthlyChart";
 
 const ALL_MONTHS = "todos";
 
@@ -133,6 +134,8 @@ export default function EquipamientosVentasView({ rows }: { rows: SaleItem[] }) 
           sublabel="Promedio por transacción"
         />
       </div>
+
+      <EquipamientosMonthlyChart rows={rows} />
 
       <EquipamientosVentasTable rows={filteredRows} currency={currency} />
     </div>
