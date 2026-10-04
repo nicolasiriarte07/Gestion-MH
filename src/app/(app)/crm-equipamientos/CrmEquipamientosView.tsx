@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Wallet } from "lucide-react";
 import type { SaleItem } from "@/lib/types";
-import EquipamientosVentasTable from "./EquipamientosVentasTable";
+import EquipamientosVentasView from "./EquipamientosVentasView";
 import ContactsView from "./ContactsView";
 import CrmTabs, { type CrmTab } from "./CrmTabs";
 import type { ContactRow } from "./ContactsTable";
@@ -44,7 +44,7 @@ export default function CrmEquipamientosView({
               Historial de ventas ordenado por fecha (más recientes primero).
             </p>
           </div>
-          <EquipamientosVentasTable rows={saleItems} />
+          <EquipamientosVentasView rows={saleItems} />
         </div>
       )}
 

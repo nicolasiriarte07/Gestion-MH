@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Card from "@/components/ds/Card";
-import { formatCurrency } from "@/lib/currency";
+import { formatCurrency, type Currency } from "@/lib/currency";
 import type { SaleItem } from "@/lib/types";
 
 const ROWS_PER_PAGE = 50;
@@ -13,7 +13,13 @@ function formatDate(iso: string): string {
   return `${d}/${m}/${y}`;
 }
 
-export default function EquipamientosVentasTable({ rows }: { rows: SaleItem[] }) {
+export default function EquipamientosVentasTable({
+  rows,
+  currency,
+}: {
+  rows: SaleItem[];
+  currency: Currency;
+}) {
   const [page, setPage] = useState(1);
 
   const totalPages = Math.max(1, Math.ceil(rows.length / ROWS_PER_PAGE));
@@ -53,7 +59,12 @@ export default function EquipamientosVentasTable({ rows }: { rows: SaleItem[] })
                   <p className="truncate">{row.product_description_raw}</p>
                 </td>
                 <td className="overflow-hidden px-3 py-3 font-semibold text-mh-ink">
-                  <p className="truncate">{formatCurrency(row.subtotal_with_iva)}</p>
+                  <p className="truncate">
+                    {formatCurrency(
+                      currency === "usd" ? (row.amount_usd ?? 0) : row.subtotal_with_iva,
+                      currency
+                    )}
+                  </p>
                 </td>
               </tr>
             ))}
