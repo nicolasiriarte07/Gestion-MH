@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { fetchAllRows } from "@/lib/supabase/fetchAll";
-import type { EquipamientoContact, EquipamientoSale } from "@/lib/types";
+import type { EquipamientoContact, EquipamientoSale, SaleItem } from "@/lib/types";
 import CrmEquipamientosView from "./CrmEquipamientosView";
 import type { ContactRow } from "./ContactsTable";
 
@@ -20,7 +20,7 @@ function normalizeName(name: string): string {
 export default async function CrmEquipamientosPage() {
   const supabase = await createClient();
 
-  const [{ data: contacts }, { data: sales }] = await Promise.all([
+  const [{ data: contacts }, { data: sales }, { data: businessUnits }] = await Promise.all([
     fetchAllRows<EquipamientoContact>((from, to) =>
       supabase
         .from("equipamientos_contacts")
@@ -36,7 +36,29 @@ export default async function CrmEquipamientosPage() {
         .order("fecha", { ascending: false })
         .range(from, to)
     ),
+    supabase.from("business_units").select("id, name"),
   ]);
+
+  // La pestaña "Ventas" del CRM muestra las ventas reales importadas en el
+  // módulo Ventas general (sale_items), filtradas a la unidad de negocio
+  // EQUIPAMIENTOS MH — no la tabla equipamientos_sales (esa sigue siendo
+  // la fuente de Última compra/Facturación total/Cantidad de ventas de la
+  // pestaña Contactos, y del módulo Ventas Equipamientos aparte).
+  const equipamientosMhId =
+    (businessUnits ?? []).find(
+      (bu) => bu.name.trim().toLowerCase() === "equipamientos mh"
+    )?.id ?? null;
+
+  const { data: equipamientosSaleItems } = equipamientosMhId
+    ? await fetchAllRows<SaleItem>((from, to) =>
+        supabase
+          .from("sale_items")
+          .select("*")
+          .eq("business_unit_id", equipamientosMhId)
+          .order("sale_date", { ascending: false })
+          .range(from, to)
+      )
+    : { data: [] as SaleItem[] };
 
   // Última compra, facturación total y cantidad de ventas por cliente,
   // agregado en una sola pasada. Se matchea por nombre normalizado porque
@@ -83,19 +105,13 @@ export default async function CrmEquipamientosPage() {
     (c) => !c.last_contact_date || c.last_contact_date < staleThreshold
   ).length;
 
-  const salesRows = sales ?? [];
-  const salesCategoryOptions = [
-    ...new Set(salesRows.map((s) => s.categoria).filter((c): c is string => !!c)),
-  ].sort();
-
   return (
     <CrmEquipamientosView
       contactRows={rows}
       totalCount={totalCount}
       contactedThisWeek={contactedThisWeek}
       staleCount={staleCount}
-      salesRows={salesRows}
-      salesCategoryOptions={salesCategoryOptions}
+      saleItems={equipamientosSaleItems ?? []}
     />
   );
 }

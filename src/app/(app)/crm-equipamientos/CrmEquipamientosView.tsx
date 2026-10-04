@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Wallet } from "lucide-react";
-import type { EquipamientoSale } from "@/lib/types";
-import SalesTable from "../ventas-equipamientos/SalesTable";
+import type { SaleItem } from "@/lib/types";
+import EquipamientosVentasTable from "./EquipamientosVentasTable";
 import ContactsView from "./ContactsView";
 import CrmTabs, { type CrmTab } from "./CrmTabs";
 import type { ContactRow } from "./ContactsTable";
@@ -13,15 +13,13 @@ export default function CrmEquipamientosView({
   totalCount,
   contactedThisWeek,
   staleCount,
-  salesRows,
-  salesCategoryOptions,
+  saleItems,
 }: {
   contactRows: ContactRow[];
   totalCount: number;
   contactedThisWeek: number;
   staleCount: number;
-  salesRows: EquipamientoSale[];
-  salesCategoryOptions: string[];
+  saleItems: SaleItem[];
 }) {
   const [tab, setTab] = useState<CrmTab>("contactos");
 
@@ -46,7 +44,7 @@ export default function CrmEquipamientosView({
               Historial de ventas ordenado por fecha (más recientes primero).
             </p>
           </div>
-          <SalesTable rows={salesRows} categoryOptions={salesCategoryOptions} />
+          <EquipamientosVentasTable rows={saleItems} />
         </div>
       )}
 
