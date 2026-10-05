@@ -77,6 +77,7 @@ export default async function CrmEquipamientosPage() {
               .from("products")
               .select("*")
               .eq("business_unit_id", equipamientosMhId)
+              .order("stock", { ascending: false })
               .order("description", { ascending: true })
               .range(from, to)
           )

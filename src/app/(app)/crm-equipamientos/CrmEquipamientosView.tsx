@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Wallet } from "lucide-react";
 import type { Product, SaleItem } from "@/lib/types";
 import EquipamientosVentasView from "./EquipamientosVentasView";
-import EquipamientosStockTable from "./EquipamientosStockTable";
+import EquipamientosStockView from "./EquipamientosStockView";
 import ContactsView from "./ContactsView";
 import CrmTabs, { type CrmTab } from "./CrmTabs";
 import type { ContactRow } from "./ContactsTable";
@@ -65,7 +65,7 @@ export default function CrmEquipamientosView({
               Stock de Inventario de esta unidad de negocio únicamente.
             </p>
           </div>
-          <EquipamientosStockTable
+          <EquipamientosStockView
             rows={stockProducts}
             brandName={brandName}
             categoryName={categoryName}
