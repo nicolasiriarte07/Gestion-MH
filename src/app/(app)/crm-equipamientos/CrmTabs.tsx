@@ -1,10 +1,11 @@
-import { Users, Receipt, Wallet } from "lucide-react";
+import { Users, Receipt, Wallet, Package } from "lucide-react";
 
-export type CrmTab = "contactos" | "ventas" | "cuenta_corriente";
+export type CrmTab = "contactos" | "ventas" | "stock" | "cuenta_corriente";
 
 const TABS: { key: CrmTab; label: string; icon: typeof Users }[] = [
   { key: "contactos", label: "Gestión de contactos", icon: Users },
   { key: "ventas", label: "Ventas", icon: Receipt },
+  { key: "stock", label: "Stock", icon: Package },
   { key: "cuenta_corriente", label: "Cuenta corriente", icon: Wallet },
 ];
 

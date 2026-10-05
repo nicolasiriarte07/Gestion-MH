@@ -1,6 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { fetchAllRows } from "@/lib/supabase/fetchAll";
-import type { EquipamientoContact, EquipamientoSale, SaleItem } from "@/lib/types";
+import type {
+  Brand,
+  Category,
+  EquipamientoContact,
+  EquipamientoSale,
+  Product,
+  SaleItem,
+} from "@/lib/types";
 import CrmEquipamientosView from "./CrmEquipamientosView";
 import type { ContactRow } from "./ContactsTable";
 
@@ -60,6 +67,24 @@ export default async function CrmEquipamientosPage() {
       )
     : { data: [] as SaleItem[] };
 
+  // Pestaña "Stock": productos de Inventario de la unidad de negocio
+  // EQUIPAMIENTOS MH únicamente.
+  const [{ data: equipamientosProducts }, { data: categories }, { data: brands }] =
+    await Promise.all([
+      equipamientosMhId
+        ? fetchAllRows<Product>((from, to) =>
+            supabase
+              .from("products")
+              .select("*")
+              .eq("business_unit_id", equipamientosMhId)
+              .order("description", { ascending: true })
+              .range(from, to)
+          )
+        : Promise.resolve({ data: [] as Product[], error: null }),
+      supabase.from("categories").select("id, name"),
+      supabase.from("brands").select("id, name"),
+    ]);
+
   // Última compra, facturación total y cantidad de ventas por cliente,
   // agregado en una sola pasada. Se matchea por nombre normalizado porque
   // "Cliente" en Ventas y "Nombre" en el CRM son campos de texto libre
@@ -105,6 +130,9 @@ export default async function CrmEquipamientosPage() {
     (c) => !c.last_contact_date || c.last_contact_date < staleThreshold
   ).length;
 
+  const categoryName = new Map(((categories ?? []) as Category[]).map((c) => [c.id, c.name]));
+  const brandName = new Map(((brands ?? []) as Brand[]).map((b) => [b.id, b.name]));
+
   return (
     <CrmEquipamientosView
       contactRows={rows}
@@ -112,6 +140,9 @@ export default async function CrmEquipamientosPage() {
       contactedThisWeek={contactedThisWeek}
       staleCount={staleCount}
       saleItems={equipamientosSaleItems ?? []}
+      stockProducts={equipamientosProducts ?? []}
+      categoryNameById={Object.fromEntries(categoryName)}
+      brandNameById={Object.fromEntries(brandName)}
     />
   );
 }
