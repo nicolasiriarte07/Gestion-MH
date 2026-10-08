@@ -96,7 +96,7 @@ export default function ContactsTable({ rows }: { rows: ContactRow[] }) {
                 <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
                   {row.phone ? (
                     <a
-                      href={buildWhatsAppLink(row.phone, `Hola ${row.name}! Te escribimos desde Equipamientos MH.`)}
+                      href={buildWhatsAppLink(row.phone, "Hola! Te escribe Nico de MH Equipamientos")}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
