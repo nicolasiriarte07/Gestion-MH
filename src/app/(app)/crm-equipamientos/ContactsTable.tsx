@@ -2,10 +2,11 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2, MoreHorizontal, ChevronLeft, ChevronRight, Phone } from "lucide-react";
+import { Pencil, Trash2, MoreHorizontal, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import Card from "@/components/ds/Card";
 import Badge, { type BadgeTone } from "@/components/ds/Badge";
 import { formatCurrency } from "@/lib/currency";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 import type { ContactCategory, EquipamientoContact } from "@/lib/types";
 import { deleteContact } from "./actions";
 import ContactFormModal from "./ContactFormModal";
@@ -95,11 +96,14 @@ export default function ContactsTable({ rows }: { rows: ContactRow[] }) {
                 <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
                   {row.phone ? (
                     <a
-                      href={`tel:${row.phone}`}
+                      href={buildWhatsAppLink(row.phone, `Hola ${row.name}! Te escribimos desde Equipamientos MH.`)}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="flex items-center gap-1.5 truncate hover:text-mh-pink"
+                      title="Abrir WhatsApp"
+                      className="flex items-center gap-1.5 truncate hover:text-emerald-600"
                     >
-                      <Phone size={13} />
+                      <MessageCircle size={13} />
                       {row.phone}
                     </a>
                   ) : (
