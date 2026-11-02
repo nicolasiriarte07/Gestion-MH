@@ -286,10 +286,10 @@ export default function MarketingCalendar({
                 <colgroup>
                   <col style={{ width: 220 }} />
                   <col style={{ width: "auto" }} />
+                  <col style={{ width: 110 }} />
                   <col style={{ width: 190 }} />
                   <col style={{ width: 130 }} />
                   <col style={{ width: 150 }} />
-                  <col style={{ width: 110 }} />
                   <col style={{ width: 120 }} />
                   <col style={{ width: 100 }} />
                   <col style={{ width: 130 }} />
@@ -298,10 +298,10 @@ export default function MarketingCalendar({
                   <tr className="border-b border-mh-border bg-mh-bg text-left text-xs font-semibold text-mh-ink-muted uppercase">
                     <th className="px-3 py-3">Concepto</th>
                     <th className="px-3 py-3">Descripción</th>
+                    <th className="px-3 py-3">Responsable</th>
                     <th className="px-3 py-3">Vertical</th>
                     <th className="px-3 py-3">Fecha</th>
                     <th className="px-3 py-3">Contenido</th>
-                    <th className="px-3 py-3">Responsable</th>
                     <th className="px-3 py-3">Formato</th>
                     <th className="px-3 py-3">Publicado</th>
                     <th className="px-3 py-3" />
@@ -347,6 +347,26 @@ export default function MarketingCalendar({
                               });
                             }}
                           />
+                        </td>
+                        <td className="overflow-hidden px-3 py-3">
+                          <select
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 uppercase hover:border-mh-border focus:border-mh-pink focus:outline-none"
+                            value={row.responsible ?? ""}
+                            onChange={(e) => {
+                              applyChange(row, draft, {
+                                responsible:
+                                  (e.target.value as MarketingPost["responsible"]) ||
+                                  null,
+                              });
+                            }}
+                          >
+                            <option value="">Sin asignar</option>
+                            {RESPONSIBLE_OPTIONS.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
                         </td>
                         <td className="overflow-hidden px-3 py-3">
                           <select
@@ -404,26 +424,6 @@ export default function MarketingCalendar({
                             ).map(([key, label]) => (
                               <option key={key} value={key}>
                                 {label}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="overflow-hidden px-3 py-3">
-                          <select
-                            className="w-full rounded border border-transparent px-1.5 py-1.5 uppercase hover:border-mh-border focus:border-mh-pink focus:outline-none"
-                            value={row.responsible ?? ""}
-                            onChange={(e) => {
-                              applyChange(row, draft, {
-                                responsible:
-                                  (e.target.value as MarketingPost["responsible"]) ||
-                                  null,
-                              });
-                            }}
-                          >
-                            <option value="">Sin asignar</option>
-                            {RESPONSIBLE_OPTIONS.map((option) => (
-                              <option key={option} value={option}>
-                                {option}
                               </option>
                             ))}
                           </select>
