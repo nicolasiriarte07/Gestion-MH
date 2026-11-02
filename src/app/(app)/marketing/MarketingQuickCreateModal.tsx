@@ -53,6 +53,7 @@ export default function MarketingQuickCreateModal({
             investment_ars: 0,
             responsible: null,
             format: null,
+            piece_url: null,
           })
         : await createAdCampaign({
             campaign_name: name.trim(),

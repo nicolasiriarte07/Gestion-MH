@@ -15,6 +15,7 @@ export type MarketingPostInput = {
   investment_ars: number;
   responsible: MarketingResponsible | null;
   format: MarketingFormat | null;
+  piece_url: string | null;
 };
 
 export async function createMarketingPost(input: MarketingPostInput) {

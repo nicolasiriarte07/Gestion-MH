@@ -69,6 +69,7 @@ export default function MarketingItemDrawer({
             investment_ars: item.data.investment_ars,
             responsible: item.data.responsible,
             format: item.data.format,
+            piece_url: item.data.piece_url,
           })
         : await createAdCampaign({
             campaign_name: `${item.data.campaign_name} (copia)`,

@@ -53,6 +53,7 @@ export type MarketingPost = {
   investment_ars: number;
   responsible: MarketingResponsible | null;
   format: MarketingFormat | null;
+  piece_url: string | null;
   created_at: string;
   updated_at: string;
 };

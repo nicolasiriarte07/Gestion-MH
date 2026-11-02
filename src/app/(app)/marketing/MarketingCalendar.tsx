@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink, Plus } from "lucide-react";
 import type { BusinessUnit, ContentType, MarketingPost } from "@/lib/types";
 import { monthKeyOf, formatMonthLabel } from "@/lib/months";
 import AutoGrowTextarea from "@/components/AutoGrowTextarea";
@@ -44,6 +44,7 @@ function emptyDraft(publishDate: string): DraftPost {
     investment_ars: 0,
     responsible: null,
     format: null,
+    piece_url: null,
   };
 }
 
@@ -179,6 +180,7 @@ export default function MarketingCalendar({
       investment_ars: draft.investment_ars,
       responsible: draft.responsible,
       format: draft.format,
+      piece_url: draft.piece_url,
     };
     const result = await createMarketingPost(input);
     setSaving(draft.id, false);
@@ -291,6 +293,7 @@ export default function MarketingCalendar({
                   <col style={{ width: 130 }} />
                   <col style={{ width: 150 }} />
                   <col style={{ width: 120 }} />
+                  <col style={{ width: 150 }} />
                   <col style={{ width: 100 }} />
                   <col style={{ width: 130 }} />
                 </colgroup>
@@ -303,6 +306,7 @@ export default function MarketingCalendar({
                     <th className="px-3 py-3">Fecha</th>
                     <th className="px-3 py-3">Contenido</th>
                     <th className="px-3 py-3">Formato</th>
+                    <th className="px-3 py-3">Pieza</th>
                     <th className="px-3 py-3">Publicado</th>
                     <th className="px-3 py-3" />
                   </tr>
@@ -447,6 +451,33 @@ export default function MarketingCalendar({
                               </option>
                             ))}
                           </select>
+                        </td>
+                        <td className="overflow-hidden px-3 py-3">
+                          <input
+                            type="text"
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 hover:border-mh-border focus:border-mh-pink focus:outline-none"
+                            placeholder="Pegar link de Canva"
+                            defaultValue={row.piece_url ?? ""}
+                            onBlur={(e) => {
+                              const value = e.target.value.trim();
+                              if (value === (row.piece_url ?? "")) return;
+                              applyChange(row, draft, {
+                                piece_url: value || null,
+                              });
+                            }}
+                          />
+                          {row.piece_url && (
+                            <a
+                              href={row.piece_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="mt-1 flex items-center gap-1 text-xs font-semibold text-mh-pink hover:text-mh-pink-dark"
+                            >
+                              Abrir en Canva
+                              <ExternalLink size={12} />
+                            </a>
+                          )}
                         </td>
                         <td className="overflow-hidden px-3 py-3 text-center">
                           <input
