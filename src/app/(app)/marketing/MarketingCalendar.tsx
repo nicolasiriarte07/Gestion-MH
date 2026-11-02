@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 import type { BusinessUnit, ContentType, MarketingPost } from "@/lib/types";
-import { formatCurrency } from "@/lib/currency";
 import { monthKeyOf, formatMonthLabel } from "@/lib/months";
 import AutoGrowTextarea from "@/components/AutoGrowTextarea";
 import {
@@ -58,9 +57,17 @@ export default function MarketingCalendar({
   const [rows, setRows] = useState<Row[]>(initialPosts);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
-  const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(
-    new Set()
-  );
+  // Los meses ya pasados arrancan cerrados; el actual y los futuros,
+  // desplegados.
+  const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(() => {
+    const currentMonthKey = monthKeyOf(todayISO());
+    const set = new Set<string>();
+    for (const row of initialPosts) {
+      const key = monthKeyOf(row.publish_date);
+      if (key < currentMonthKey) set.add(key);
+    }
+    return set;
+  });
 
   function toggleMonth(monthKey: string) {
     setCollapsedMonths((prev) => {
@@ -94,7 +101,7 @@ export default function MarketingCalendar({
       byMonth.set(key, list);
     }
     return [...byMonth.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
+      .sort(([a], [b]) => b.localeCompare(a))
       .map(([monthKey, monthRows]) => ({
         monthKey,
         rows: [...monthRows].sort((a, b) =>
@@ -226,10 +233,6 @@ export default function MarketingCalendar({
         </div>
       ) : (
         groups.map(({ monthKey, rows: monthRows }) => {
-          const totalInvestment = monthRows.reduce(
-            (sum, r) => sum + (isDraft(r) ? r.investment_ars : r.investment_ars),
-            0
-          );
           const collapsed = collapsedMonths.has(monthKey);
 
           return (
@@ -252,8 +255,7 @@ export default function MarketingCalendar({
                       {formatMonthLabel(monthKey)}
                     </p>
                     <p className="text-xs text-mh-ink-muted">
-                      {monthRows.length} acción(es) · Inversión total{" "}
-                      {formatCurrency(totalInvestment)}
+                      {monthRows.length} acción(es)
                     </p>
                   </div>
                 </div>
