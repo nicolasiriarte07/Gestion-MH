@@ -38,6 +38,8 @@ export type Product = {
 };
 
 export type ContentType = "educacional" | "marca" | "comercial";
+export type MarketingResponsible = "Nico" | "Jesi" | "Axel";
+export type MarketingFormat = "Reel" | "Historia" | "Feed";
 
 export type MarketingPost = {
   id: string;
@@ -49,6 +51,8 @@ export type MarketingPost = {
   is_scheduled: boolean;
   is_published: boolean;
   investment_ars: number;
+  responsible: MarketingResponsible | null;
+  format: MarketingFormat | null;
   created_at: string;
   updated_at: string;
 };

@@ -4,10 +4,15 @@ import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 import type { BusinessUnit, ContentType, MarketingPost } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
-import { parseFlexibleNumber } from "@/lib/excel";
 import { monthKeyOf, formatMonthLabel } from "@/lib/months";
 import AutoGrowTextarea from "@/components/AutoGrowTextarea";
-import { CONTENT_LABELS, CONTENT_TONE_CLASSES, VERTICAL_TONE_CLASSES } from "./marketingLabels";
+import {
+  CONTENT_LABELS,
+  CONTENT_TONE_CLASSES,
+  VERTICAL_TONE_CLASSES,
+  RESPONSIBLE_OPTIONS,
+  FORMAT_OPTIONS,
+} from "./marketingLabels";
 import {
   createMarketingPost,
   deleteMarketingPost,
@@ -38,6 +43,8 @@ function emptyDraft(publishDate: string): DraftPost {
     is_scheduled: false,
     is_published: false,
     investment_ars: 0,
+    responsible: null,
+    format: null,
   };
 }
 
@@ -163,6 +170,8 @@ export default function MarketingCalendar({
       is_scheduled: draft.is_scheduled,
       is_published: draft.is_published,
       investment_ars: draft.investment_ars,
+      responsible: draft.responsible,
+      format: draft.format,
     };
     const result = await createMarketingPost(input);
     setSaving(draft.id, false);
@@ -197,15 +206,6 @@ export default function MarketingCalendar({
 
   function addDraftRow(publishDate: string) {
     setRows((prev) => [...prev, emptyDraft(publishDate)]);
-  }
-
-  function parseCurrencyInput(
-    e: React.FocusEvent<HTMLInputElement>,
-    current: number
-  ): number | null {
-    const value = parseFlexibleNumber(e.target.value);
-    e.target.value = formatCurrency(value);
-    return value === current ? null : value;
   }
 
   return (
@@ -287,9 +287,9 @@ export default function MarketingCalendar({
                   <col style={{ width: 190 }} />
                   <col style={{ width: 130 }} />
                   <col style={{ width: 150 }} />
-                  <col style={{ width: 80 }} />
-                  <col style={{ width: 100 }} />
                   <col style={{ width: 110 }} />
+                  <col style={{ width: 120 }} />
+                  <col style={{ width: 100 }} />
                   <col style={{ width: 130 }} />
                 </colgroup>
                 <thead>
@@ -299,9 +299,9 @@ export default function MarketingCalendar({
                     <th className="px-3 py-3">Vertical</th>
                     <th className="px-3 py-3">Fecha</th>
                     <th className="px-3 py-3">Contenido</th>
-                    <th className="px-3 py-3">Pautado</th>
+                    <th className="px-3 py-3">Responsable</th>
+                    <th className="px-3 py-3">Formato</th>
                     <th className="px-3 py-3">Publicado</th>
-                    <th className="px-3 py-3">Inversión</th>
                     <th className="px-3 py-3" />
                   </tr>
                 </thead>
@@ -406,17 +406,45 @@ export default function MarketingCalendar({
                             ))}
                           </select>
                         </td>
-                        <td className="overflow-hidden px-3 py-3 text-center">
-                          <input
-                            type="checkbox"
-                            className="accent-mh-pink"
-                            checked={row.is_scheduled}
+                        <td className="overflow-hidden px-3 py-3">
+                          <select
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 uppercase hover:border-mh-border focus:border-mh-pink focus:outline-none"
+                            value={row.responsible ?? ""}
                             onChange={(e) => {
                               applyChange(row, draft, {
-                                is_scheduled: e.target.checked,
+                                responsible:
+                                  (e.target.value as MarketingPost["responsible"]) ||
+                                  null,
                               });
                             }}
-                          />
+                          >
+                            <option value="">Sin asignar</option>
+                            {RESPONSIBLE_OPTIONS.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="overflow-hidden px-3 py-3">
+                          <select
+                            className="w-full rounded border border-transparent px-1.5 py-1.5 uppercase hover:border-mh-border focus:border-mh-pink focus:outline-none"
+                            value={row.format ?? ""}
+                            onChange={(e) => {
+                              applyChange(row, draft, {
+                                format:
+                                  (e.target.value as MarketingPost["format"]) ||
+                                  null,
+                              });
+                            }}
+                          >
+                            <option value="">Sin definir</option>
+                            {FORMAT_OPTIONS.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
                         </td>
                         <td className="overflow-hidden px-3 py-3 text-center">
                           <input
@@ -427,25 +455,6 @@ export default function MarketingCalendar({
                               applyChange(row, draft, {
                                 is_published: e.target.checked,
                               });
-                            }}
-                          />
-                        </td>
-                        <td className="overflow-hidden px-3 py-3">
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            className="w-full rounded border border-transparent px-1.5 py-1.5 text-right hover:border-mh-border focus:border-mh-pink focus:outline-none"
-                            defaultValue={formatCurrency(row.investment_ars)}
-                            onFocus={(e) => e.target.select()}
-                            onBlur={(e) => {
-                              const value = parseCurrencyInput(
-                                e,
-                                row.investment_ars
-                              );
-                              if (value !== null)
-                                applyChange(row, draft, {
-                                  investment_ars: value,
-                                });
                             }}
                           />
                         </td>

@@ -2,11 +2,13 @@ import { CalendarDays, List, Kanban, ListTodo } from "lucide-react";
 
 export type MarketingView = "calendario" | "agenda" | "kanban" | "lista";
 
+// Calendario y Lista van primero: son las vistas principales para el
+// manejo del día a día de publicidad y comunicación.
 const VIEWS: { key: MarketingView; label: string; icon: typeof CalendarDays }[] = [
   { key: "calendario", label: "Calendario", icon: CalendarDays },
+  { key: "lista", label: "Lista", icon: List },
   { key: "agenda", label: "Agenda", icon: ListTodo },
   { key: "kanban", label: "Kanban", icon: Kanban },
-  { key: "lista", label: "Lista", icon: List },
 ];
 
 // Las 4 vistas leen exactamente los mismos posts/campañas (ver

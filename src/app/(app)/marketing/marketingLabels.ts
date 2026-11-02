@@ -1,4 +1,4 @@
-import type { ContentType } from "@/lib/types";
+import type { ContentType, MarketingFormat, MarketingResponsible } from "@/lib/types";
 
 export const CONTENT_LABELS: Record<ContentType, string> = {
   educacional: "Educacional",
@@ -20,3 +20,6 @@ export const VERTICAL_TONE_CLASSES: Record<string, string> = {
   "EQUIPAMIENTOS MH": "bg-violet-100 text-violet-700",
   Ecommerce: "bg-mh-blue-light text-mh-blue",
 };
+
+export const RESPONSIBLE_OPTIONS: MarketingResponsible[] = ["Nico", "Jesi", "Axel"];
+export const FORMAT_OPTIONS: MarketingFormat[] = ["Reel", "Historia", "Feed"];

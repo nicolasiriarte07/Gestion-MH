@@ -51,6 +51,8 @@ export default function MarketingQuickCreateModal({
             is_scheduled: false,
             is_published: false,
             investment_ars: 0,
+            responsible: null,
+            format: null,
           })
         : await createAdCampaign({
             campaign_name: name.trim(),

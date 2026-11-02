@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { ContentType } from "@/lib/types";
+import type { ContentType, MarketingFormat, MarketingResponsible } from "@/lib/types";
 
 export type MarketingPostInput = {
   concept: string;
@@ -13,6 +13,8 @@ export type MarketingPostInput = {
   is_scheduled: boolean;
   is_published: boolean;
   investment_ars: number;
+  responsible: MarketingResponsible | null;
+  format: MarketingFormat | null;
 };
 
 export async function createMarketingPost(input: MarketingPostInput) {

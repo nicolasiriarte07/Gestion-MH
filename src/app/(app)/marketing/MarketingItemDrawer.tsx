@@ -67,6 +67,8 @@ export default function MarketingItemDrawer({
             is_scheduled: item.data.is_scheduled,
             is_published: false,
             investment_ars: item.data.investment_ars,
+            responsible: item.data.responsible,
+            format: item.data.format,
           })
         : await createAdCampaign({
             campaign_name: `${item.data.campaign_name} (copia)`,
