@@ -92,6 +92,7 @@ export type Supplier = {
   delivery_time: string | null;
   min_order: string | null;
   usual_discount: number | null;
+  cash_discount: number | null;
   payment_cash: boolean;
   payment_7d: boolean;
   payment_15d: boolean;

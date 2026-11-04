@@ -66,6 +66,7 @@ function emptyInput(): SupplierInput {
     delivery_time: null,
     min_order: null,
     usual_discount: null,
+    cash_discount: null,
     payment_cash: false,
     payment_7d: false,
     payment_15d: false,
@@ -103,6 +104,7 @@ function supplierToInput(s: Supplier): SupplierInput {
     delivery_time: s.delivery_time,
     min_order: s.min_order,
     usual_discount: s.usual_discount,
+    cash_discount: s.cash_discount,
     payment_cash: s.payment_cash,
     payment_7d: s.payment_7d,
     payment_15d: s.payment_15d,
@@ -387,6 +389,20 @@ export default function SupplierForm({
             onChange={(e) =>
               set(
                 "usual_discount",
+                e.target.value === "" ? null : Number(e.target.value)
+              )
+            }
+          />
+        </Field>
+        <Field label="Descuento de contado (%)">
+          <input
+            type="number"
+            step="0.01"
+            className={inputClass}
+            value={input.cash_discount ?? ""}
+            onChange={(e) =>
+              set(
+                "cash_discount",
                 e.target.value === "" ? null : Number(e.target.value)
               )
             }

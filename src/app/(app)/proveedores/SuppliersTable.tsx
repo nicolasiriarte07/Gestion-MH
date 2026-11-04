@@ -129,6 +129,7 @@ export default function SuppliersTable({ rows }: { rows: SupplierRow[] }) {
               <th className="px-3 py-3 font-semibold">Teléfono</th>
               <th className="px-3 py-3 font-semibold">Email</th>
               <th className="px-3 py-3 font-semibold">Lista</th>
+              <th className="px-3 py-3 font-semibold">Desc. contado</th>
               <th className="px-3 py-3 font-semibold">Compras acum.</th>
               <th className="px-3 py-3 font-semibold">Saldo</th>
               <th className="px-3 py-3 font-semibold">Última compra</th>
@@ -188,6 +189,11 @@ export default function SuppliersTable({ rows }: { rows: SupplierRow[] }) {
                     <span className="text-mh-ink-muted">—</span>
                   )}
                 </td>
+                <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
+                  <p className="truncate">
+                    {row.cash_discount != null ? `${row.cash_discount}%` : "—"}
+                  </p>
+                </td>
                 <td className="overflow-hidden px-3 py-3 font-medium text-mh-ink">
                   <p className="truncate">{formatCurrency(row.totalPurchased)}</p>
                 </td>
@@ -237,7 +243,7 @@ export default function SuppliersTable({ rows }: { rows: SupplierRow[] }) {
             ))}
             {pagedRows.length === 0 && (
               <tr>
-                <td colSpan={13} className="px-6 py-16 text-center text-mh-ink-muted">
+                <td colSpan={14} className="px-6 py-16 text-center text-mh-ink-muted">
                   No hay proveedores que coincidan con los filtros.
                 </td>
               </tr>
