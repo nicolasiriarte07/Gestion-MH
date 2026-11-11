@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Wallet } from "lucide-react";
-import type { Product, SaleItem } from "@/lib/types";
+import type { CrmInstallment, CrmInstallmentSale, Product, SaleItem } from "@/lib/types";
 import EquipamientosVentasView from "./EquipamientosVentasView";
 import EquipamientosStockView from "./EquipamientosStockView";
 import ContactsView from "./ContactsView";
+import CuentaCorrienteView from "./CuentaCorrienteView";
 import CrmTabs, { type CrmTab } from "./CrmTabs";
 import type { ContactRow } from "./ContactsTable";
 
@@ -18,6 +18,8 @@ export default function CrmEquipamientosView({
   stockProducts,
   categoryNameById,
   brandNameById,
+  installmentSales,
+  installments,
 }: {
   contactRows: ContactRow[];
   totalCount: number;
@@ -27,6 +29,8 @@ export default function CrmEquipamientosView({
   stockProducts: Product[];
   categoryNameById: Record<string, string>;
   brandNameById: Record<string, string>;
+  installmentSales: CrmInstallmentSale[];
+  installments: CrmInstallment[];
 }) {
   const [tab, setTab] = useState<CrmTab>("contactos");
   const categoryName = (id: string | null) => (id ? (categoryNameById[id] ?? "") : "");
@@ -74,13 +78,7 @@ export default function CrmEquipamientosView({
       )}
 
       {tab === "cuenta_corriente" && (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-mh-border bg-mh-surface p-12 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <Wallet size={28} className="text-mh-ink-muted" />
-          <p className="text-sm font-semibold text-mh-ink">Cuenta corriente</p>
-          <p className="max-w-sm text-sm text-mh-ink-muted">
-            Todavía no está disponible — próximamente.
-          </p>
-        </div>
+        <CuentaCorrienteView initialSales={installmentSales} initialInstallments={installments} />
       )}
     </div>
   );

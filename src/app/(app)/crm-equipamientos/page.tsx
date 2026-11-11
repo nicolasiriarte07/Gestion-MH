@@ -3,6 +3,8 @@ import { fetchAllRows } from "@/lib/supabase/fetchAll";
 import type {
   Brand,
   Category,
+  CrmInstallment,
+  CrmInstallmentSale,
   EquipamientoContact,
   EquipamientoSale,
   Product,
@@ -86,6 +88,25 @@ export default async function CrmEquipamientosPage() {
       supabase.from("brands").select("id, name"),
     ]);
 
+  // Pestaña "Cuenta corriente": ventas financiadas en cuotas propias de
+  // este CRM (no vienen de sale_items ni de equipamientos_sales).
+  const [{ data: installmentSales }, { data: installments }] = await Promise.all([
+    fetchAllRows<CrmInstallmentSale>((from, to) =>
+      supabase
+        .from("crm_installment_sales")
+        .select("*")
+        .order("sale_date", { ascending: false })
+        .range(from, to)
+    ),
+    fetchAllRows<CrmInstallment>((from, to) =>
+      supabase
+        .from("crm_installments")
+        .select("*")
+        .order("due_date", { ascending: true })
+        .range(from, to)
+    ),
+  ]);
+
   // Última compra, facturación total y cantidad de ventas por cliente,
   // agregado en una sola pasada. Se matchea por nombre normalizado porque
   // "Cliente" en Ventas y "Nombre" en el CRM son campos de texto libre
@@ -144,6 +165,8 @@ export default async function CrmEquipamientosPage() {
       stockProducts={equipamientosProducts ?? []}
       categoryNameById={Object.fromEntries(categoryName)}
       brandNameById={Object.fromEntries(brandName)}
+      installmentSales={installmentSales ?? []}
+      installments={installments ?? []}
     />
   );
 }

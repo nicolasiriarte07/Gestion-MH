@@ -238,3 +238,31 @@ export type EquipamientoSale = {
   created_at: string;
   updated_at: string;
 };
+
+export const INSTALLMENT_FREQUENCIES = ["diaria", "semanal", "mensual"] as const;
+export type InstallmentFrequency = (typeof INSTALLMENT_FREQUENCIES)[number];
+
+export type CrmInstallmentSale = {
+  id: string;
+  client_name: string;
+  product: string;
+  sale_date: string;
+  down_payment: number;
+  installment_frequency: InstallmentFrequency;
+  installment_amount: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CrmInstallment = {
+  id: string;
+  sale_id: string;
+  installment_number: number;
+  due_date: string;
+  amount: number;
+  paid: boolean;
+  paid_date: string | null;
+  created_at: string;
+  updated_at: string;
+};
