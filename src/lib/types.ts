@@ -266,3 +266,26 @@ export type CrmInstallment = {
   created_at: string;
   updated_at: string;
 };
+
+export type PurchaseOrder = {
+  id: string;
+  business_unit_id: string | null;
+  order_date: string;
+  brand_id: string | null;
+  traveler: string | null;
+  payment_type: string | null;
+  confirmed: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PurchaseOrderItem = {
+  id: string;
+  purchase_order_id: string;
+  product_id: string | null;
+  product_description: string;
+  quantity: number;
+  amount: number;
+  created_at: string;
+};

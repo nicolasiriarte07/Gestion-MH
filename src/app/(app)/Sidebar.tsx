@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
+  PackagePlus,
   Truck,
   Megaphone,
   ShoppingCart,
@@ -28,6 +29,7 @@ const NAV_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/inventario", label: "Inventario", icon: Package },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/proveedores", label: "Proveedores", icon: Truck },
+  { href: "/compras", label: "Compras", icon: PackagePlus },
   { href: "/marketing", label: "Marketing", icon: Megaphone },
   { href: "/crm-equipamientos", label: "CRM Equipamientos", icon: Contact },
   { href: "/ventas-equipamientos", label: "Ventas Equipamientos", icon: Receipt },
