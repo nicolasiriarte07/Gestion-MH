@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type {
   ContactCategory,
+  ContactStage,
   CrmInstallment,
   CrmInstallmentSale,
   InstallmentFrequency,
@@ -16,6 +17,10 @@ export type ContactInput = {
   phone: string | null;
   category: ContactCategory;
   last_contact_date: string | null;
+  etapa: ContactStage;
+  equipo_interes: string | null;
+  proximo_seguimiento: string | null;
+  notas_seguimiento: string | null;
 };
 
 export async function createContact(input: ContactInput) {

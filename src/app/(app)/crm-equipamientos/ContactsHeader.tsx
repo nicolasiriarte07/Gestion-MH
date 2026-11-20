@@ -30,7 +30,6 @@ export default function ContactsHeader() {
 
       {creating && (
         <ContactFormModal
-          contact={null}
           onClose={() => setCreating(false)}
           onSaved={() => {
             setCreating(false);

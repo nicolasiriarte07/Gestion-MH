@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import type { CrmInstallment, CrmInstallmentSale, Product, SaleItem } from "@/lib/types";
+import type {
+  ContactStage,
+  CrmInstallment,
+  CrmInstallmentSale,
+  EquipamientoSale,
+  Product,
+  SaleItem,
+} from "@/lib/types";
 import EquipamientosVentasView from "./EquipamientosVentasView";
 import EquipamientosStockView from "./EquipamientosStockView";
 import ContactsView from "./ContactsView";
@@ -14,6 +21,9 @@ export default function CrmEquipamientosView({
   totalCount,
   contactedThisWeek,
   staleCount,
+  stageCounts,
+  dueTodayCount,
+  salesByContactId,
   saleItems,
   stockProducts,
   categoryNameById,
@@ -25,6 +35,9 @@ export default function CrmEquipamientosView({
   totalCount: number;
   contactedThisWeek: number;
   staleCount: number;
+  stageCounts: Record<ContactStage, number>;
+  dueTodayCount: number;
+  salesByContactId: Record<string, EquipamientoSale[]>;
   saleItems: SaleItem[];
   stockProducts: Product[];
   categoryNameById: Record<string, string>;
@@ -46,6 +59,9 @@ export default function CrmEquipamientosView({
           totalCount={totalCount}
           contactedThisWeek={contactedThisWeek}
           staleCount={staleCount}
+          stageCounts={stageCounts}
+          dueTodayCount={dueTodayCount}
+          salesByContactId={salesByContactId}
         />
       )}
 

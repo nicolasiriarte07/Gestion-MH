@@ -198,6 +198,16 @@ export const CONTACT_CATEGORIES = [
 
 export type ContactCategory = (typeof CONTACT_CATEGORIES)[number];
 
+export const CONTACT_STAGES = [
+  "lead",
+  "contactado",
+  "cotizado",
+  "cliente",
+  "perdido",
+] as const;
+
+export type ContactStage = (typeof CONTACT_STAGES)[number];
+
 export type EquipamientoContact = {
   id: string;
   name: string;
@@ -206,6 +216,10 @@ export type EquipamientoContact = {
   phone: string | null;
   category: ContactCategory;
   last_contact_date: string | null;
+  etapa: ContactStage;
+  equipo_interes: string | null;
+  proximo_seguimiento: string | null;
+  notas_seguimiento: string | null;
   created_at: string;
   updated_at: string;
 };

@@ -3,24 +3,34 @@
 import { useMemo, useState } from "react";
 import { Users, CalendarCheck, CalendarClock } from "lucide-react";
 import KpiCard from "@/components/ds/KpiCard";
-import type { ContactCategory } from "@/lib/types";
+import type { ContactCategory, ContactStage, EquipamientoSale } from "@/lib/types";
 import ContactsHeader from "./ContactsHeader";
 import ContactFilterBar from "./ContactFilterBar";
+import ContactsStageBoard from "./ContactsStageBoard";
 import ContactsTable, { type ContactRow } from "./ContactsTable";
+import { needsFollowUpToday, todayISO } from "./followUp";
 
 export default function ContactsView({
   rows,
   totalCount,
   contactedThisWeek,
   staleCount,
+  stageCounts,
+  dueTodayCount,
+  salesByContactId,
 }: {
   rows: ContactRow[];
   totalCount: number;
   contactedThisWeek: number;
   staleCount: number;
+  stageCounts: Record<ContactStage, number>;
+  dueTodayCount: number;
+  salesByContactId: Record<string, EquipamientoSale[]>;
 }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<ContactCategory | "">("");
+  const [stage, setStage] = useState<ContactStage | "">("");
+  const [dueToday, setDueToday] = useState(false);
 
   const filteredRows = useMemo(() => {
     let result = rows;
@@ -36,8 +46,15 @@ export default function ContactsView({
     if (category) {
       result = result.filter((c) => c.category === category);
     }
+    if (stage) {
+      result = result.filter((c) => c.etapa === stage);
+    }
+    if (dueToday) {
+      const today = todayISO();
+      result = result.filter((c) => needsFollowUpToday(c, today));
+    }
     return result;
-  }, [rows, search, category]);
+  }, [rows, search, category, stage, dueToday]);
 
   return (
     <div className="font-inter space-y-8">
@@ -60,18 +77,26 @@ export default function ContactsView({
         />
       </div>
 
+      <ContactsStageBoard stageCounts={stageCounts} dueTodayCount={dueTodayCount} />
+
       <ContactFilterBar
         search={search}
         onSearchChange={setSearch}
         category={category}
         onCategoryChange={setCategory}
+        stage={stage}
+        onStageChange={setStage}
+        dueToday={dueToday}
+        onDueTodayChange={setDueToday}
         onClear={() => {
           setSearch("");
           setCategory("");
+          setStage("");
+          setDueToday(false);
         }}
       />
 
-      <ContactsTable rows={filteredRows} />
+      <ContactsTable rows={filteredRows} salesByContactId={salesByContactId} />
     </div>
   );
 }

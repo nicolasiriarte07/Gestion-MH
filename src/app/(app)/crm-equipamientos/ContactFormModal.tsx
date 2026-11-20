@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Modal from "@/components/Modal";
 import { CONTACT_CATEGORIES, type EquipamientoContact } from "@/lib/types";
-import { createContact, updateContact, type ContactInput } from "./actions";
+import { createContact, type ContactInput } from "./actions";
 
 const inputClass =
   "w-full rounded-xl border border-mh-border px-3 py-2 text-sm focus:border-mh-pink focus:outline-none";
@@ -17,30 +17,23 @@ function emptyInput(): ContactInput {
     phone: null,
     category: "Otro",
     last_contact_date: null,
+    etapa: "lead",
+    equipo_interes: null,
+    proximo_seguimiento: null,
+    notas_seguimiento: null,
   };
 }
 
+// Solo crea contactos nuevos (arrancan en etapa "lead"); editar un
+// contacto existente —incluyendo la etapa— se hace desde ContactDrawer.
 export default function ContactFormModal({
-  contact,
   onClose,
   onSaved,
 }: {
-  contact: EquipamientoContact | null;
   onClose: () => void;
   onSaved: (contact: EquipamientoContact) => void;
 }) {
-  const [form, setForm] = useState<ContactInput>(
-    contact
-      ? {
-          name: contact.name,
-          business_name: contact.business_name,
-          city: contact.city,
-          phone: contact.phone,
-          category: contact.category,
-          last_contact_date: contact.last_contact_date,
-        }
-      : emptyInput()
-  );
+  const [form, setForm] = useState<ContactInput>(emptyInput());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,9 +50,7 @@ export default function ContactFormModal({
 
     setSaving(true);
     setError(null);
-    const result = contact
-      ? await updateContact(contact.id, form)
-      : await createContact(form);
+    const result = await createContact(form);
     setSaving(false);
 
     if (result.error) {
@@ -70,7 +61,7 @@ export default function ContactFormModal({
   }
 
   return (
-    <Modal title={contact ? "Editar contacto" : "Nuevo contacto"} onClose={onClose}>
+    <Modal title="Nuevo contacto" onClose={onClose}>
       <form onSubmit={handleSubmit} className="font-inter space-y-4">
         <div>
           <label className={labelClass}>Nombre</label>

@@ -3,6 +3,7 @@ import { fetchAllRows } from "@/lib/supabase/fetchAll";
 import type {
   Brand,
   Category,
+  ContactStage,
   CrmInstallment,
   CrmInstallmentSale,
   EquipamientoContact,
@@ -10,8 +11,10 @@ import type {
   Product,
   SaleItem,
 } from "@/lib/types";
+import { CONTACT_STAGES } from "@/lib/types";
 import CrmEquipamientosView from "./CrmEquipamientosView";
 import type { ContactRow } from "./ContactsTable";
+import { needsFollowUpToday, todayISO } from "./followUp";
 
 const RECENT_CONTACT_DAYS = 7;
 const STALE_CONTACT_DAYS = 30;
@@ -24,6 +27,26 @@ function daysAgoISO(days: number): string {
 
 function normalizeName(name: string): string {
   return name.trim().toLowerCase();
+}
+
+// Une las ventas de equipamientos_sales a un contacto por nombre de
+// cliente O de comercio (cualquiera de los dos campos de la venta puede
+// coincidir con el nombre o el comercio del contacto) — antes solo se
+// matcheaba cliente-vs-nombre, esto suma los casos donde el vendedor
+// cargó el nombre del comercio en cualquiera de las dos columnas.
+function buildSalesByNormalizedKey(sales: EquipamientoSale[]): Map<string, EquipamientoSale[]> {
+  const map = new Map<string, EquipamientoSale[]>();
+  function add(key: string | null, sale: EquipamientoSale) {
+    if (!key) return;
+    const list = map.get(key) ?? [];
+    list.push(sale);
+    map.set(key, list);
+  }
+  for (const sale of sales) {
+    add(normalizeName(sale.cliente), sale);
+    add(sale.comercio ? normalizeName(sale.comercio) : null, sale);
+  }
+  return map;
 }
 
 export default async function CrmEquipamientosPage() {
@@ -107,37 +130,35 @@ export default async function CrmEquipamientosPage() {
     ),
   ]);
 
-  // Última compra, facturación total y cantidad de ventas por cliente,
-  // agregado en una sola pasada. Se matchea por nombre normalizado porque
-  // "Cliente" en Ventas y "Nombre" en el CRM son campos de texto libre
-  // cargados a mano, no hay un ID en común. Las fechas ISO "YYYY-MM-DD"
-  // comparan bien como texto.
-  const salesByName = new Map<
-    string,
-    { lastPurchaseDate: string | null; totalRevenue: number; salesCount: number }
-  >();
-  for (const sale of sales ?? []) {
-    const key = normalizeName(sale.cliente);
-    const agg = salesByName.get(key) ?? {
-      lastPurchaseDate: null,
-      totalRevenue: 0,
-      salesCount: 0,
-    };
-    agg.totalRevenue += sale.monto;
-    agg.salesCount += 1;
-    if (sale.fecha && (!agg.lastPurchaseDate || sale.fecha > agg.lastPurchaseDate)) {
-      agg.lastPurchaseDate = sale.fecha;
+  // Última compra, facturación total, cantidad de ventas y el detalle de
+  // compras por contacto, agregado en una sola pasada a partir del mismo
+  // índice cliente/comercio. Las fechas ISO "YYYY-MM-DD" comparan bien
+  // como texto.
+  const salesByKey = buildSalesByNormalizedKey(sales ?? []);
+  const salesByContactId: Record<string, EquipamientoSale[]> = {};
+
+  function matchedSalesFor(contact: EquipamientoContact): EquipamientoSale[] {
+    const keys = [normalizeName(contact.name)];
+    if (contact.business_name) keys.push(normalizeName(contact.business_name));
+    const matched = new Map<string, EquipamientoSale>();
+    for (const key of keys) {
+      for (const sale of salesByKey.get(key) ?? []) matched.set(sale.id, sale);
     }
-    salesByName.set(key, agg);
+    return [...matched.values()].sort((a, b) => (b.fecha ?? "").localeCompare(a.fecha ?? ""));
   }
 
   const rows: ContactRow[] = (contacts ?? []).map((c) => {
-    const agg = salesByName.get(normalizeName(c.name));
+    const matched = matchedSalesFor(c);
+    salesByContactId[c.id] = matched;
+    const lastPurchaseDate = matched.reduce<string | null>(
+      (latest, s) => (s.fecha && (!latest || s.fecha > latest) ? s.fecha : latest),
+      null
+    );
     return {
       ...c,
-      lastPurchaseDate: agg?.lastPurchaseDate ?? null,
-      totalRevenue: agg?.totalRevenue ?? 0,
-      salesCount: agg?.salesCount ?? 0,
+      lastPurchaseDate,
+      totalRevenue: matched.reduce((sum, s) => sum + s.monto, 0),
+      salesCount: matched.length,
     };
   });
 
@@ -152,6 +173,15 @@ export default async function CrmEquipamientosPage() {
     (c) => !c.last_contact_date || c.last_contact_date < staleThreshold
   ).length;
 
+  const stageCounts = CONTACT_STAGES.reduce(
+    (acc, stage) => ({ ...acc, [stage]: 0 }),
+    {} as Record<ContactStage, number>
+  );
+  for (const c of rows) stageCounts[c.etapa]++;
+
+  const today = todayISO();
+  const dueTodayCount = rows.filter((c) => needsFollowUpToday(c, today)).length;
+
   const categoryName = new Map(((categories ?? []) as Category[]).map((c) => [c.id, c.name]));
   const brandName = new Map(((brands ?? []) as Brand[]).map((b) => [b.id, b.name]));
 
@@ -161,6 +191,9 @@ export default async function CrmEquipamientosPage() {
       totalCount={totalCount}
       contactedThisWeek={contactedThisWeek}
       staleCount={staleCount}
+      stageCounts={stageCounts}
+      dueTodayCount={dueTodayCount}
+      salesByContactId={salesByContactId}
       saleItems={equipamientosSaleItems ?? []}
       stockProducts={equipamientosProducts ?? []}
       categoryNameById={Object.fromEntries(categoryName)}
