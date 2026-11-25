@@ -1,102 +1,126 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Users, CalendarCheck, CalendarClock } from "lucide-react";
-import KpiCard from "@/components/ds/KpiCard";
-import type { ContactCategory, ContactStage, EquipamientoSale } from "@/lib/types";
+import { useRouter } from "next/navigation";
+import type { ContactCategory, EquipamientoSale } from "@/lib/types";
 import ContactsHeader from "./ContactsHeader";
 import ContactFilterBar from "./ContactFilterBar";
-import ContactsStageBoard from "./ContactsStageBoard";
-import ContactsTable, { type ContactRow } from "./ContactsTable";
-import { needsFollowUpToday, todayISO } from "./followUp";
+import FollowUpBanner from "./FollowUpBanner";
+import LeadsKanbanView from "./LeadsKanbanView";
+import ClientsTable from "./ClientsTable";
+import ContactDrawer from "./ContactDrawer";
+import type { ContactRow } from "./contactRow";
+
+type SubTab = "leads" | "clientes";
+
+function normalizePhoneDigits(value: string): string {
+  return value.replace(/\D/g, "");
+}
 
 export default function ContactsView({
   rows,
-  totalCount,
-  contactedThisWeek,
-  staleCount,
-  stageCounts,
-  dueTodayCount,
+  cities,
   salesByContactId,
 }: {
   rows: ContactRow[];
-  totalCount: number;
-  contactedThisWeek: number;
-  staleCount: number;
-  stageCounts: Record<ContactStage, number>;
-  dueTodayCount: number;
+  cities: string[];
   salesByContactId: Record<string, EquipamientoSale[]>;
 }) {
+  const router = useRouter();
+  const [subTab, setSubTab] = useState<SubTab>("leads");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<ContactCategory | "">("");
-  const [stage, setStage] = useState<ContactStage | "">("");
-  const [dueToday, setDueToday] = useState(false);
+  const [city, setCity] = useState("");
+  const [viewingContactId, setViewingContactId] = useState<string | null>(null);
 
   const filteredRows = useMemo(() => {
     let result = rows;
     if (search.trim()) {
       const needle = search.trim().toLowerCase();
-      result = result.filter(
-        (c) =>
-          c.name.toLowerCase().includes(needle) ||
-          (c.business_name ?? "").toLowerCase().includes(needle) ||
-          (c.city ?? "").toLowerCase().includes(needle)
-      );
+      const needleDigits = normalizePhoneDigits(search);
+      result = result.filter((c) => {
+        if (c.name.toLowerCase().includes(needle)) return true;
+        if (c.phone?.toLowerCase().includes(needle)) return true;
+        if (needleDigits && c.phone && normalizePhoneDigits(c.phone).includes(needleDigits)) {
+          return true;
+        }
+        return false;
+      });
     }
-    if (category) {
-      result = result.filter((c) => c.category === category);
-    }
-    if (stage) {
-      result = result.filter((c) => c.etapa === stage);
-    }
-    if (dueToday) {
-      const today = todayISO();
-      result = result.filter((c) => needsFollowUpToday(c, today));
-    }
+    if (category) result = result.filter((c) => c.category === category);
+    if (city) result = result.filter((c) => c.city === city);
     return result;
-  }, [rows, search, category, stage, dueToday]);
+  }, [rows, search, category, city]);
+
+  const leadRows = useMemo(
+    () =>
+      filteredRows.filter(
+        (c) => c.etapa === "lead" || c.etapa === "contactado" || c.etapa === "cotizado"
+      ),
+    [filteredRows]
+  );
+  const lostRows = useMemo(() => filteredRows.filter((c) => c.etapa === "perdido"), [filteredRows]);
+  const clientRows = useMemo(() => filteredRows.filter((c) => c.etapa === "cliente"), [filteredRows]);
+
+  const viewingContact = rows.find((r) => r.id === viewingContactId) ?? null;
 
   return (
-    <div className="font-inter space-y-8">
+    <div className="font-inter space-y-6">
       <ContactsHeader />
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <KpiCard icon={Users} tone="pink" label="Contactos totales" value={String(totalCount)} />
-        <KpiCard
-          icon={CalendarCheck}
-          tone="blue"
-          label="Contactados esta semana"
-          value={String(contactedThisWeek)}
-        />
-        <KpiCard
-          icon={CalendarClock}
-          tone="amber"
-          label="Sin contacto reciente"
-          value={String(staleCount)}
-          sublabel="hace más de 30 días o nunca"
-        />
-      </div>
-
-      <ContactsStageBoard stageCounts={stageCounts} dueTodayCount={dueTodayCount} />
+      <FollowUpBanner rows={rows} onSelect={setViewingContactId} />
 
       <ContactFilterBar
         search={search}
         onSearchChange={setSearch}
         category={category}
         onCategoryChange={setCategory}
-        stage={stage}
-        onStageChange={setStage}
-        dueToday={dueToday}
-        onDueTodayChange={setDueToday}
+        city={city}
+        onCityChange={setCity}
+        cities={cities}
         onClear={() => {
           setSearch("");
           setCategory("");
-          setStage("");
-          setDueToday(false);
+          setCity("");
         }}
       />
 
-      <ContactsTable rows={filteredRows} salesByContactId={salesByContactId} />
+      <div className="inline-flex gap-1 rounded-2xl border border-mh-border bg-mh-surface p-1.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <button
+          onClick={() => setSubTab("leads")}
+          className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+            subTab === "leads"
+              ? "bg-mh-pink text-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+              : "text-mh-ink-muted hover:bg-slate-50 hover:text-mh-ink"
+          }`}
+        >
+          Leads ({leadRows.length})
+        </button>
+        <button
+          onClick={() => setSubTab("clientes")}
+          className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
+            subTab === "clientes"
+              ? "bg-mh-pink text-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+              : "text-mh-ink-muted hover:bg-slate-50 hover:text-mh-ink"
+          }`}
+        >
+          Clientes ({clientRows.length})
+        </button>
+      </div>
+
+      {subTab === "leads" ? (
+        <LeadsKanbanView rows={leadRows} lostRows={lostRows} onOpenContact={setViewingContactId} />
+      ) : (
+        <ClientsTable rows={clientRows} onOpenContact={setViewingContactId} />
+      )}
+
+      <ContactDrawer
+        key={viewingContact?.id ?? "none"}
+        contact={viewingContact}
+        sales={viewingContact ? (salesByContactId[viewingContact.id] ?? []) : []}
+        onClose={() => setViewingContactId(null)}
+        onDeleted={() => router.refresh()}
+      />
     </div>
   );
 }

@@ -2,8 +2,6 @@
 // desde page.tsx (server) como desde los componentes de cliente de este
 // módulo.
 
-const FOLLOW_UP_STALE_DAYS = 15;
-
 export function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -17,7 +15,7 @@ export function addDaysISO(dateISO: string, days: number): string {
   ).padStart(2, "0")}`;
 }
 
-function daysBetweenISO(fromISO: string, toISO: string): number {
+export function daysBetweenISO(fromISO: string, toISO: string): number {
   const [fy, fm, fd] = fromISO.split("-").map(Number);
   const [ty, tm, td] = toISO.split("-").map(Number);
   const from = new Date(fy, fm - 1, fd);
@@ -25,17 +23,22 @@ function daysBetweenISO(fromISO: string, toISO: string): number {
   return Math.round((to.getTime() - from.getTime()) / 86_400_000);
 }
 
-// Un contacto "toca hoy" si:
-// - tiene próximo_seguimiento cargado y es hoy o ya pasó, o
-// - no tiene próximo_seguimiento y hace 15 días o más que no se lo
-//   contacta (o nunca se lo contactó).
-export function needsFollowUpToday(
-  contact: { proximo_seguimiento: string | null; last_contact_date: string | null },
+// Para el rojo de "vencido" en tarjetas/tablas: estrictamente antes de
+// hoy (hoy todavía no es "vencido", es "para hoy").
+export function isOverdue(
+  contact: { proximo_seguimiento: string | null },
   today: string
 ): boolean {
-  if (contact.proximo_seguimiento) {
-    return contact.proximo_seguimiento <= today;
-  }
-  if (!contact.last_contact_date) return true;
-  return daysBetweenISO(contact.last_contact_date, today) >= FOLLOW_UP_STALE_DAYS;
+  return !!contact.proximo_seguimiento && contact.proximo_seguimiento < today;
+}
+
+// Franja "Para contactar esta semana": próximo_seguimiento vencido o
+// dentro de los próximos 7 días (incluye hoy). Contactos sin fecha
+// cargada no entran acá.
+export function needsFollowUpThisWeek(
+  contact: { proximo_seguimiento: string | null },
+  today: string
+): boolean {
+  if (!contact.proximo_seguimiento) return false;
+  return contact.proximo_seguimiento <= addDaysISO(today, 7);
 }

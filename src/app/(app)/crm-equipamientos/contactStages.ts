@@ -1,4 +1,5 @@
 import type { ContactCategory, ContactStage } from "@/lib/types";
+import { todayISO } from "./followUp";
 
 export const STAGE_LABELS: Record<ContactStage, string> = {
   lead: "Lead",
@@ -35,4 +36,18 @@ export function suggestedWhatsAppMessage(contact: {
 }): string {
   const topic = contact.equipo_interes?.trim() || CATEGORY_INTEREST_HINT[contact.category];
   return `Hola! Te escribe Nico de MH Equipamientos. Te quería consultar cómo seguís con lo de ${topic}.`;
+}
+
+export function formatDateDMY(iso: string | null): string {
+  if (!iso) return "—";
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+// El motivo de "Perdido" se guarda dentro de notas_seguimiento (no hay
+// columna aparte): se antepone como una entrada con fecha, sin pisar las
+// notas que ya hubiera.
+export function withLostReasonNote(existingNote: string | null, motivo: string): string {
+  const entry = `[${formatDateDMY(todayISO())}] Perdido: ${motivo.trim()}`;
+  return existingNote?.trim() ? `${entry}\n\n${existingNote.trim()}` : entry;
 }

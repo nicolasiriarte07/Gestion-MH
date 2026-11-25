@@ -1,8 +1,7 @@
 "use client";
 
 import { Search, X } from "lucide-react";
-import { CONTACT_CATEGORIES, CONTACT_STAGES, type ContactCategory, type ContactStage } from "@/lib/types";
-import { STAGE_LABELS } from "./contactStages";
+import { CONTACT_CATEGORIES, type ContactCategory } from "@/lib/types";
 
 const selectClass =
   "font-inter rounded-xl border border-mh-border bg-white px-3 py-2.5 text-sm font-medium text-mh-ink focus:border-mh-pink focus:outline-none";
@@ -12,23 +11,21 @@ export default function ContactFilterBar({
   onSearchChange,
   category,
   onCategoryChange,
-  stage,
-  onStageChange,
-  dueToday,
-  onDueTodayChange,
+  city,
+  onCityChange,
+  cities,
   onClear,
 }: {
   search: string;
   onSearchChange: (v: string) => void;
   category: ContactCategory | "";
   onCategoryChange: (v: ContactCategory | "") => void;
-  stage: ContactStage | "";
-  onStageChange: (v: ContactStage | "") => void;
-  dueToday: boolean;
-  onDueTodayChange: (v: boolean) => void;
+  city: string;
+  onCityChange: (v: string) => void;
+  cities: string[];
   onClear: () => void;
 }) {
-  const hasFilters = search !== "" || category !== "" || stage !== "" || dueToday;
+  const hasFilters = search !== "" || category !== "" || city !== "";
 
   return (
     <div className="font-inter flex flex-wrap items-center gap-3 rounded-2xl border border-mh-border bg-mh-surface p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
@@ -39,7 +36,7 @@ export default function ContactFilterBar({
         />
         <input
           type="text"
-          placeholder="Buscar por nombre, comercio o ciudad..."
+          placeholder="Buscar por nombre o teléfono..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           className="font-inter w-full rounded-xl border border-mh-border bg-white py-2.5 pr-3 pl-9 text-sm font-medium text-mh-ink focus:border-mh-pink focus:outline-none"
@@ -47,14 +44,14 @@ export default function ContactFilterBar({
       </div>
 
       <select
-        value={stage}
-        onChange={(e) => onStageChange(e.target.value as ContactStage | "")}
+        value={city}
+        onChange={(e) => onCityChange(e.target.value)}
         className={selectClass}
       >
-        <option value="">Etapa: todas</option>
-        {CONTACT_STAGES.map((s) => (
-          <option key={s} value={s}>
-            {STAGE_LABELS[s]}
+        <option value="">Ciudad: todas</option>
+        {cities.map((c) => (
+          <option key={c} value={c}>
+            {c}
           </option>
         ))}
       </select>
@@ -71,17 +68,6 @@ export default function ContactFilterBar({
           </option>
         ))}
       </select>
-
-      <button
-        onClick={() => onDueTodayChange(!dueToday)}
-        className={`rounded-xl border px-3.5 py-2.5 text-sm font-semibold transition-colors ${
-          dueToday
-            ? "border-mh-pink bg-mh-pink text-white"
-            : "border-mh-border bg-white text-mh-ink-muted hover:text-mh-ink"
-        }`}
-      >
-        Toca seguimiento hoy
-      </button>
 
       {hasFilters && (
         <button

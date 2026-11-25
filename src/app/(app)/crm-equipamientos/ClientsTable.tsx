@@ -2,24 +2,20 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2, MoreHorizontal, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
+import { Trash2, MoreHorizontal, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import Card from "@/components/ds/Card";
 import Badge, { type BadgeTone } from "@/components/ds/Badge";
+import AutoGrowTextarea from "@/components/AutoGrowTextarea";
 import { formatCurrency } from "@/lib/currency";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
-import {
-  CONTACT_STAGES,
-  type ContactCategory,
-  type ContactStage,
-  type EquipamientoContact,
-  type EquipamientoSale,
-} from "@/lib/types";
+import type { ContactCategory, EquipamientoContact } from "@/lib/types";
 import { deleteContact, updateContact } from "./actions";
-import { STAGE_LABELS, STAGE_TONE_CLASSES, suggestedWhatsAppMessage } from "./contactStages";
-import { needsFollowUpToday, todayISO } from "./followUp";
-import ContactDrawer from "./ContactDrawer";
+import { formatDateDMY, suggestedWhatsAppMessage } from "./contactStages";
+import { daysBetweenISO, isOverdue, todayISO } from "./followUp";
+import type { ContactRow } from "./contactRow";
 
 const ROWS_PER_PAGE = 50;
+const STALE_PURCHASE_DAYS = 90;
 
 const CATEGORY_TONE: Record<ContactCategory, BadgeTone> = {
   "Carnicería": "red",
@@ -30,29 +26,19 @@ const CATEGORY_TONE: Record<ContactCategory, BadgeTone> = {
   Otro: "gray",
 };
 
-function formatDate(iso: string | null): string {
-  if (!iso) return "—";
-  const [y, m, d] = iso.split("-");
-  return `${d}/${m}/${y}`;
-}
+const fieldClass =
+  "w-full rounded border border-transparent px-1.5 py-1.5 text-xs hover:border-mh-border focus:border-mh-pink focus:outline-none";
 
-export type ContactRow = EquipamientoContact & {
-  lastPurchaseDate: string | null;
-  totalRevenue: number;
-  salesCount: number;
-};
-
-export default function ContactsTable({
+export default function ClientsTable({
   rows,
-  salesByContactId,
+  onOpenContact,
 }: {
   rows: ContactRow[];
-  salesByContactId: Record<string, EquipamientoSale[]>;
+  onOpenContact: (id: string) => void;
 }) {
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [editingContactId, setEditingContactId] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -62,7 +48,6 @@ export default function ContactsTable({
     (currentPage - 1) * ROWS_PER_PAGE,
     currentPage * ROWS_PER_PAGE
   );
-  const editingContact = rows.find((r) => r.id === editingContactId) ?? null;
   const today = todayISO();
 
   async function handleQuickEdit(row: ContactRow, patch: Record<string, unknown>) {
@@ -90,7 +75,7 @@ export default function ContactsTable({
   return (
     <Card padding="none" className="font-inter overflow-hidden">
       <div className="max-h-[640px] overflow-auto">
-        <table className="w-full min-w-[1480px] text-sm">
+        <table className="w-full min-w-[1700px] text-sm">
           <thead className="sticky top-0 z-10 bg-mh-bg">
             <tr className="border-b border-mh-border text-left text-xs font-semibold text-mh-ink-muted uppercase">
               <th className="px-4 py-3 font-semibold">Nombre</th>
@@ -98,22 +83,28 @@ export default function ContactsTable({
               <th className="px-3 py-3 font-semibold">Ciudad</th>
               <th className="px-3 py-3 font-semibold">Teléfono</th>
               <th className="px-3 py-3 font-semibold">Rubro</th>
-              <th className="px-3 py-3 font-semibold">Etapa</th>
-              <th className="px-3 py-3 font-semibold">Próx. seguimiento</th>
-              <th className="px-3 py-3 font-semibold">Último contacto</th>
+              <th className="px-3 py-3 font-semibold">Equipo de interés</th>
               <th className="px-3 py-3 font-semibold">Última compra</th>
+              <th className="px-3 py-3 font-semibold">Días s/compra</th>
               <th className="px-3 py-3 font-semibold">Facturación total</th>
-              <th className="px-3 py-3 font-semibold">Cantidad de ventas</th>
+              <th className="px-3 py-3 font-semibold">Cant. ventas</th>
+              <th className="px-3 py-3 font-semibold">Próx. seguimiento</th>
+              <th className="px-3 py-3 font-semibold">Nota</th>
               <th className="w-12 px-3 py-3" />
             </tr>
           </thead>
           <tbody>
             {pagedRows.map((row) => {
-              const dueToday = needsFollowUpToday(row, today);
+              const daysSincePurchase = row.lastPurchaseDate
+                ? daysBetweenISO(row.lastPurchaseDate, today)
+                : null;
+              const stale = daysSincePurchase === null || daysSincePurchase > STALE_PURCHASE_DAYS;
+              const overdue = isOverdue(row, today);
+
               return (
                 <tr
                   key={row.id}
-                  onClick={() => setEditingContactId(row.id)}
+                  onClick={() => onOpenContact(row.id)}
                   className="cursor-pointer border-b border-mh-border/70 transition-colors last:border-0 hover:bg-mh-pink-light/40"
                 >
                   <td className="overflow-hidden px-4 py-3">
@@ -146,20 +137,35 @@ export default function ContactsTable({
                     <Badge tone={CATEGORY_TONE[row.category]}>{row.category}</Badge>
                   </td>
                   <td className="overflow-hidden px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                    <select
-                      value={row.etapa}
+                    <input
+                      className={fieldClass}
+                      defaultValue={row.equipo_interes ?? ""}
                       disabled={savingId === row.id}
-                      onChange={(e) =>
-                        handleQuickEdit(row, { etapa: e.target.value as ContactStage })
-                      }
-                      className={`w-full rounded border border-transparent px-1.5 py-1.5 text-xs font-semibold hover:border-mh-border focus:border-mh-pink focus:outline-none ${STAGE_TONE_CLASSES[row.etapa]}`}
-                    >
-                      {CONTACT_STAGES.map((s) => (
-                        <option key={s} value={s}>
-                          {STAGE_LABELS[s]}
-                        </option>
-                      ))}
-                    </select>
+                      onBlur={(e) => {
+                        const v = e.target.value.trim();
+                        if (v !== (row.equipo_interes ?? "")) {
+                          handleQuickEdit(row, { equipo_interes: v || null });
+                        }
+                      }}
+                    />
+                  </td>
+                  <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
+                    <p className="truncate">{formatDateDMY(row.lastPurchaseDate)}</p>
+                  </td>
+                  <td className="overflow-hidden px-3 py-3">
+                    {daysSincePurchase === null ? (
+                      <Badge tone="amber">Sin compras</Badge>
+                    ) : stale ? (
+                      <Badge tone="amber">{daysSincePurchase} días</Badge>
+                    ) : (
+                      <p className="text-mh-ink-muted">{daysSincePurchase} días</p>
+                    )}
+                  </td>
+                  <td className="overflow-hidden px-3 py-3 font-semibold text-mh-ink">
+                    <p className="truncate">{formatCurrency(row.totalRevenue)}</p>
+                  </td>
+                  <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
+                    <p className="truncate">{row.salesCount}</p>
                   </td>
                   <td className="overflow-hidden px-3 py-3" onClick={(e) => e.stopPropagation()}>
                     <input
@@ -169,22 +175,23 @@ export default function ContactsTable({
                       onChange={(e) =>
                         handleQuickEdit(row, { proximo_seguimiento: e.target.value || null })
                       }
-                      className={`w-full rounded border border-transparent px-1.5 py-1.5 text-xs hover:border-mh-border focus:border-mh-pink focus:outline-none ${
-                        dueToday ? "bg-amber-50 font-semibold text-amber-700" : ""
-                      }`}
+                      className={`${fieldClass} ${overdue ? "bg-red-50 font-semibold text-red-600" : ""}`}
                     />
                   </td>
-                  <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
-                    <p className="truncate">{formatDate(row.last_contact_date)}</p>
-                  </td>
-                  <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
-                    <p className="truncate">{formatDate(row.lastPurchaseDate)}</p>
-                  </td>
-                  <td className="overflow-hidden px-3 py-3 font-semibold text-mh-ink">
-                    <p className="truncate">{formatCurrency(row.totalRevenue)}</p>
-                  </td>
-                  <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
-                    <p className="truncate">{row.salesCount}</p>
+                  <td className="overflow-hidden px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                    <AutoGrowTextarea
+                      className={fieldClass}
+                      defaultValue={row.notas_seguimiento ?? ""}
+                      onBlur={(e) => {
+                        const v = e.target.value.trim();
+                        if (v !== (row.notas_seguimiento ?? "")) {
+                          handleQuickEdit(row, {
+                            notas_seguimiento: v || null,
+                            last_contact_date: todayISO(),
+                          });
+                        }
+                      }}
+                    />
                   </td>
                   <td className="relative px-3 py-3" onClick={(e) => e.stopPropagation()}>
                     <button
@@ -198,16 +205,6 @@ export default function ContactsTable({
                         ref={menuRef}
                         className="absolute top-full right-3 z-20 w-40 rounded-xl border border-mh-border bg-white py-1 shadow-lg"
                       >
-                        <button
-                          onClick={() => {
-                            setEditingContactId(row.id);
-                            setOpenMenuId(null);
-                          }}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-mh-ink hover:bg-slate-50"
-                        >
-                          <Pencil size={15} />
-                          Editar
-                        </button>
                         <button
                           onClick={() => handleDelete(row)}
                           className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-red-600 hover:bg-slate-50"
@@ -223,8 +220,8 @@ export default function ContactsTable({
             })}
             {pagedRows.length === 0 && (
               <tr>
-                <td colSpan={12} className="px-6 py-16 text-center text-mh-ink-muted">
-                  No hay contactos que coincidan con los filtros.
+                <td colSpan={13} className="px-6 py-16 text-center text-mh-ink-muted">
+                  No hay clientes que coincidan con los filtros.
                 </td>
               </tr>
             )}
@@ -236,7 +233,7 @@ export default function ContactsTable({
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-mh-border px-6 py-4 text-sm text-mh-ink-muted">
           <span>
             Mostrando {(currentPage - 1) * ROWS_PER_PAGE + 1}–
-            {Math.min(currentPage * ROWS_PER_PAGE, rows.length)} de {rows.length} contacto(s)
+            {Math.min(currentPage * ROWS_PER_PAGE, rows.length)} de {rows.length} cliente(s)
           </span>
           <div className="flex items-center gap-1">
             <button
@@ -259,14 +256,6 @@ export default function ContactsTable({
           </div>
         </div>
       )}
-
-      <ContactDrawer
-        key={editingContact?.id ?? "none"}
-        contact={editingContact}
-        sales={editingContact ? (salesByContactId[editingContact.id] ?? []) : []}
-        onClose={() => setEditingContactId(null)}
-        onDeleted={() => router.refresh()}
-      />
     </Card>
   );
 }

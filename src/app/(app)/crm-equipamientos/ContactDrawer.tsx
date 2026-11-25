@@ -16,18 +16,13 @@ import {
   type EquipamientoSale,
 } from "@/lib/types";
 import { deleteContact, updateContact, type ContactInput } from "./actions";
-import { STAGE_LABELS, STAGE_TONE_CLASSES, suggestedWhatsAppMessage } from "./contactStages";
-import { addDaysISO, needsFollowUpToday, todayISO } from "./followUp";
+import { STAGE_LABELS, STAGE_TONE_CLASSES, formatDateDMY, suggestedWhatsAppMessage } from "./contactStages";
+import { addDaysISO, daysBetweenISO, isOverdue, todayISO } from "./followUp";
 
 const inputClass =
   "font-inter w-full rounded-xl border border-mh-border px-3 py-2 text-sm text-mh-ink focus:border-mh-pink focus:outline-none";
 const labelClass = "mb-1 block text-xs font-semibold text-mh-ink-muted";
-
-function formatDate(iso: string | null): string {
-  if (!iso) return "—";
-  const [y, m, d] = iso.split("-");
-  return `${d}/${m}/${y}`;
-}
+const STALE_PURCHASE_DAYS = 90;
 
 // Mismo patrón de autosave por campo que MarketingItemDrawer: inputs no
 // controlados (defaultValue) que guardan en onBlur/onChange, salvo
@@ -88,7 +83,7 @@ export default function ContactDrawer({
   }
 
   const today = todayISO();
-  const dueToday = contact ? needsFollowUpToday(contact, today) : false;
+  const overdue = contact ? isOverdue(contact, today) : false;
 
   return (
     <Drawer open={contact !== null} onClose={onClose}>
@@ -102,7 +97,7 @@ export default function ContactDrawer({
               >
                 {STAGE_LABELS[contact.etapa]}
               </span>
-              {dueToday && <Badge tone="amber">Toca seguimiento hoy</Badge>}
+              {overdue && <Badge tone="red">Seguimiento vencido</Badge>}
             </div>
             <p className="mt-2 text-lg font-extrabold text-mh-ink">{contact.name}</p>
             {contact.business_name && (
@@ -246,7 +241,7 @@ export default function ContactDrawer({
                 <span className={labelClass}>Próximo seguimiento</span>
                 <input
                   type="date"
-                  className={`${inputClass} ${dueToday ? "border-amber-400 bg-amber-50" : ""}`}
+                  className={`${inputClass} ${overdue ? "border-red-400 bg-red-50" : ""}`}
                   value={proximoSeguimiento ?? ""}
                   onChange={(e) => {
                     setProximoSeguimiento(e.target.value);
@@ -264,13 +259,31 @@ export default function ContactDrawer({
                 defaultValue={contact.notas_seguimiento ?? ""}
                 onBlur={(e) => {
                   const v = e.target.value.trim();
-                  if (v !== (contact.notas_seguimiento ?? "")) saveField({ notas_seguimiento: v || null });
+                  if (v === (contact.notas_seguimiento ?? "")) return;
+                  // Guardar una nota cuenta como una interacción: actualiza
+                  // "último contacto" a hoy en el mismo guardado.
+                  saveField({ notas_seguimiento: v || null, last_contact_date: todayISO() });
                 }}
               />
             </label>
 
             <div>
-              <p className="mb-2 text-sm font-bold text-mh-ink">Compras</p>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-sm font-bold text-mh-ink">Compras</p>
+                {contact.etapa === "cliente" &&
+                  (() => {
+                    const daysSince = sales[0]?.fecha
+                      ? daysBetweenISO(sales[0].fecha, today)
+                      : null;
+                    const stale = daysSince === null || daysSince > STALE_PURCHASE_DAYS;
+                    if (!stale) return null;
+                    return (
+                      <Badge tone="amber">
+                        {daysSince === null ? "Sin compras" : `${daysSince} días sin comprar`}
+                      </Badge>
+                    );
+                  })()}
+              </div>
               {sales.length === 0 ? (
                 <p className="text-sm text-mh-ink-muted">Sin compras registradas.</p>
               ) : (
@@ -285,7 +298,7 @@ export default function ContactDrawer({
                         <p className="font-bold text-mh-ink">{formatCurrency(sale.monto)}</p>
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-mh-ink-muted">
-                        <span>{formatDate(sale.fecha)}</span>
+                        <span>{formatDateDMY(sale.fecha)}</span>
                         <Badge tone={sale.cobrado ? "green" : "amber"}>
                           {sale.cobrado ? "Cobrado" : "Pendiente de cobro"}
                         </Badge>

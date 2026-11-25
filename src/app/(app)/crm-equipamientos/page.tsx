@@ -3,7 +3,6 @@ import { fetchAllRows } from "@/lib/supabase/fetchAll";
 import type {
   Brand,
   Category,
-  ContactStage,
   CrmInstallment,
   CrmInstallmentSale,
   EquipamientoContact,
@@ -11,19 +10,8 @@ import type {
   Product,
   SaleItem,
 } from "@/lib/types";
-import { CONTACT_STAGES } from "@/lib/types";
 import CrmEquipamientosView from "./CrmEquipamientosView";
-import type { ContactRow } from "./ContactsTable";
-import { needsFollowUpToday, todayISO } from "./followUp";
-
-const RECENT_CONTACT_DAYS = 7;
-const STALE_CONTACT_DAYS = 30;
-
-function daysAgoISO(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString().slice(0, 10);
-}
+import type { ContactRow } from "./contactRow";
 
 function normalizeName(name: string): string {
   return name.trim().toLowerCase();
@@ -162,25 +150,9 @@ export default async function CrmEquipamientosPage() {
     };
   });
 
-  const recentThreshold = daysAgoISO(RECENT_CONTACT_DAYS);
-  const staleThreshold = daysAgoISO(STALE_CONTACT_DAYS);
-
-  const totalCount = rows.length;
-  const contactedThisWeek = rows.filter(
-    (c) => c.last_contact_date && c.last_contact_date >= recentThreshold
-  ).length;
-  const staleCount = rows.filter(
-    (c) => !c.last_contact_date || c.last_contact_date < staleThreshold
-  ).length;
-
-  const stageCounts = CONTACT_STAGES.reduce(
-    (acc, stage) => ({ ...acc, [stage]: 0 }),
-    {} as Record<ContactStage, number>
-  );
-  for (const c of rows) stageCounts[c.etapa]++;
-
-  const today = todayISO();
-  const dueTodayCount = rows.filter((c) => needsFollowUpToday(c, today)).length;
+  const cities = [
+    ...new Set(rows.map((r) => r.city).filter((c): c is string => !!c)),
+  ].sort();
 
   const categoryName = new Map(((categories ?? []) as Category[]).map((c) => [c.id, c.name]));
   const brandName = new Map(((brands ?? []) as Brand[]).map((b) => [b.id, b.name]));
@@ -188,11 +160,7 @@ export default async function CrmEquipamientosPage() {
   return (
     <CrmEquipamientosView
       contactRows={rows}
-      totalCount={totalCount}
-      contactedThisWeek={contactedThisWeek}
-      staleCount={staleCount}
-      stageCounts={stageCounts}
-      dueTodayCount={dueTodayCount}
+      cities={cities}
       salesByContactId={salesByContactId}
       saleItems={equipamientosSaleItems ?? []}
       stockProducts={equipamientosProducts ?? []}

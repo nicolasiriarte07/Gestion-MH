@@ -1,28 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import type {
-  ContactStage,
-  CrmInstallment,
-  CrmInstallmentSale,
-  EquipamientoSale,
-  Product,
-  SaleItem,
-} from "@/lib/types";
+import type { CrmInstallment, CrmInstallmentSale, EquipamientoSale, Product, SaleItem } from "@/lib/types";
 import EquipamientosVentasView from "./EquipamientosVentasView";
 import EquipamientosStockView from "./EquipamientosStockView";
 import ContactsView from "./ContactsView";
 import CuentaCorrienteView from "./CuentaCorrienteView";
 import CrmTabs, { type CrmTab } from "./CrmTabs";
-import type { ContactRow } from "./ContactsTable";
+import type { ContactRow } from "./contactRow";
 
 export default function CrmEquipamientosView({
   contactRows,
-  totalCount,
-  contactedThisWeek,
-  staleCount,
-  stageCounts,
-  dueTodayCount,
+  cities,
   salesByContactId,
   saleItems,
   stockProducts,
@@ -32,11 +21,7 @@ export default function CrmEquipamientosView({
   installments,
 }: {
   contactRows: ContactRow[];
-  totalCount: number;
-  contactedThisWeek: number;
-  staleCount: number;
-  stageCounts: Record<ContactStage, number>;
-  dueTodayCount: number;
+  cities: string[];
   salesByContactId: Record<string, EquipamientoSale[]>;
   saleItems: SaleItem[];
   stockProducts: Product[];
@@ -54,15 +39,7 @@ export default function CrmEquipamientosView({
       <CrmTabs active={tab} onSelect={setTab} />
 
       {tab === "contactos" && (
-        <ContactsView
-          rows={contactRows}
-          totalCount={totalCount}
-          contactedThisWeek={contactedThisWeek}
-          staleCount={staleCount}
-          stageCounts={stageCounts}
-          dueTodayCount={dueTodayCount}
-          salesByContactId={salesByContactId}
-        />
+        <ContactsView rows={contactRows} cities={cities} salesByContactId={salesByContactId} />
       )}
 
       {tab === "ventas" && (
