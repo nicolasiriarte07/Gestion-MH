@@ -9,9 +9,9 @@ const inputClass =
   "w-full rounded-xl border border-mh-border px-3 py-2 text-sm focus:border-mh-pink focus:outline-none";
 const labelClass = "mb-1 block text-xs font-semibold text-mh-ink-muted";
 
-function emptyInput(): ContactInput {
+function emptyInput(initialName: string): ContactInput {
   return {
-    name: "",
+    name: initialName,
     business_name: null,
     city: null,
     phone: null,
@@ -27,13 +27,15 @@ function emptyInput(): ContactInput {
 // Solo crea contactos nuevos (arrancan en etapa "lead"); editar un
 // contacto existente —incluyendo la etapa— se hace desde ContactDrawer.
 export default function ContactFormModal({
+  initialName,
   onClose,
   onSaved,
 }: {
+  initialName?: string;
   onClose: () => void;
   onSaved: (contact: EquipamientoContact) => void;
 }) {
-  const [form, setForm] = useState<ContactInput>(emptyInput());
+  const [form, setForm] = useState<ContactInput>(emptyInput(initialName ?? ""));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

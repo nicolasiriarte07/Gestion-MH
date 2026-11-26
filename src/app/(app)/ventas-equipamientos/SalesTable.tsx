@@ -6,7 +6,7 @@ import { Pencil, Trash2, ChevronLeft, ChevronRight, MessageSquare } from "lucide
 import Card from "@/components/ds/Card";
 import Badge from "@/components/ds/Badge";
 import { formatCurrency } from "@/lib/currency";
-import type { EquipamientoSale } from "@/lib/types";
+import type { EquipamientoContact, EquipamientoSale } from "@/lib/types";
 import { deleteSale } from "./actions";
 import SaleFormModal from "./SaleFormModal";
 
@@ -21,9 +21,11 @@ function formatDate(iso: string | null): string {
 export default function SalesTable({
   rows,
   categoryOptions,
+  contacts,
 }: {
   rows: EquipamientoSale[];
   categoryOptions: string[];
+  contacts: EquipamientoContact[];
 }) {
   const router = useRouter();
   const [page, setPage] = useState(1);
@@ -180,6 +182,7 @@ export default function SalesTable({
         <SaleFormModal
           sale={editingSale}
           categoryOptions={categoryOptions}
+          contacts={contacts}
           onClose={() => setEditingSale(null)}
           onSaved={() => {
             setEditingSale(null);

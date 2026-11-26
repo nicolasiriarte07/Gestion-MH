@@ -4,12 +4,18 @@ import { useMemo, useState } from "react";
 import { Wallet, Hash, CheckCircle2, Truck } from "lucide-react";
 import KpiCard from "@/components/ds/KpiCard";
 import { formatCurrency } from "@/lib/currency";
-import type { EquipamientoSale, SalePaymentMethod } from "@/lib/types";
+import type { EquipamientoContact, EquipamientoSale, SalePaymentMethod } from "@/lib/types";
 import SalesHeader from "./SalesHeader";
 import SalesFilterBar, { type EstadoFilter } from "./SalesFilterBar";
 import SalesTable from "./SalesTable";
 
-export default function SalesView({ rows }: { rows: EquipamientoSale[] }) {
+export default function SalesView({
+  rows,
+  contacts,
+}: {
+  rows: EquipamientoSale[];
+  contacts: EquipamientoContact[];
+}) {
   const [search, setSearch] = useState("");
   const [metodo, setMetodo] = useState<SalePaymentMethod | "">("");
   const [estado, setEstado] = useState<EstadoFilter>("");
@@ -40,10 +46,15 @@ export default function SalesView({ rows }: { rows: EquipamientoSale[] }) {
   const cantidad = rows.length;
   const cobradas = rows.filter((r) => r.cobrado).length;
   const entregadas = rows.filter((r) => r.entregado).length;
+  const unlinkedCount = rows.filter((r) => !r.contact_id).length;
 
   return (
     <div className="font-inter space-y-8">
-      <SalesHeader categoryOptions={categoryOptions} />
+      <SalesHeader
+        categoryOptions={categoryOptions}
+        contacts={contacts}
+        unlinkedCount={unlinkedCount}
+      />
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard icon={Wallet} tone="pink" label="Total ventas" value={formatCurrency(totalVentas)} />
@@ -66,7 +77,7 @@ export default function SalesView({ rows }: { rows: EquipamientoSale[] }) {
         }}
       />
 
-      <SalesTable rows={filteredRows} categoryOptions={categoryOptions} />
+      <SalesTable rows={filteredRows} categoryOptions={categoryOptions} contacts={contacts} />
     </div>
   );
 }

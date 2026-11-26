@@ -1,8 +1,17 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, MoreHorizontal, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  MessageCircle,
+  MoreHorizontal,
+  Trash2,
+} from "lucide-react";
 import Card from "@/components/ds/Card";
 import Badge, { type BadgeTone } from "@/components/ds/Badge";
 import AutoGrowTextarea from "@/components/AutoGrowTextarea";
@@ -40,11 +49,23 @@ export default function ClientsTable({
   const [page, setPage] = useState(1);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [balanceSort, setBalanceSort] = useState<"asc" | "desc" | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const totalPages = Math.max(1, Math.ceil(rows.length / ROWS_PER_PAGE));
+  const sortedRows = useMemo(() => {
+    if (!balanceSort) return rows;
+    const sorted = [...rows].sort((a, b) => a.outstandingBalance - b.outstandingBalance);
+    return balanceSort === "desc" ? sorted.reverse() : sorted;
+  }, [rows, balanceSort]);
+
+  function toggleBalanceSort() {
+    setBalanceSort((prev) => (prev === "desc" ? "asc" : prev === "asc" ? null : "desc"));
+    setPage(1);
+  }
+
+  const totalPages = Math.max(1, Math.ceil(sortedRows.length / ROWS_PER_PAGE));
   const currentPage = Math.min(page, totalPages);
-  const pagedRows = rows.slice(
+  const pagedRows = sortedRows.slice(
     (currentPage - 1) * ROWS_PER_PAGE,
     currentPage * ROWS_PER_PAGE
   );
@@ -75,7 +96,7 @@ export default function ClientsTable({
   return (
     <Card padding="none" className="font-inter overflow-hidden">
       <div className="max-h-[640px] overflow-auto">
-        <table className="w-full min-w-[1700px] text-sm">
+        <table className="w-full min-w-[1850px] text-sm">
           <thead className="sticky top-0 z-10 bg-mh-bg">
             <tr className="border-b border-mh-border text-left text-xs font-semibold text-mh-ink-muted uppercase">
               <th className="px-4 py-3 font-semibold">Nombre</th>
@@ -88,6 +109,21 @@ export default function ClientsTable({
               <th className="px-3 py-3 font-semibold">Días s/compra</th>
               <th className="px-3 py-3 font-semibold">Facturación total</th>
               <th className="px-3 py-3 font-semibold">Cant. ventas</th>
+              <th className="px-3 py-3 font-semibold">
+                <button
+                  onClick={toggleBalanceSort}
+                  className="flex items-center gap-1 uppercase hover:text-mh-ink"
+                >
+                  Saldo pendiente
+                  {balanceSort === "asc" ? (
+                    <ArrowUp size={12} />
+                  ) : balanceSort === "desc" ? (
+                    <ArrowDown size={12} />
+                  ) : (
+                    <ArrowUpDown size={12} className="opacity-50" />
+                  )}
+                </button>
+              </th>
               <th className="px-3 py-3 font-semibold">Próx. seguimiento</th>
               <th className="px-3 py-3 font-semibold">Nota</th>
               <th className="w-12 px-3 py-3" />
@@ -167,6 +203,15 @@ export default function ClientsTable({
                   <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
                     <p className="truncate">{row.salesCount}</p>
                   </td>
+                  <td className="overflow-hidden px-3 py-3">
+                    {row.outstandingBalance > 0 ? (
+                      <p className="truncate font-semibold text-amber-700">
+                        {formatCurrency(row.outstandingBalance)}
+                      </p>
+                    ) : (
+                      <p className="text-mh-ink-muted">—</p>
+                    )}
+                  </td>
                   <td className="overflow-hidden px-3 py-3" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="date"
@@ -220,7 +265,7 @@ export default function ClientsTable({
             })}
             {pagedRows.length === 0 && (
               <tr>
-                <td colSpan={13} className="px-6 py-16 text-center text-mh-ink-muted">
+                <td colSpan={14} className="px-6 py-16 text-center text-mh-ink-muted">
                   No hay clientes que coincidan con los filtros.
                 </td>
               </tr>

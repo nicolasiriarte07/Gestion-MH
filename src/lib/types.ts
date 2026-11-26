@@ -237,6 +237,7 @@ export type EquipamientoSale = {
   id: string;
   cliente: string;
   comercio: string | null;
+  contact_id: string | null;
   mes: string | null;
   fecha: string | null;
   producto: string;

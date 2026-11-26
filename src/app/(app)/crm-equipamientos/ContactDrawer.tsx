@@ -6,6 +6,7 @@ import { MessageCircle, PhoneCall, Trash2 } from "lucide-react";
 import Drawer from "@/components/ds/Drawer";
 import Badge from "@/components/ds/Badge";
 import { formatCurrency } from "@/lib/currency";
+import { outstandingBalance } from "@/lib/equipamientoSales";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import {
   CONTACT_CATEGORIES,
@@ -284,31 +285,62 @@ export default function ContactDrawer({
                     );
                   })()}
               </div>
+
               {sales.length === 0 ? (
                 <p className="text-sm text-mh-ink-muted">Sin compras registradas.</p>
               ) : (
-                <div className="space-y-1.5">
-                  {sales.map((sale) => (
-                    <div
-                      key={sale.id}
-                      className="rounded-xl border border-mh-border px-3 py-2.5 text-sm"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold text-mh-ink">{sale.producto}</p>
-                        <p className="font-bold text-mh-ink">{formatCurrency(sale.monto)}</p>
-                      </div>
-                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-mh-ink-muted">
-                        <span>{formatDateDMY(sale.fecha)}</span>
-                        <Badge tone={sale.cobrado ? "green" : "amber"}>
-                          {sale.cobrado ? "Cobrado" : "Pendiente de cobro"}
-                        </Badge>
-                        <Badge tone={sale.entregado ? "green" : "amber"}>
-                          {sale.entregado ? "Entregado" : "Pendiente de entrega"}
-                        </Badge>
-                      </div>
+                <>
+                  <div className="mb-3 grid grid-cols-3 gap-2">
+                    <div className="rounded-xl bg-mh-bg px-3 py-2">
+                      <p className="text-[11px] font-semibold text-mh-ink-muted uppercase">
+                        Total comprado
+                      </p>
+                      <p className="text-sm font-extrabold text-mh-ink">
+                        {formatCurrency(sales.reduce((sum, s) => sum + s.monto, 0))}
+                      </p>
                     </div>
-                  ))}
-                </div>
+                    <div className="rounded-xl bg-mh-bg px-3 py-2">
+                      <p className="text-[11px] font-semibold text-mh-ink-muted uppercase">
+                        Última compra
+                      </p>
+                      <p className="text-sm font-extrabold text-mh-ink">
+                        {formatDateDMY(sales[0]?.fecha ?? null)}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-mh-bg px-3 py-2">
+                      <p className="text-[11px] font-semibold text-mh-ink-muted uppercase">
+                        Saldo pendiente
+                      </p>
+                      <p className="text-sm font-extrabold text-mh-ink">
+                        {formatCurrency(sales.reduce((sum, s) => sum + outstandingBalance(s), 0))}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {sales.map((sale) => (
+                      <div
+                        key={sale.id}
+                        className="rounded-xl border border-mh-border px-3 py-2.5 text-sm"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-semibold text-mh-ink">{sale.producto}</p>
+                          <p className="font-bold text-mh-ink">{formatCurrency(sale.monto)}</p>
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-mh-ink-muted">
+                          <span>{formatDateDMY(sale.fecha)}</span>
+                          {sale.metodo_pago && <span>· {sale.metodo_pago}</span>}
+                          <Badge tone={sale.cobrado ? "green" : "amber"}>
+                            {sale.cobrado ? "Cobrado" : "Pendiente de cobro"}
+                          </Badge>
+                          <Badge tone={sale.entregado ? "green" : "amber"}>
+                            {sale.entregado ? "Entregado" : "Pendiente de entrega"}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           </div>

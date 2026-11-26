@@ -4,8 +4,9 @@ import { useState } from "react";
 import Modal from "@/components/Modal";
 import { formatCurrency } from "@/lib/currency";
 import { parseFlexibleNumber } from "@/lib/excel";
-import { SALE_PAYMENT_METHODS, type EquipamientoSale } from "@/lib/types";
+import { SALE_PAYMENT_METHODS, type EquipamientoContact, type EquipamientoSale } from "@/lib/types";
 import { createSale, updateSale, type SaleInput } from "./actions";
+import ContactPicker from "./ContactPicker";
 
 const inputClass =
   "w-full rounded-xl border border-mh-border px-3 py-2 text-sm focus:border-mh-pink focus:outline-none";
@@ -15,6 +16,7 @@ function emptyInput(): SaleInput {
   return {
     cliente: "",
     comercio: null,
+    contact_id: null,
     mes: null,
     fecha: null,
     producto: "",
@@ -33,11 +35,13 @@ function emptyInput(): SaleInput {
 export default function SaleFormModal({
   sale,
   categoryOptions,
+  contacts,
   onClose,
   onSaved,
 }: {
   sale: EquipamientoSale | null;
   categoryOptions: string[];
+  contacts: EquipamientoContact[];
   onClose: () => void;
   onSaved: (sale: EquipamientoSale) => void;
 }) {
@@ -46,6 +50,7 @@ export default function SaleFormModal({
       ? {
           cliente: sale.cliente,
           comercio: sale.comercio,
+          contact_id: sale.contact_id,
           mes: sale.mes,
           fecha: sale.fecha,
           producto: sale.producto,
@@ -66,6 +71,14 @@ export default function SaleFormModal({
 
   function patch(fields: Partial<SaleInput>) {
     setForm((prev) => ({ ...prev, ...fields }));
+  }
+
+  function handleSelectContact(contact: EquipamientoContact) {
+    patch({
+      contact_id: contact.id,
+      cliente: contact.name,
+      comercio: contact.business_name,
+    });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -93,11 +106,13 @@ export default function SaleFormModal({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={labelClass}>Cliente</label>
-            <input
+            <ContactPicker
               autoFocus
-              className={inputClass}
-              value={form.cliente}
-              onChange={(e) => patch({ cliente: e.target.value })}
+              contacts={contacts}
+              contactId={form.contact_id}
+              displayName={form.cliente}
+              onChangeDisplayName={(name) => patch({ cliente: name, contact_id: null })}
+              onSelectContact={handleSelectContact}
             />
           </div>
           <div>

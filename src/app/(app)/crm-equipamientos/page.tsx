@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { fetchAllRows } from "@/lib/supabase/fetchAll";
+import { outstandingBalance } from "@/lib/equipamientoSales";
 import type {
   Brand,
   Category,
@@ -12,30 +13,6 @@ import type {
 } from "@/lib/types";
 import CrmEquipamientosView from "./CrmEquipamientosView";
 import type { ContactRow } from "./contactRow";
-
-function normalizeName(name: string): string {
-  return name.trim().toLowerCase();
-}
-
-// Une las ventas de equipamientos_sales a un contacto por nombre de
-// cliente O de comercio (cualquiera de los dos campos de la venta puede
-// coincidir con el nombre o el comercio del contacto) — antes solo se
-// matcheaba cliente-vs-nombre, esto suma los casos donde el vendedor
-// cargó el nombre del comercio en cualquiera de las dos columnas.
-function buildSalesByNormalizedKey(sales: EquipamientoSale[]): Map<string, EquipamientoSale[]> {
-  const map = new Map<string, EquipamientoSale[]>();
-  function add(key: string | null, sale: EquipamientoSale) {
-    if (!key) return;
-    const list = map.get(key) ?? [];
-    list.push(sale);
-    map.set(key, list);
-  }
-  for (const sale of sales) {
-    add(normalizeName(sale.cliente), sale);
-    add(sale.comercio ? normalizeName(sale.comercio) : null, sale);
-  }
-  return map;
-}
 
 export default async function CrmEquipamientosPage() {
   const supabase = await createClient();
@@ -118,26 +95,23 @@ export default async function CrmEquipamientosPage() {
     ),
   ]);
 
-  // Última compra, facturación total, cantidad de ventas y el detalle de
-  // compras por contacto, agregado en una sola pasada a partir del mismo
-  // índice cliente/comercio. Las fechas ISO "YYYY-MM-DD" comparan bien
-  // como texto.
-  const salesByKey = buildSalesByNormalizedKey(sales ?? []);
+  // Última compra, facturación total, cantidad de ventas, saldo
+  // pendiente y el detalle de compras por contacto — ahora por
+  // contact_id real (ver migración 0050 y /ventas-equipamientos/vincular
+  // para las ventas viejas que todavía no estén vinculadas).
   const salesByContactId: Record<string, EquipamientoSale[]> = {};
-
-  function matchedSalesFor(contact: EquipamientoContact): EquipamientoSale[] {
-    const keys = [normalizeName(contact.name)];
-    if (contact.business_name) keys.push(normalizeName(contact.business_name));
-    const matched = new Map<string, EquipamientoSale>();
-    for (const key of keys) {
-      for (const sale of salesByKey.get(key) ?? []) matched.set(sale.id, sale);
-    }
-    return [...matched.values()].sort((a, b) => (b.fecha ?? "").localeCompare(a.fecha ?? ""));
+  for (const sale of sales ?? []) {
+    if (!sale.contact_id) continue;
+    const list = salesByContactId[sale.contact_id] ?? [];
+    list.push(sale);
+    salesByContactId[sale.contact_id] = list;
+  }
+  for (const list of Object.values(salesByContactId)) {
+    list.sort((a, b) => (b.fecha ?? "").localeCompare(a.fecha ?? ""));
   }
 
   const rows: ContactRow[] = (contacts ?? []).map((c) => {
-    const matched = matchedSalesFor(c);
-    salesByContactId[c.id] = matched;
+    const matched = salesByContactId[c.id] ?? [];
     const lastPurchaseDate = matched.reduce<string | null>(
       (latest, s) => (s.fecha && (!latest || s.fecha > latest) ? s.fecha : latest),
       null
@@ -147,6 +121,7 @@ export default async function CrmEquipamientosPage() {
       lastPurchaseDate,
       totalRevenue: matched.reduce((sum, s) => sum + s.monto, 0),
       salesCount: matched.length,
+      outstandingBalance: matched.reduce((sum, s) => sum + outstandingBalance(s), 0),
     };
   });
 
