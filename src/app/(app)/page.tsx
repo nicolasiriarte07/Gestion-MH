@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { fetchAllRows } from "@/lib/supabase/fetchAll";
 import { previousMonthRange, thisMonthRange } from "@/lib/dates";
-import type { BusinessUnit, EquipamientoContact } from "@/lib/types";
+import type { BusinessUnit, EquipamientoContact, MarketingPost } from "@/lib/types";
 import type { KpiDelta } from "@/components/ds/KpiCard";
 import type { DonutRow } from "@/components/ds/Donut";
 import type { BarRow } from "@/components/ds/MiniBarChart";
@@ -11,6 +11,7 @@ import InicioSalesChart, { type DailySalesRow } from "./InicioSalesChart";
 import InicioTopCustomers, { type TopCustomerRow } from "./InicioTopCustomers";
 import InicioBreakdownRow from "./InicioBreakdownRow";
 import InicioSeguimientoCard from "./InicioSeguimientoCard";
+import InicioMarketingCard from "./InicioMarketingCard";
 import { isOverdue, todayISO } from "./crm-equipamientos/followUp";
 
 const DASHBOARD_LIST_LIMIT = 10;
@@ -140,6 +141,7 @@ export default async function InicioPage({
     { data: businessUnits },
     { count: lowStockCount },
     { data: marketingPosts },
+    { data: pendingMarketingPosts },
   ] = await Promise.all([
     supabase.rpc("sales_summary", { from_date: from, to_date: to }),
     supabase.rpc("sales_summary", {
@@ -165,6 +167,11 @@ export default async function InicioPage({
       .select("investment_ars")
       .gte("publish_date", thisMonth.from)
       .lte("publish_date", thisMonth.to),
+    supabase
+      .from("marketing_posts")
+      .select("*")
+      .eq("is_published", false)
+      .order("publish_date", { ascending: true }),
   ]);
 
   const summary: SalesSummary = summaryData?.[0] ?? {
@@ -228,6 +235,10 @@ export default async function InicioPage({
 
   const avgTicket = summary.line_count > 0 ? summary.total_ars / summary.line_count : 0;
 
+  const pendingPosts = (pendingMarketingPosts ?? []) as MarketingPost[];
+  const marketingActionsCount = pendingPosts.length;
+  const marketingActionsRows = pendingPosts.slice(0, DASHBOARD_LIST_LIMIT);
+
   return (
     <div className="font-inter space-y-10">
       <InicioHeader from={from} to={to} />
@@ -244,6 +255,11 @@ export default async function InicioPage({
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <InicioSeguimientoCard rows={seguimientoRows} totalCount={seguimientoCount} />
+        <InicioMarketingCard
+          rows={marketingActionsRows}
+          totalCount={marketingActionsCount}
+          todayISO={today}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
