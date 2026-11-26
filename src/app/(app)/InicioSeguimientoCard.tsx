@@ -10,8 +10,6 @@ import {
   suggestedWhatsAppMessage,
 } from "./crm-equipamientos/contactStages";
 
-export type SeguimientoRow = EquipamientoContact & { overdue: boolean };
-
 function displayName(c: EquipamientoContact): string {
   const name = c.name.trim();
   if (name && name !== "-") return name;
@@ -22,14 +20,14 @@ export default function InicioSeguimientoCard({
   rows,
   totalCount,
 }: {
-  rows: SeguimientoRow[];
+  rows: EquipamientoContact[];
   totalCount: number;
 }) {
   return (
     <Card className="font-inter">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <h3 className="text-base font-bold text-mh-ink">Seguimiento esta semana</h3>
+          <h3 className="text-base font-bold text-mh-ink">Seguimientos vencidos</h3>
           <span className="rounded-full bg-mh-pink-light px-2 py-0.5 text-xs font-extrabold text-mh-pink">
             {totalCount}
           </span>
@@ -44,7 +42,7 @@ export default function InicioSeguimientoCard({
 
       {rows.length === 0 ? (
         <p className="py-6 text-center text-sm text-mh-ink-muted">
-          Sin seguimientos pendientes. 🎉
+          Sin seguimientos vencidos. 🎉
         </p>
       ) : (
         <div className="space-y-2">
@@ -70,10 +68,8 @@ export default function InicioSeguimientoCard({
                 <p className="mt-1 truncate text-xs text-mh-ink-muted">{c.equipo_interes}</p>
               )}
               <div className="mt-2 flex items-center justify-between gap-2">
-                <span
-                  className={`text-xs font-semibold ${c.overdue ? "text-red-600" : "text-mh-ink-muted"}`}
-                >
-                  {c.overdue ? "Vencido" : "Seguimiento"}
+                <span className="text-xs font-semibold text-red-600">
+                  Vencido
                   {c.proximo_seguimiento ? ` · ${formatDateDMY(c.proximo_seguimiento)}` : ""}
                 </span>
                 {c.phone && (
