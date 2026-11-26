@@ -60,7 +60,7 @@ export default function NewPurchaseOrderModal({
   const [brandId, setBrandId] = useState("");
   const [traveler, setTraveler] = useState("");
   const [paymentType, setPaymentType] = useState("");
-  const [confirmed, setConfirmed] = useState(false);
+  const [arrivalDate, setArrivalDate] = useState("");
   const [lines, setLines] = useState<DraftLine[]>([emptyLine()]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -115,7 +115,7 @@ export default function NewPurchaseOrderModal({
       brand_id: brandId,
       traveler: traveler.trim() || null,
       payment_type: paymentType.trim() || null,
-      confirmed,
+      arrival_date: arrivalDate || null,
       notes: null,
       items: validLines.map((l) => ({
         product_id: l.productId,
@@ -179,6 +179,16 @@ export default function NewPurchaseOrderModal({
               ))}
             </datalist>
           </div>
+        </div>
+
+        <div>
+          <label className={labelClass}>Fecha de llegada estimada (opcional)</label>
+          <input
+            type="date"
+            className={inputClass}
+            value={arrivalDate}
+            onChange={(e) => setArrivalDate(e.target.value)}
+          />
         </div>
 
         <div>
@@ -277,16 +287,6 @@ export default function NewPurchaseOrderModal({
             })}
           </div>
         </div>
-
-        <label className="flex items-center gap-2 text-sm font-medium text-mh-ink">
-          <input
-            type="checkbox"
-            className="accent-mh-pink"
-            checked={confirmed}
-            onChange={(e) => setConfirmed(e.target.checked)}
-          />
-          Confirmado
-        </label>
 
         {total > 0 && (
           <p className="rounded-xl bg-mh-bg px-3 py-2 text-sm text-mh-ink-muted">

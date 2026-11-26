@@ -282,6 +282,9 @@ export type CrmInstallment = {
   updated_at: string;
 };
 
+export const PURCHASE_ORDER_ESTADOS = ["pedido", "confirmado", "en_camino", "recibido"] as const;
+export type PurchaseOrderEstado = (typeof PURCHASE_ORDER_ESTADOS)[number];
+
 export type PurchaseOrder = {
   id: string;
   business_unit_id: string | null;
@@ -290,6 +293,8 @@ export type PurchaseOrder = {
   traveler: string | null;
   payment_type: string | null;
   confirmed: boolean;
+  estado: PurchaseOrderEstado;
+  arrival_date: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;

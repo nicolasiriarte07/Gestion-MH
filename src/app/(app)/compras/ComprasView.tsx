@@ -3,8 +3,9 @@
 import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import type { Brand, BusinessUnit, Product, PurchaseOrder, PurchaseOrderItem } from "@/lib/types";
+import type { PurchaseOrderRow } from "./purchaseOrderRow";
 import BusinessUnitSwitch from "./BusinessUnitSwitch";
-import PurchaseOrdersTable from "./PurchaseOrdersTable";
+import PurchaseOrdersKanban from "./PurchaseOrdersKanban";
 import NewPurchaseOrderModal from "./NewPurchaseOrderModal";
 
 export default function ComprasView({
@@ -45,6 +46,20 @@ export default function ComprasView({
     return map;
   }, [items]);
 
+  const kanbanRows: PurchaseOrderRow[] = useMemo(
+    () =>
+      filteredOrders.map((order) => {
+        const orderItems = itemsByOrder.get(order.id) ?? [];
+        return {
+          ...order,
+          items: orderItems,
+          totalAmount: orderItems.reduce((sum, i) => sum + i.amount, 0),
+          totalQuantity: orderItems.reduce((sum, i) => sum + i.quantity, 0),
+        };
+      }),
+    [filteredOrders, itemsByOrder]
+  );
+
   const activeProducts = useMemo(
     () => products.filter((p) => p.business_unit_id === activeUnitId),
     [products, activeUnitId]
@@ -54,10 +69,6 @@ export default function ComprasView({
     setOrders((prev) => [order, ...prev]);
     setItems((prev) => [...prev, ...newItems]);
     setCreating(false);
-  }
-
-  function handleToggled(updated: PurchaseOrder) {
-    setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
   }
 
   function handleDeleted(orderId: string) {
@@ -98,13 +109,7 @@ export default function ComprasView({
         />
       </div>
 
-      <PurchaseOrdersTable
-        orders={filteredOrders}
-        itemsByOrder={itemsByOrder}
-        brandName={brandName}
-        onToggled={handleToggled}
-        onDeleted={handleDeleted}
-      />
+      <PurchaseOrdersKanban orders={kanbanRows} brandName={brandName} onDeleted={handleDeleted} />
 
       {creating && (
         <NewPurchaseOrderModal

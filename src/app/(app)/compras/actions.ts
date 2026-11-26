@@ -17,7 +17,7 @@ export type PurchaseOrderInput = {
   brand_id: string | null;
   traveler: string | null;
   payment_type: string | null;
-  confirmed: boolean;
+  arrival_date: string | null;
   notes: string | null;
   items: PurchaseOrderItemInput[];
 };
@@ -55,11 +55,14 @@ export async function createPurchaseOrder(input: PurchaseOrderInput) {
   };
 }
 
-export async function toggleOrderConfirmed(id: string, confirmed: boolean) {
+export async function updatePurchaseOrder(
+  id: string,
+  patch: Partial<Pick<PurchaseOrder, "estado" | "arrival_date">>
+) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("purchase_orders")
-    .update({ confirmed })
+    .update(patch)
     .eq("id", id)
     .select("*")
     .single();
