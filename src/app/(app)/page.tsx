@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
+import { fetchAllRows } from "@/lib/supabase/fetchAll";
 import { previousMonthRange, thisMonthRange } from "@/lib/dates";
-import type { BusinessUnit } from "@/lib/types";
+import { outstandingBalance } from "@/lib/equipamientoSales";
+import type { BusinessUnit, EquipamientoContact, EquipamientoSale, TnSyncStatus } from "@/lib/types";
 import type { KpiDelta } from "@/components/ds/KpiCard";
 import type { DonutRow } from "@/components/ds/Donut";
 import type { BarRow } from "@/components/ds/MiniBarChart";
@@ -9,6 +11,16 @@ import InicioKpis from "./InicioKpis";
 import InicioSalesChart, { type DailySalesRow } from "./InicioSalesChart";
 import InicioTopCustomers, { type TopCustomerRow } from "./InicioTopCustomers";
 import InicioBreakdownRow from "./InicioBreakdownRow";
+import InicioHoySummary from "./InicioHoySummary";
+import InicioSeguimientoCard, { type SeguimientoRow } from "./InicioSeguimientoCard";
+import InicioCuotasCard from "./InicioCuotasCard";
+import InicioPendientesCard from "./InicioPendientesCard";
+import InicioStockTnCard from "./InicioStockTnCard";
+import { daysBetweenISO, isOverdue, needsFollowUpThisWeek, todayISO } from "./crm-equipamientos/followUp";
+
+const DASHBOARD_LIST_LIMIT = 10;
+const STALE_CONTACT_DAYS = 14;
+const ACTIVE_LEAD_STAGES = ["lead", "contactado", "cotizado"];
 
 const LOW_STOCK_THRESHOLD = 1;
 
@@ -107,6 +119,98 @@ export default async function InicioPage({
   const last30 = last30DaysRange();
 
   const supabase = await createClient();
+
+  // --- Tablero de hoy (bloques de seguimiento/cuotas/pendientes/stock) ---
+  const today = todayISO();
+
+  const [{ data: contacts }, { data: sales }] = await Promise.all([
+    fetchAllRows<EquipamientoContact>((from_, to_) =>
+      supabase.from("equipamientos_contacts").select("*").range(from_, to_)
+    ),
+    fetchAllRows<EquipamientoSale>((from_, to_) =>
+      supabase.from("equipamientos_sales").select("*").range(from_, to_)
+    ),
+  ]);
+
+  function needsWeeklyFollowUp(contact: EquipamientoContact): boolean {
+    if (contact.etapa === "perdido") return false;
+    if (needsFollowUpThisWeek(contact, today)) return true;
+    if (ACTIVE_LEAD_STAGES.includes(contact.etapa)) {
+      if (!contact.last_contact_date) return true;
+      return daysBetweenISO(contact.last_contact_date, today) > STALE_CONTACT_DAYS;
+    }
+    return false;
+  }
+
+  function seguimientoSortKey(contact: EquipamientoContact): [number, string] {
+    const overdue = isOverdue(contact, today);
+    const dateKey = contact.proximo_seguimiento ?? contact.last_contact_date ?? "9999-99-99";
+    return [overdue ? 0 : 1, dateKey];
+  }
+
+  const seguimientoSorted: SeguimientoRow[] = (contacts ?? [])
+    .filter(needsWeeklyFollowUp)
+    .sort((a, b) => {
+      const [pa, da] = seguimientoSortKey(a);
+      const [pb, db] = seguimientoSortKey(b);
+      return pa !== pb ? pa - pb : da.localeCompare(db);
+    })
+    .map((c) => ({ ...c, overdue: isOverdue(c, today) }));
+
+  const seguimientoCount = seguimientoSorted.length;
+  const seguimientoRows = seguimientoSorted.slice(0, DASHBOARD_LIST_LIMIT);
+
+  const cuotaMatches = (sales ?? [])
+    .filter((s) => s.cuota_semanal != null && s.cuota_semanal > 0 && outstandingBalance(s) > 0)
+    .sort((a, b) => (a.fecha ?? "").localeCompare(b.fecha ?? ""));
+  const cuotasCount = cuotaMatches.length;
+  const cuotaRows = cuotaMatches.slice(0, DASHBOARD_LIST_LIMIT);
+
+  const porCobrarAll = (sales ?? [])
+    .filter((s) => !s.cobrado)
+    .sort((a, b) => (a.fecha ?? "").localeCompare(b.fecha ?? ""));
+  const porEntregarAll = (sales ?? [])
+    .filter((s) => !s.entregado)
+    .sort((a, b) => (a.fecha ?? "").localeCompare(b.fecha ?? ""));
+  const porCobrarCount = porCobrarAll.length;
+  const porEntregarCount = porEntregarAll.length;
+
+  // tn_sync_status puede no existir todavía (falta correr la migración):
+  // si la consulta falla, el bloque se muestra vacío en vez de romper
+  // toda la página de Inicio.
+  let tnLatestDate: string | null = null;
+  let tnCriticosCount = 0;
+  let tnDesincronizadosCount = 0;
+  let tnStockBajoCount = 0;
+  let tnCriticos: TnSyncStatus[] = [];
+  let tnDesincronizados: TnSyncStatus[] = [];
+  try {
+    const { data: latestRow } = await supabase
+      .from("tn_sync_status")
+      .select("fecha")
+      .order("fecha", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (latestRow?.fecha) {
+      tnLatestDate = latestRow.fecha;
+      const { data: tnRows } = await supabase
+        .from("tn_sync_status")
+        .select("*")
+        .eq("fecha", latestRow.fecha);
+      const rows = (tnRows ?? []) as TnSyncStatus[];
+      const allCriticos = rows.filter((r) => r.estado === "critico");
+      const allDesincronizados = rows.filter((r) => r.estado === "desincronizado");
+      tnCriticosCount = allCriticos.length;
+      tnDesincronizadosCount = allDesincronizados.length;
+      tnStockBajoCount = rows.filter((r) => r.estado === "stock_bajo").length;
+      tnCriticos = allCriticos.slice(0, DASHBOARD_LIST_LIMIT);
+      tnDesincronizados = allDesincronizados.slice(0, DASHBOARD_LIST_LIMIT);
+    }
+  } catch {
+    // Tabla todavía no creada: se muestra "sin datos" más abajo.
+  }
+  const tnIsStale = tnLatestDate !== null && tnLatestDate !== today;
 
   const [
     { data: summaryData },
@@ -209,6 +313,36 @@ export default async function InicioPage({
 
   return (
     <div className="font-inter space-y-10">
+      <div className="space-y-5">
+        <InicioHoySummary
+          todayISO={today}
+          seguimientoCount={seguimientoCount}
+          cuotasCount={cuotasCount}
+          sinEntregarCount={porEntregarCount}
+          criticosCount={tnCriticosCount}
+        />
+
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <InicioSeguimientoCard rows={seguimientoRows} totalCount={seguimientoCount} />
+          <InicioCuotasCard rows={cuotaRows} totalCount={cuotasCount} />
+          <InicioPendientesCard
+            porCobrar={porCobrarAll.slice(0, DASHBOARD_LIST_LIMIT)}
+            porCobrarCount={porCobrarCount}
+            porEntregar={porEntregarAll.slice(0, DASHBOARD_LIST_LIMIT)}
+            porEntregarCount={porEntregarCount}
+          />
+          <InicioStockTnCard
+            criticos={tnCriticos}
+            criticosCount={tnCriticosCount}
+            desincronizados={tnDesincronizados}
+            desincronizadosCount={tnDesincronizadosCount}
+            stockBajoCount={tnStockBajoCount}
+            latestDate={tnLatestDate}
+            isStale={tnIsStale}
+          />
+        </div>
+      </div>
+
       <InicioHeader from={from} to={to} />
 
       <InicioKpis

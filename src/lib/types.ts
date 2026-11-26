@@ -304,3 +304,18 @@ export type PurchaseOrderItem = {
   amount: number;
   created_at: string;
 };
+
+export const TN_SYNC_ESTADOS = ["critico", "desincronizado", "stock_bajo"] as const;
+export type TnSyncEstado = (typeof TN_SYNC_ESTADOS)[number];
+
+export type TnSyncStatus = {
+  id: string;
+  fecha: string | null;
+  sku: string | null;
+  producto: string | null;
+  stock_gestion: number | null;
+  stock_tn: number | null;
+  estado: TnSyncEstado | null;
+  accion: string | null;
+  created_at: string;
+};
