@@ -2,11 +2,11 @@
 
 import { Search, X } from "lucide-react";
 import { SALE_PAYMENT_METHODS, type SalePaymentMethod } from "@/lib/types";
+import Input from "@/components/ds/Input";
+import Select from "@/components/ds/Select";
+import Button from "@/components/ds/Button";
 
 export type EstadoFilter = "" | "cobrado" | "pendiente";
-
-const selectClass =
-  "font-inter rounded-xl border border-mh-border bg-white px-3 py-2.5 text-sm font-medium text-mh-ink focus:border-mh-pink focus:outline-none";
 
 export default function SalesFilterBar({
   search,
@@ -29,51 +29,42 @@ export default function SalesFilterBar({
 
   return (
     <div className="font-inter flex flex-wrap items-center gap-3 rounded-2xl border border-mh-border bg-mh-surface p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-      <div className="relative min-w-[240px] flex-1">
-        <Search
-          size={16}
-          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-mh-ink-muted"
-        />
-        <input
+      <div className="min-w-[240px] flex-1">
+        <Input
+          icon={<Search size={16} />}
           type="text"
           placeholder="Buscar por cliente, comercio o producto..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="font-inter w-full rounded-xl border border-mh-border bg-white py-2.5 pr-3 pl-9 text-sm font-medium text-mh-ink focus:border-mh-pink focus:outline-none"
         />
       </div>
 
-      <select
-        value={metodo}
-        onChange={(e) => onMetodoChange(e.target.value as SalePaymentMethod | "")}
-        className={selectClass}
-      >
-        <option value="">Método: todos</option>
-        {SALE_PAYMENT_METHODS.map((m) => (
-          <option key={m} value={m}>
-            {m}
-          </option>
-        ))}
-      </select>
+      <div className="w-44">
+        <Select
+          value={metodo}
+          onChange={(e) => onMetodoChange(e.target.value as SalePaymentMethod | "")}
+        >
+          <option value="">Método: todos</option>
+          {SALE_PAYMENT_METHODS.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </Select>
+      </div>
 
-      <select
-        value={estado}
-        onChange={(e) => onEstadoChange(e.target.value as EstadoFilter)}
-        className={selectClass}
-      >
-        <option value="">Estado: todos</option>
-        <option value="cobrado">Cobrado</option>
-        <option value="pendiente">Pendiente de cobro</option>
-      </select>
+      <div className="w-52">
+        <Select value={estado} onChange={(e) => onEstadoChange(e.target.value as EstadoFilter)}>
+          <option value="">Estado: todos</option>
+          <option value="cobrado">Cobrado</option>
+          <option value="pendiente">Pendiente de cobro</option>
+        </Select>
+      </div>
 
       {hasFilters && (
-        <button
-          onClick={onClear}
-          className="flex items-center gap-1 rounded-xl px-3 py-2.5 text-sm font-semibold text-mh-ink-muted hover:text-mh-ink"
-        >
-          <X size={14} />
+        <Button variant="ghost" icon={<X size={14} />} onClick={onClear}>
           Limpiar filtros
-        </button>
+        </Button>
       )}
     </div>
   );

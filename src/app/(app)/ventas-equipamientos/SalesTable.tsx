@@ -6,6 +6,7 @@ import { Pencil, Trash2, ChevronLeft, ChevronRight, MessageSquare } from "lucide
 import Card from "@/components/ds/Card";
 import Badge from "@/components/ds/Badge";
 import { formatCurrency } from "@/lib/currency";
+import { outstandingBalance } from "@/lib/equipamientoSales";
 import type { EquipamientoContact, EquipamientoSale } from "@/lib/types";
 import { deleteSale } from "./actions";
 import SaleFormModal from "./SaleFormModal";
@@ -61,8 +62,8 @@ export default function SalesTable({
               <th className="px-3 py-3 font-semibold">Categoría</th>
               <th className="px-3 py-3 font-semibold">Monto</th>
               <th className="px-3 py-3 font-semibold">Método</th>
-              <th className="px-3 py-3 font-semibold">Entrega inicial</th>
-              <th className="px-3 py-3 font-semibold">Cuota semanal</th>
+              <th className="px-3 py-3 font-semibold">Cuotas</th>
+              <th className="px-3 py-3 font-semibold">Estado</th>
               <th className="w-20 px-3 py-3" />
             </tr>
           </thead>
@@ -98,7 +99,7 @@ export default function SalesTable({
                     <span className="text-mh-ink-muted">—</span>
                   )}
                 </td>
-                <td className="overflow-hidden px-3 py-3 font-semibold text-mh-ink">
+                <td className="tabular-nums-mh overflow-hidden px-3 py-3 font-semibold text-mh-ink">
                   <p className="truncate">{formatCurrency(row.monto)}</p>
                 </td>
                 <td className="overflow-hidden px-3 py-3">
@@ -108,16 +109,34 @@ export default function SalesTable({
                     <span className="text-mh-ink-muted">—</span>
                   )}
                 </td>
-                <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
-                  <p className="truncate">{formatCurrency(row.entrega_inicial)}</p>
-                </td>
-                <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
-                  <p className="truncate">
-                    {row.cuota_semanal ? formatCurrency(row.cuota_semanal) : "—"}
-                  </p>
-                  {row.semanas_pagadas > 0 && (
-                    <p className="truncate text-xs">{row.semanas_pagadas} sem. pagadas</p>
+                <td className="overflow-hidden px-3 py-3">
+                  {row.cuota_semanal && row.cuota_semanal > 0 ? (
+                    <div className="min-w-[120px]">
+                      <div className="h-1.5 w-full rounded-full bg-mh-border">
+                        <div
+                          className="h-1.5 rounded-full bg-mh-pink"
+                          style={{
+                            width: `${Math.min(100, ((row.monto - outstandingBalance(row)) / row.monto) * 100)}%`,
+                          }}
+                        />
+                      </div>
+                      <p className="tabular-nums-mh mt-1 truncate text-xs text-mh-ink-muted">
+                        {row.semanas_pagadas} sem. · saldo {formatCurrency(outstandingBalance(row))}
+                      </p>
+                    </div>
+                  ) : (
+                    <span className="text-mh-ink-muted">Sin cuotas</span>
                   )}
+                </td>
+                <td className="overflow-hidden px-3 py-3">
+                  <div className="flex flex-col gap-1">
+                    <Badge tone={row.cobrado ? "green" : "amber"}>
+                      {row.cobrado ? "Cobrado" : "Pendiente de cobro"}
+                    </Badge>
+                    <Badge tone={row.entregado ? "blue" : "gray"}>
+                      {row.entregado ? "Entregado" : "Sin entregar"}
+                    </Badge>
+                  </div>
                 </td>
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-1">

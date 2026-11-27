@@ -2,12 +2,16 @@
 
 import { useMemo, useState } from "react";
 import { Wallet, Hash, CheckCircle2, Truck } from "lucide-react";
+import { motion } from "framer-motion";
 import KpiCard from "@/components/ds/KpiCard";
 import { formatCurrency } from "@/lib/currency";
 import type { EquipamientoContact, EquipamientoSale, SalePaymentMethod } from "@/lib/types";
 import SalesHeader from "./SalesHeader";
 import SalesFilterBar, { type EstadoFilter } from "./SalesFilterBar";
 import SalesTable from "./SalesTable";
+
+const container = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
+const item = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.18 } } };
 
 export default function SalesView({
   rows,
@@ -56,12 +60,25 @@ export default function SalesView({
         unlinkedCount={unlinkedCount}
       />
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard icon={Wallet} tone="pink" label="Total ventas" value={formatCurrency(totalVentas)} />
-        <KpiCard icon={Hash} tone="blue" label="Cantidad" value={String(cantidad)} />
-        <KpiCard icon={CheckCircle2} tone="blue-light" label="Cobradas" value={String(cobradas)} />
-        <KpiCard icon={Truck} tone="amber" label="Entregadas" value={String(entregadas)} />
-      </div>
+      <motion.div
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
+      >
+        <motion.div variants={item}>
+          <KpiCard icon={Wallet} tone="pink" label="Total ventas" value={formatCurrency(totalVentas)} />
+        </motion.div>
+        <motion.div variants={item}>
+          <KpiCard icon={Hash} tone="blue" label="Cantidad" value={String(cantidad)} />
+        </motion.div>
+        <motion.div variants={item}>
+          <KpiCard icon={CheckCircle2} tone="blue-light" label="Cobradas" value={String(cobradas)} />
+        </motion.div>
+        <motion.div variants={item}>
+          <KpiCard icon={Truck} tone="amber" label="Entregadas" value={String(entregadas)} />
+        </motion.div>
+      </motion.div>
 
       <SalesFilterBar
         search={search}
