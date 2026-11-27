@@ -24,6 +24,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${sora.variable} h-full antialiased`}>
+      <head>
+        {/* Evita el flash de tema equivocado: aplica data-theme antes del
+            primer paint, leyendo la preferencia guardada (ver ThemeToggle). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("mh-theme");if(t==="dark"||t==="light"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900">
         {children}
       </body>

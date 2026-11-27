@@ -22,6 +22,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import Select from "@/components/ds/Select";
+import { useBusinessUnit } from "./BusinessUnitContext";
 
 const NAV_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/", label: "Inicio", icon: LayoutDashboard },
@@ -44,6 +46,7 @@ export default function Sidebar({ userEmail }: { userEmail: string }) {
   const router = useRouter();
   const initial = userEmail.charAt(0).toUpperCase();
   const [collapsed, setCollapsed] = useState(false);
+  const { businessUnits, activeId, setActiveId } = useBusinessUnit();
 
   useEffect(() => {
     // Se lee después del montaje (no en el render inicial) para que el
@@ -68,36 +71,58 @@ export default function Sidebar({ userEmail }: { userEmail: string }) {
     router.refresh();
   }
 
-  // Debajo de md (tablet chico/celular) el sidebar es siempre solo-íconos
-  // (76px), sin importar la preferencia de escritorio guardada: a 256px
-  // de ancho no entraba ni el contenido de Inicio en un celular. El
-  // toggle "retraer/expandir" solo tiene efecto visual en md hacia
-  // arriba, así que se oculta en mobile para no mostrar un control que
-  // ahí no hace nada.
-  const widthClass = collapsed ? "w-[76px]" : "w-[76px] md:w-64";
+  // Debajo de md (tablet chico/celular) el sidebar se oculta del todo:
+  // la navegación ahí la da la barra inferior (MobileBottomNav).
+  const widthClass = collapsed ? "md:w-[76px]" : "md:w-64";
   const showLabels = !collapsed;
 
   return (
     <aside
-      className={`font-inter sticky top-0 flex h-screen shrink-0 flex-col bg-mh-pink transition-[width] duration-200 ${widthClass}`}
+      className={`font-inter sticky top-0 hidden h-screen shrink-0 flex-col border-r border-mh-border bg-mh-surface transition-[width] duration-200 md:flex ${widthClass}`}
     >
-      <div className="flex items-center gap-3 px-5 py-7">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-sm font-extrabold text-mh-pink">
+      <div className="flex items-center gap-3 px-5 py-6">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-mh-pink text-sm font-extrabold text-white">
           MH
         </span>
         {showLabels && (
-          <div className="hidden min-w-0 md:block">
-            <p className="truncate text-sm leading-tight font-extrabold tracking-tight text-white">
+          <div className="min-w-0">
+            <p className="truncate text-sm leading-tight font-extrabold tracking-tight text-mh-ink">
               MUNDO HOGAR
             </p>
-            <p className="truncate text-[11px] leading-tight font-medium tracking-wide text-white/70 uppercase">
+            <p className="truncate text-[11px] leading-tight font-medium tracking-wide text-mh-ink-muted uppercase">
               Viví tu hogar
             </p>
           </div>
         )}
       </div>
 
-      <nav className="flex-1 space-y-1 px-3">
+      {businessUnits.length > 0 && (
+        <div className="px-3 pb-3">
+          {showLabels ? (
+            <Select
+              value={activeId ?? ""}
+              onChange={(e) => setActiveId(e.target.value || null)}
+              className="text-xs"
+            >
+              <option value="">Todas las unidades</option>
+              {businessUnits.map((bu) => (
+                <option key={bu.id} value={bu.id}>
+                  {bu.name}
+                </option>
+              ))}
+            </Select>
+          ) : (
+            <div
+              title="Unidad de negocio"
+              className="flex h-9 items-center justify-center rounded-mh-control bg-mh-bg text-[11px] font-bold text-mh-ink-muted"
+            >
+              UN
+            </div>
+          )}
+        </div>
+      )}
+
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3">
         {NAV_LINKS.map((link) => {
           const active =
             pathname === link.href || pathname.startsWith(`${link.href}/`);
@@ -108,15 +133,15 @@ export default function Sidebar({ userEmail }: { userEmail: string }) {
               href={link.href}
               title={collapsed ? link.label : undefined}
               className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
-                collapsed ? "justify-center" : "justify-center md:justify-start"
+                collapsed ? "justify-center" : ""
               } ${
                 active
-                  ? "bg-white text-mh-pink shadow-sm"
-                  : "text-white/85 hover:bg-white/10 hover:text-white"
+                  ? "bg-mh-pink-light text-mh-pink"
+                  : "text-mh-ink-muted hover:bg-mh-bg hover:text-mh-ink"
               }`}
             >
               <Icon size={19} strokeWidth={2} className="shrink-0" />
-              {showLabels && <span className="hidden md:inline">{link.label}</span>}
+              {showLabels && <span>{link.label}</span>}
             </Link>
           );
         })}
@@ -125,7 +150,7 @@ export default function Sidebar({ userEmail }: { userEmail: string }) {
       <button
         onClick={toggleCollapsed}
         title={collapsed ? "Expandir menú" : "Retraer menú"}
-        className={`mx-3 mb-1 hidden items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-white/60 transition-colors hover:bg-white/10 hover:text-white md:flex ${
+        className={`mx-3 mb-1 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-mh-ink-muted transition-colors hover:bg-mh-bg hover:text-mh-ink ${
           collapsed ? "justify-center" : ""
         }`}
       >
@@ -133,39 +158,35 @@ export default function Sidebar({ userEmail }: { userEmail: string }) {
         {!collapsed && "Retraer menú"}
       </button>
 
-      <div className="mx-3 mb-3 space-y-3 border-t border-white/15 pt-3">
+      <div className="mx-3 mb-3 space-y-3 border-t border-mh-border pt-3">
         <div
-          className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-white/85 ${
-            collapsed ? "justify-center" : "justify-center md:justify-start"
+          className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-mh-ink-muted ${
+            collapsed ? "justify-center" : ""
           }`}
           title="Centro de ayuda"
         >
           <CircleHelp size={18} className="shrink-0" />
-          {showLabels && <span className="hidden md:inline">Centro de ayuda</span>}
+          {showLabels && <span>Centro de ayuda</span>}
         </div>
 
         <div
-          className={`flex items-center gap-2.5 rounded-xl bg-white/10 p-2.5 ${
-            collapsed ? "flex-col" : "flex-col md:flex-row"
+          className={`flex items-center gap-2.5 rounded-xl bg-mh-bg p-2.5 ${
+            collapsed ? "flex-col" : ""
           }`}
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-xs font-extrabold text-mh-pink">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mh-pink text-xs font-extrabold text-white">
             {initial}
           </span>
           {showLabels && (
-            <div className="hidden min-w-0 flex-1 md:block">
-              <p className="truncate text-xs font-semibold text-white">
-                Nicolás Iriarte
-              </p>
-              <p className="truncate text-[11px] text-white/70">
-                Administrador
-              </p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-semibold text-mh-ink">Nicolás Iriarte</p>
+              <p className="truncate text-[11px] text-mh-ink-muted">Administrador</p>
             </div>
           )}
           <button
             onClick={handleLogout}
             title="Salir"
-            className="shrink-0 rounded-lg p-1.5 text-white/70 hover:bg-white/15 hover:text-white"
+            className="shrink-0 rounded-lg p-1.5 text-mh-ink-muted hover:bg-mh-border/60 hover:text-mh-ink"
           >
             <LogOut size={15} />
           </button>

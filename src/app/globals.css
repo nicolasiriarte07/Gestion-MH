@@ -3,6 +3,62 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Valores reales del sistema "mh-*", en un :root plano (no dentro de
+     @theme): así quedan como variables de verdad en tiempo de
+     ejecución, y los overrides de dark mode más abajo (que pisan estas
+     mismas variables) afectan a las utilidades generadas, en vez de
+     quedar "horneados" como hex fijo en el CSS compilado. @theme más
+     abajo solo las referencia con var(...), igual que ya hacía
+     --color-background/--background. */
+  --mh-pink: #f3437e;
+  --mh-pink-dark: #d92e66;
+  --mh-pink-light: #fce7ef;
+  --mh-blue: #00429c;
+  --mh-blue-dark: #002e70;
+  --mh-blue-light: #e6ecf7;
+  --mh-bg: #f7f8fa;
+  --mh-surface: #ffffff;
+  --mh-border: #eceef2;
+  --mh-ink: #111827;
+  --mh-ink-muted: #6b7280;
+  --mh-success: #059669;
+  --mh-success-light: #d1fae5;
+  --mh-warning: #b45309;
+  --mh-warning-light: #fef3c7;
+  --mh-danger: #dc2626;
+  --mh-danger-light: #fee2e2;
+}
+
+/* Dark mode: mismas variables, repintadas. Sigue la preferencia del
+   sistema por default; data-theme en <html> la pisa en cualquier
+   sentido (ver ThemeToggle). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --mh-bg: #0b0d12;
+    --mh-surface: #14161c;
+    --mh-border: #262a33;
+    --mh-ink: #f3f4f6;
+    --mh-ink-muted: #9ca3af;
+    --mh-pink-light: #3a1a28;
+    --mh-blue-light: #15233a;
+    --mh-success-light: #0b2e24;
+    --mh-warning-light: #3a2a0c;
+    --mh-danger-light: #3a1515;
+  }
+}
+
+:root[data-theme="dark"] {
+  --mh-bg: #0b0d12;
+  --mh-surface: #14161c;
+  --mh-border: #262a33;
+  --mh-ink: #f3f4f6;
+  --mh-ink-muted: #9ca3af;
+  --mh-pink-light: #3a1a28;
+  --mh-blue-light: #15233a;
+  --mh-success-light: #0b2e24;
+  --mh-warning-light: #3a2a0c;
+  --mh-danger-light: #3a1515;
 }
 
 @theme inline {
@@ -11,35 +67,61 @@
   --font-sans: var(--font-sora);
   --font-heading: var(--font-sora);
 
-  /* Paleta de marca MUNDO HOGAR (mundohogar.com.ar), usada hoy por los
-     módulos existentes (Ventas, Inventario, Clientes, etc.). No se toca
-     al introducir el nuevo sistema de diseño, para no alterar esos
-     módulos hasta que se migren explícitamente. */
+  /* Paleta de marca MUNDO HOGAR (mundohogar.com.ar), usada por los
+     módulos todavía no migrados al sistema nuevo (Descuentos, Simulador
+     Web). No se toca para no alterarlos hasta que se migren. */
   --color-brand: #ec1e79;
   --color-brand-dark: #c4145f;
   --color-brand-light: #fde6f0;
 
-  /* Sistema de diseño nuevo ("mh-*"), usado por el shell (Sidebar) y por
-     los módulos ya migrados (por ahora, Inicio). Convive con --color-brand
-     de arriba a propósito: son dos paletas de la misma marca en distintas
-     etapas de rollout, no un error. */
+  /* Sistema de diseño nuevo ("mh-*"): shell de la app y la mayoría de
+     los módulos (Inicio, Inventario, Clientes, Marketing, Proveedores,
+     CRM Equipamientos, Ventas Equipamientos, Compras, Ventas). Convive
+     con --color-brand de arriba a propósito, hasta terminar de migrar
+     Descuentos y Simulador Web. */
   --font-inter: var(--font-inter-sans);
 
-  --color-mh-pink: #f3437e;
-  --color-mh-pink-dark: #d92e66;
-  --color-mh-pink-light: #fce7ef;
-  --color-mh-blue: #00429c;
-  --color-mh-blue-dark: #002e70;
-  --color-mh-blue-light: #e6ecf7;
-  --color-mh-bg: #f6f7fb;
-  --color-mh-surface: #ffffff;
-  --color-mh-border: #ececec;
-  --color-mh-ink: #14171f;
-  --color-mh-ink-muted: #6b7280;
+  --color-mh-pink: var(--mh-pink);
+  --color-mh-pink-dark: var(--mh-pink-dark);
+  --color-mh-pink-light: var(--mh-pink-light);
+  --color-mh-blue: var(--mh-blue);
+  --color-mh-blue-dark: var(--mh-blue-dark);
+  --color-mh-blue-light: var(--mh-blue-light);
+  --color-mh-bg: var(--mh-bg);
+  --color-mh-surface: var(--mh-surface);
+  --color-mh-border: var(--mh-border);
+  --color-mh-ink: var(--mh-ink);
+  --color-mh-ink-muted: var(--mh-ink-muted);
+
+  /* Colores semánticos (estado), separados de mh-pink/mh-blue para que
+     nunca se reutilicen como "color de serie": siempre ok/alerta/error/
+     info, con ícono o texto al lado, nunca solo el color. */
+  --color-mh-success: var(--mh-success);
+  --color-mh-success-light: var(--mh-success-light);
+  --color-mh-warning: var(--mh-warning);
+  --color-mh-warning-light: var(--mh-warning-light);
+  --color-mh-danger: var(--mh-danger);
+  --color-mh-danger-light: var(--mh-danger-light);
+  --color-mh-info: var(--mh-blue);
+  --color-mh-info-light: var(--mh-blue-light);
+
+  /* Radios: 12px tarjetas/paneles, 8px inputs/botones. */
+  --radius-mh-card: 12px;
+  --radius-mh-control: 8px;
+
+  /* Sombra única y sutil para tarjetas/paneles (antes repetida como
+     string arbitrario en cada componente). */
+  --shadow-mh-card: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sora), Arial, Helvetica, sans-serif;
+}
+
+/* Números tabulares para montos y stock (no "bailan" de ancho al
+   cambiar de dígito en una lista). */
+.tabular-nums-mh {
+  font-variant-numeric: tabular-nums;
 }
