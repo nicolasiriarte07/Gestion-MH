@@ -21,10 +21,12 @@ import {
 import Link from "next/link";
 import Card from "@/components/ds/Card";
 import Badge from "@/components/ds/Badge";
+import Button from "@/components/ds/Button";
 import { formatCurrency } from "@/lib/currency";
 import type { BusinessUnit, Category, Subcategory, Brand, Product } from "@/lib/types";
 import { deleteProduct, updateProduct } from "./actions";
 import { stockTone, stockLabel, stockTextClass } from "./stockStatus";
+import { brandAvatarClass, brandInitial } from "../compras/brandColor";
 import InventarioDrawer from "./InventarioDrawer";
 import ProductFormModal from "./ProductFormModal";
 import StockAdjustModal from "./StockAdjustModal";
@@ -363,22 +365,45 @@ export default function InventarioTable({
     <Card padding="none" className="font-inter overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-mh-border px-6 py-4">
         <div className="flex flex-wrap items-center gap-2">
-          <ToolbarButton icon={Download} label="Exportar" onClick={exportCsv} />
+          <Button variant="secondary" size="sm" icon={<Download size={14} />} onClick={exportCsv}>
+            Exportar
+          </Button>
           <Link href="/inventario/import">
-            <ToolbarButton icon={Upload} label="Importar" />
+            <Button variant="secondary" size="sm" icon={<Upload size={14} />}>
+              Importar
+            </Button>
           </Link>
-          <ToolbarButton icon={Tag} label="Etiquetas" disabled title="Próximamente" />
-          <ToolbarButton icon={DollarSign} label="Actualizar precios" disabled title="Próximamente" />
+          <Button variant="secondary" size="sm" icon={<Tag size={14} />} disabled title="Próximamente">
+            Etiquetas
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<DollarSign size={14} />}
+            disabled
+            title="Próximamente"
+          >
+            Actualizar precios
+          </Button>
           <Link href="/inventario?stockMax=1">
-            <ToolbarButton icon={Truck} label="Reposición" />
+            <Button variant="secondary" size="sm" icon={<Truck size={14} />}>
+              Reposición
+            </Button>
           </Link>
-          <ToolbarButton
-            icon={Trash2}
-            label="Eliminar"
-            danger
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<Trash2 size={14} />}
+            className={
+              selectedIds.size === 0 || deleting
+                ? ""
+                : "!border-red-200 !text-red-600 hover:!bg-red-50"
+            }
             disabled={selectedIds.size === 0 || deleting}
             onClick={handleDeleteSelected}
-          />
+          >
+            Eliminar
+          </Button>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-mh-ink-muted">
@@ -494,20 +519,29 @@ export default function InventarioTable({
                     <p className="truncate">{p.sku}</p>
                   </td>
                   <td className="overflow-hidden px-2 py-3" onClick={(e) => e.stopPropagation()}>
-                    <select
-                      value={p.brand_id ?? ""}
-                      onChange={(e) =>
-                        handleQuickEdit(p, { brand_id: e.target.value || null })
-                      }
-                      className="w-full cursor-pointer truncate rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-sm text-mh-ink hover:border-mh-border focus:border-mh-pink focus:outline-none"
-                    >
-                      <option value="">Sin marca</option>
-                      {brands.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.name}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex items-center gap-1.5">
+                      {p.brand_id && (
+                        <span
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${brandAvatarClass(brandName(p.brand_id))}`}
+                        >
+                          {brandInitial(brandName(p.brand_id))}
+                        </span>
+                      )}
+                      <select
+                        value={p.brand_id ?? ""}
+                        onChange={(e) =>
+                          handleQuickEdit(p, { brand_id: e.target.value || null })
+                        }
+                        className="w-full cursor-pointer truncate rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-sm text-mh-ink hover:border-mh-border focus:border-mh-pink focus:outline-none"
+                      >
+                        <option value="">Sin marca</option>
+                        {brands.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </td>
                   <td className="overflow-hidden px-2 py-3" onClick={(e) => e.stopPropagation()}>
                     <select
@@ -541,18 +575,21 @@ export default function InventarioTable({
                       ))}
                     </select>
                   </td>
-                  <td className={`overflow-hidden px-3 py-3 font-bold ${stockTextClass(p.stock)}`}>{p.stock}</td>
-                  <td className="overflow-hidden px-3 py-3 text-mh-ink">
+                  <td className={`tabular-nums-mh overflow-hidden px-3 py-3 font-bold ${stockTextClass(p.stock)}`}>{p.stock}</td>
+                  <td className="tabular-nums-mh overflow-hidden px-3 py-3 text-mh-ink">
                     <p className="truncate">{formatCurrency(p.cost)}</p>
                   </td>
-                  <td className="overflow-hidden px-3 py-3 text-mh-ink">
+                  <td className="tabular-nums-mh overflow-hidden px-3 py-3 text-mh-ink">
                     <p className="truncate">{formatCurrency(costWithoutIva(p.cost, p.iva_rate))}</p>
                   </td>
-                  <td className="overflow-hidden px-3 py-3 font-semibold text-mh-ink">
+                  <td className="tabular-nums-mh overflow-hidden px-3 py-3 font-bold text-mh-ink">
                     <p className="truncate">{formatCurrency(p.price_cash)}</p>
                   </td>
-                  <td className="overflow-hidden px-3 py-3 text-mh-ink">
-                    <p className="truncate">{formatCurrency(p.price_web)}</p>
+                  <td className="tabular-nums-mh overflow-hidden px-3 py-3">
+                    <p className="flex items-center gap-1 truncate font-semibold text-mh-blue">
+                      <Globe size={11} className="shrink-0" />
+                      {formatCurrency(p.price_web)}
+                    </p>
                   </td>
                   <td className="overflow-hidden px-3 py-3 text-mh-ink">{formatPercent(markup)}</td>
                   <td className="overflow-hidden px-3 py-3 text-mh-ink">{formatPercent(cogs)}</td>
@@ -654,37 +691,6 @@ export default function InventarioTable({
   );
 }
 
-function ToolbarButton({
-  icon: Icon,
-  label,
-  onClick,
-  disabled,
-  danger,
-  title,
-}: {
-  icon: typeof Download;
-  label: string;
-  onClick?: () => void;
-  disabled?: boolean;
-  danger?: boolean;
-  title?: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-        danger
-          ? "border-mh-border text-red-600 hover:border-red-300 hover:bg-red-50"
-          : "border-mh-border text-mh-ink hover:bg-slate-50"
-      }`}
-    >
-      <Icon size={14} />
-      {label}
-    </button>
-  );
-}
 
 function MenuItem({
   icon: Icon,

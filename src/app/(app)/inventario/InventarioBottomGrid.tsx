@@ -44,7 +44,9 @@ export default function InventarioBottomGrid({
                   <p className="truncate font-medium text-mh-ink">{p.description}</p>
                   <p className="text-xs text-mh-ink-muted">{p.stock} en stock</p>
                 </div>
-                <span className="shrink-0 font-bold text-mh-ink">{formatCurrency(p.value)}</span>
+                <span className="tabular-nums-mh shrink-0 font-bold text-mh-ink">
+                  {formatCurrency(p.value)}
+                </span>
               </div>
             ))}
           </div>

@@ -4,6 +4,9 @@ import { useState, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import type { BusinessUnit, Category, Brand } from "@/lib/types";
+import Input from "@/components/ds/Input";
+import Select from "@/components/ds/Select";
+import Button from "@/components/ds/Button";
 
 // Por defecto (sin nada elegido) la tabla ya solo muestra productos con
 // stock >= 1 (ver page.tsx); para ver los de 0 hay que elegir "Sin stock"
@@ -48,9 +51,6 @@ function paramsForEstado(
   }
 }
 
-const selectClass =
-  "rounded-xl border border-mh-border bg-white px-3 py-2.5 text-sm font-medium text-mh-ink focus:border-mh-pink focus:outline-none";
-
 export default function InventarioFilterBar({
   businessUnits,
   categories,
@@ -93,91 +93,84 @@ export default function InventarioFilterBar({
   return (
     <div className="font-inter space-y-3 rounded-2xl border border-mh-border bg-mh-surface p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
       <div className="flex flex-wrap items-center gap-2.5">
-        <div className="relative min-w-[240px] flex-1">
-          <Search
-            size={16}
-            className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-mh-ink-muted"
-          />
-          <input
+        <div className="min-w-[240px] flex-1">
+          <Input
+            icon={<Search size={16} />}
             type="text"
             placeholder="Buscar producto, SKU o marca..."
             defaultValue={searchParams.get("q") ?? ""}
             onChange={(e) => setParam("q", e.target.value)}
-            className="w-full rounded-xl border border-mh-border py-2.5 pr-3 pl-9 text-sm focus:border-mh-pink focus:outline-none"
           />
         </div>
 
-        <select
-          defaultValue={searchParams.get("cat") ?? ""}
-          onChange={(e) => setParam("cat", e.target.value)}
-          className={selectClass}
-        >
-          <option value="">Categoría</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+        <div className="w-44">
+          <Select
+            defaultValue={searchParams.get("cat") ?? ""}
+            onChange={(e) => setParam("cat", e.target.value)}
+          >
+            <option value="">Categoría</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
+        </div>
 
-        <select
-          defaultValue={searchParams.get("brand") ?? ""}
-          onChange={(e) => setParam("brand", e.target.value)}
-          className={selectClass}
-        >
-          <option value="">Marca</option>
-          {brands.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.name}
-            </option>
-          ))}
-        </select>
+        <div className="w-40">
+          <Select
+            defaultValue={searchParams.get("brand") ?? ""}
+            onChange={(e) => setParam("brand", e.target.value)}
+          >
+            <option value="">Marca</option>
+            {brands.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </Select>
+        </div>
 
-        <select
-          defaultValue={searchParams.get("bu") ?? ""}
-          onChange={(e) => setParam("bu", e.target.value)}
-          className={selectClass}
-        >
-          <option value="">Unidad de negocio</option>
-          {businessUnits.map((bu) => (
-            <option key={bu.id} value={bu.id}>
-              {bu.name}
-            </option>
-          ))}
-        </select>
+        <div className="w-48">
+          <Select
+            defaultValue={searchParams.get("bu") ?? ""}
+            onChange={(e) => setParam("bu", e.target.value)}
+          >
+            <option value="">Unidad de negocio</option>
+            {businessUnits.map((bu) => (
+              <option key={bu.id} value={bu.id}>
+                {bu.name}
+              </option>
+            ))}
+          </Select>
+        </div>
 
-        <select
-          value={estadoFromParams(searchParams)}
-          onChange={(e) => setParams(paramsForEstado(e.target.value))}
-          className={selectClass}
-        >
-          {ESTADO_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+        <div className="w-56">
+          <Select
+            value={estadoFromParams(searchParams)}
+            onChange={(e) => setParams(paramsForEstado(e.target.value))}
+          >
+            {ESTADO_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
+        </div>
 
-        <button
+        <Button
+          variant="secondary"
+          className={moreOpen ? "!border-mh-pink !bg-mh-pink-light !text-mh-pink" : ""}
+          icon={<SlidersHorizontal size={15} />}
           onClick={() => setMoreOpen((o) => !o)}
-          className={`flex items-center gap-1.5 rounded-xl border px-3 py-2.5 text-sm font-semibold ${
-            moreOpen
-              ? "border-mh-pink bg-mh-pink-light text-mh-pink"
-              : "border-mh-border text-mh-ink hover:bg-slate-50"
-          }`}
         >
-          <SlidersHorizontal size={15} />
           Más filtros
-        </button>
+        </Button>
 
         {hasFilters && (
-          <button
-            onClick={() => router.push(pathname)}
-            className="flex items-center gap-1 rounded-xl px-3 py-2.5 text-sm font-semibold text-mh-ink-muted hover:text-mh-pink"
-          >
-            <X size={15} />
+          <Button variant="ghost" icon={<X size={15} />} onClick={() => router.push(pathname)}>
             Limpiar filtros
-          </button>
+          </Button>
         )}
       </div>
 
@@ -217,15 +210,16 @@ export default function InventarioFilterBar({
               className="w-24 rounded-lg border border-mh-border px-2 py-1.5 text-sm focus:border-mh-pink focus:outline-none"
             />
           </div>
-          <select
-            defaultValue={searchParams.get("web") ?? ""}
-            onChange={(e) => setParam("web", e.target.value)}
-            className={selectClass}
-          >
-            <option value="">En web: todos</option>
-            <option value="yes">En web: sí</option>
-            <option value="no">En web: no</option>
-          </select>
+          <div className="w-40">
+            <Select
+              defaultValue={searchParams.get("web") ?? ""}
+              onChange={(e) => setParam("web", e.target.value)}
+            >
+              <option value="">En web: todos</option>
+              <option value="yes">En web: sí</option>
+              <option value="no">En web: no</option>
+            </Select>
+          </div>
         </div>
       )}
     </div>

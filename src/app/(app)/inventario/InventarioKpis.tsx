@@ -1,6 +1,12 @@
+"use client";
+
 import { Boxes, Wallet, AlertTriangle, XCircle, TrendingUp } from "lucide-react";
+import { motion } from "framer-motion";
 import KpiCard from "@/components/ds/KpiCard";
 import { formatCurrency } from "@/lib/currency";
+
+const container = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
+const item = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.18 } } };
 
 // Estas 5 tarjetas son una foto del momento (sin flecha de comparación
 // contra el mes anterior, a diferencia de las de Inicio): el inventario
@@ -20,37 +26,52 @@ export default function InventarioKpis({
   avgMarkup: number;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
-      <KpiCard
-        icon={Boxes}
-        tone="pink"
-        label="Cantidad de productos"
-        value={String(productCount)}
-      />
-      <KpiCard
-        icon={Wallet}
-        tone="blue"
-        label="Valor total del inventario"
-        value={formatCurrency(inventoryValue)}
-      />
-      <KpiCard
-        icon={AlertTriangle}
-        tone="amber"
-        label="Productos con stock bajo"
-        value={String(lowStockCount)}
-      />
-      <KpiCard
-        icon={XCircle}
-        tone="red"
-        label="Productos sin stock"
-        value={String(outOfStockCount)}
-      />
-      <KpiCard
-        icon={TrendingUp}
-        tone="blue-light"
-        label="Markup promedio"
-        value={`${avgMarkup.toFixed(0)}%`}
-      />
-    </div>
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5"
+    >
+      <motion.div variants={item}>
+        <KpiCard
+          icon={Boxes}
+          tone="pink"
+          label="Cantidad de productos"
+          value={String(productCount)}
+        />
+      </motion.div>
+      <motion.div variants={item}>
+        <KpiCard
+          icon={Wallet}
+          tone="blue"
+          label="Valor total del inventario"
+          value={formatCurrency(inventoryValue)}
+        />
+      </motion.div>
+      <motion.div variants={item}>
+        <KpiCard
+          icon={AlertTriangle}
+          tone="amber"
+          label="Productos con stock bajo"
+          value={String(lowStockCount)}
+        />
+      </motion.div>
+      <motion.div variants={item}>
+        <KpiCard
+          icon={XCircle}
+          tone="red"
+          label="Productos sin stock"
+          value={String(outOfStockCount)}
+        />
+      </motion.div>
+      <motion.div variants={item}>
+        <KpiCard
+          icon={TrendingUp}
+          tone="blue-light"
+          label="Markup promedio"
+          value={`${avgMarkup.toFixed(0)}%`}
+        />
+      </motion.div>
+    </motion.div>
   );
 }

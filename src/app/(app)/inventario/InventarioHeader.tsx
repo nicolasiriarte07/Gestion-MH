@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Upload, Plus } from "lucide-react";
 import type { BusinessUnit, Category, Subcategory, Brand } from "@/lib/types";
+import Button, { buttonClasses } from "@/components/ds/Button";
 import ProductFormModal from "./ProductFormModal";
 
 export default function InventarioHeader({
@@ -33,20 +34,13 @@ export default function InventarioHeader({
       </div>
 
       <div className="font-inter flex items-center gap-3">
-        <Link
-          href="/inventario/import"
-          className="flex items-center gap-1.5 rounded-xl border border-mh-border bg-white px-4 py-2.5 text-sm font-semibold text-mh-ink shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-slate-50"
-        >
+        <Link href="/inventario/import" className={buttonClasses("secondary")}>
           <Upload size={16} />
           Importar Excel
         </Link>
-        <button
-          onClick={() => setCreating(true)}
-          className="flex items-center gap-1.5 rounded-xl bg-mh-pink px-4 py-2.5 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-mh-pink-dark"
-        >
-          <Plus size={16} />
+        <Button variant="primary" icon={<Plus size={16} />} onClick={() => setCreating(true)}>
           Nuevo producto
-        </button>
+        </Button>
       </div>
 
       {creating && (
