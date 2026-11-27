@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ContactCategory, EquipamientoSale } from "@/lib/types";
+import SegmentedTabs from "@/components/ds/SegmentedTabs";
 import ContactsHeader from "./ContactsHeader";
 import ContactFilterBar from "./ContactFilterBar";
 import FollowUpBanner from "./FollowUpBanner";
@@ -85,28 +86,14 @@ export default function ContactsView({
         }}
       />
 
-      <div className="inline-flex gap-1 rounded-2xl border border-mh-border bg-mh-surface p-1.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-        <button
-          onClick={() => setSubTab("leads")}
-          className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
-            subTab === "leads"
-              ? "bg-mh-pink text-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
-              : "text-mh-ink-muted hover:bg-slate-50 hover:text-mh-ink"
-          }`}
-        >
-          Leads ({leadRows.length})
-        </button>
-        <button
-          onClick={() => setSubTab("clientes")}
-          className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
-            subTab === "clientes"
-              ? "bg-mh-pink text-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
-              : "text-mh-ink-muted hover:bg-slate-50 hover:text-mh-ink"
-          }`}
-        >
-          Clientes ({clientRows.length})
-        </button>
-      </div>
+      <SegmentedTabs
+        value={subTab}
+        onChange={setSubTab}
+        options={[
+          { value: "leads", label: "Leads", count: leadRows.length },
+          { value: "clientes", label: "Clientes", count: clientRows.length },
+        ]}
+      />
 
       {subTab === "leads" ? (
         <LeadsKanbanView rows={leadRows} lostRows={lostRows} onOpenContact={setViewingContactId} />

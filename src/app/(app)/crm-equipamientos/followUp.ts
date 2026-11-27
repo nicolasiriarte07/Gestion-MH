@@ -42,3 +42,24 @@ export function needsFollowUpThisWeek(
   if (!contact.proximo_seguimiento) return false;
   return contact.proximo_seguimiento <= addDaysISO(today, 7);
 }
+
+export type FollowUpLight = "verde" | "amarillo" | "rojo";
+
+// Semáforo del próximo seguimiento (mismo criterio que arrivalLight en
+// Compras): sin fecha cargada no hay semáforo que mostrar.
+export function followUpLight(
+  contact: { proximo_seguimiento: string | null },
+  today: string
+): FollowUpLight | null {
+  if (!contact.proximo_seguimiento) return null;
+  const diff = daysBetweenISO(today, contact.proximo_seguimiento);
+  if (diff < 0) return "rojo";
+  if (diff <= 3) return "amarillo";
+  return "verde";
+}
+
+export const FOLLOW_UP_LIGHT_DOT_CLASSES: Record<FollowUpLight, string> = {
+  verde: "bg-emerald-500",
+  amarillo: "bg-amber-500",
+  rojo: "bg-red-500",
+};

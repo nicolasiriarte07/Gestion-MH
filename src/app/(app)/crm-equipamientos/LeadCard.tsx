@@ -4,10 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MapPin, MessageCircle, ThumbsDown, ThumbsUp } from "lucide-react";
 import AutoGrowTextarea from "@/components/AutoGrowTextarea";
+import Avatar from "@/components/ds/Avatar";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import type { ContactRow } from "./contactRow";
 import { formatDateDMY, suggestedWhatsAppMessage, withLostReasonNote } from "./contactStages";
-import { isOverdue, todayISO } from "./followUp";
+import { followUpLight, isOverdue, todayISO, FOLLOW_UP_LIGHT_DOT_CLASSES } from "./followUp";
 import { updateContact } from "./actions";
 import LostReasonModal from "./LostReasonModal";
 
@@ -26,6 +27,7 @@ export default function LeadCard({
   const [showLostModal, setShowLostModal] = useState(false);
   const today = todayISO();
   const overdue = isOverdue(contact, today);
+  const light = followUpLight(contact, today);
 
   async function saveField(patch: Record<string, unknown>) {
     setSaving(true);
@@ -61,14 +63,17 @@ export default function LeadCard({
       onClick={() => onOpenContact(contact.id)}
       className="cursor-grab space-y-2 rounded-xl border border-mh-border bg-white p-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:border-mh-pink/40 active:cursor-grabbing"
     >
-      <div>
-        <p className="truncate text-sm font-bold text-mh-ink">{contact.name}</p>
-        {contact.city && (
-          <p className="flex items-center gap-1 truncate text-xs text-mh-ink-muted">
-            <MapPin size={11} />
-            {contact.city}
-          </p>
-        )}
+      <div className="flex items-center gap-2">
+        <Avatar name={contact.name || contact.business_name || "?"} size={28} />
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold text-mh-ink">{contact.name}</p>
+          {contact.city && (
+            <p className="flex items-center gap-1 truncate text-xs text-mh-ink-muted">
+              <MapPin size={11} />
+              {contact.city}
+            </p>
+          )}
+        </div>
       </div>
 
       <div onClick={(e) => e.stopPropagation()}>
@@ -97,15 +102,21 @@ export default function LeadCard({
       </div>
 
       <div
-        className="flex items-center justify-between gap-2"
+        className="flex items-center gap-2"
         onClick={(e) => e.stopPropagation()}
       >
+        {light && (
+          <span
+            title={overdue ? "Vencido" : "Próximo seguimiento"}
+            className={`h-2 w-2 shrink-0 rounded-full ${FOLLOW_UP_LIGHT_DOT_CLASSES[light]}`}
+          />
+        )}
         <input
           type="date"
           value={contact.proximo_seguimiento ?? ""}
           disabled={saving}
           onChange={(e) => saveField({ proximo_seguimiento: e.target.value || null })}
-          className={`${fieldClass} ${overdue ? "bg-red-50 font-semibold text-red-600" : ""}`}
+          className={`${fieldClass} ${overdue ? "font-semibold text-red-600" : ""}`}
         />
       </div>
 

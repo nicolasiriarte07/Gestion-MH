@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Card from "@/components/ds/Card";
 import Badge, { type BadgeTone } from "@/components/ds/Badge";
+import Avatar from "@/components/ds/Avatar";
 import AutoGrowTextarea from "@/components/AutoGrowTextarea";
 import { formatCurrency } from "@/lib/currency";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
@@ -144,7 +145,10 @@ export default function ClientsTable({
                   className="cursor-pointer border-b border-mh-border/70 transition-colors last:border-0 hover:bg-mh-pink-light/40"
                 >
                   <td className="overflow-hidden px-4 py-3">
-                    <p className="truncate font-bold text-mh-ink">{row.name}</p>
+                    <div className="flex items-center gap-2">
+                      <Avatar name={row.name || row.business_name || "?"} size={28} />
+                      <p className="truncate font-bold text-mh-ink">{row.name}</p>
+                    </div>
                   </td>
                   <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
                     <p className="truncate">{row.business_name ?? "—"}</p>
@@ -188,7 +192,7 @@ export default function ClientsTable({
                   <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
                     <p className="truncate">{formatDateDMY(row.lastPurchaseDate)}</p>
                   </td>
-                  <td className="overflow-hidden px-3 py-3">
+                  <td className="tabular-nums-mh overflow-hidden px-3 py-3">
                     {daysSincePurchase === null ? (
                       <Badge tone="amber">Sin compras</Badge>
                     ) : stale ? (
@@ -197,13 +201,13 @@ export default function ClientsTable({
                       <p className="text-mh-ink-muted">{daysSincePurchase} días</p>
                     )}
                   </td>
-                  <td className="overflow-hidden px-3 py-3 font-semibold text-mh-ink">
+                  <td className="tabular-nums-mh overflow-hidden px-3 py-3 font-semibold text-mh-ink">
                     <p className="truncate">{formatCurrency(row.totalRevenue)}</p>
                   </td>
-                  <td className="overflow-hidden px-3 py-3 text-mh-ink-muted">
+                  <td className="tabular-nums-mh overflow-hidden px-3 py-3 text-mh-ink-muted">
                     <p className="truncate">{row.salesCount}</p>
                   </td>
-                  <td className="overflow-hidden px-3 py-3">
+                  <td className="tabular-nums-mh overflow-hidden px-3 py-3">
                     {row.outstandingBalance > 0 ? (
                       <p className="truncate font-semibold text-amber-700">
                         {formatCurrency(row.outstandingBalance)}

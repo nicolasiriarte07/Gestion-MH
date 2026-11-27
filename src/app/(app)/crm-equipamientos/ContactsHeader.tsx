@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
+import Button from "@/components/ds/Button";
 import ContactFormModal from "./ContactFormModal";
 
 export default function ContactsHeader() {
@@ -20,13 +21,9 @@ export default function ContactsHeader() {
         </p>
       </div>
 
-      <button
-        onClick={() => setCreating(true)}
-        className="font-inter flex items-center gap-1.5 rounded-xl bg-mh-pink px-4 py-2.5 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-mh-pink-dark"
-      >
-        <Plus size={16} />
+      <Button variant="primary" icon={<Plus size={16} />} onClick={() => setCreating(true)}>
         Nuevo contacto
-      </button>
+      </Button>
 
       {creating && (
         <ContactFormModal

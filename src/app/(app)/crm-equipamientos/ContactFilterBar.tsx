@@ -2,9 +2,9 @@
 
 import { Search, X } from "lucide-react";
 import { CONTACT_CATEGORIES, type ContactCategory } from "@/lib/types";
-
-const selectClass =
-  "font-inter rounded-xl border border-mh-border bg-white px-3 py-2.5 text-sm font-medium text-mh-ink focus:border-mh-pink focus:outline-none";
+import Input from "@/components/ds/Input";
+import Select from "@/components/ds/Select";
+import Button from "@/components/ds/Button";
 
 export default function ContactFilterBar({
   search,
@@ -29,54 +29,45 @@ export default function ContactFilterBar({
 
   return (
     <div className="font-inter flex flex-wrap items-center gap-3 rounded-2xl border border-mh-border bg-mh-surface p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-      <div className="relative min-w-[240px] flex-1">
-        <Search
-          size={16}
-          className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-mh-ink-muted"
-        />
-        <input
+      <div className="min-w-[240px] flex-1">
+        <Input
+          icon={<Search size={16} />}
           type="text"
           placeholder="Buscar por nombre o teléfono..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="font-inter w-full rounded-xl border border-mh-border bg-white py-2.5 pr-3 pl-9 text-sm font-medium text-mh-ink focus:border-mh-pink focus:outline-none"
         />
       </div>
 
-      <select
-        value={city}
-        onChange={(e) => onCityChange(e.target.value)}
-        className={selectClass}
-      >
-        <option value="">Ciudad: todas</option>
-        {cities.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-      </select>
+      <div className="w-44">
+        <Select value={city} onChange={(e) => onCityChange(e.target.value)}>
+          <option value="">Ciudad: todas</option>
+          {cities.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </Select>
+      </div>
 
-      <select
-        value={category}
-        onChange={(e) => onCategoryChange(e.target.value as ContactCategory | "")}
-        className={selectClass}
-      >
-        <option value="">Rubro: todos</option>
-        {CONTACT_CATEGORIES.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-      </select>
+      <div className="w-44">
+        <Select
+          value={category}
+          onChange={(e) => onCategoryChange(e.target.value as ContactCategory | "")}
+        >
+          <option value="">Rubro: todos</option>
+          {CONTACT_CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </Select>
+      </div>
 
       {hasFilters && (
-        <button
-          onClick={onClear}
-          className="flex items-center gap-1 rounded-xl px-3 py-2.5 text-sm font-semibold text-mh-ink-muted hover:text-mh-ink"
-        >
-          <X size={14} />
+        <Button variant="ghost" icon={<X size={14} />} onClick={onClear}>
           Limpiar filtros
-        </button>
+        </Button>
       )}
     </div>
   );
