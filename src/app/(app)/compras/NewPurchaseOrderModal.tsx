@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import Modal from "@/components/Modal";
 import { formatCurrency } from "@/lib/currency";
@@ -64,14 +64,6 @@ export default function NewPurchaseOrderModal({
   const [lines, setLines] = useState<DraftLine[]>([emptyLine()]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Buscar dentro de los productos de la marca elegida reduce mucho el
-  // ruido (un pedido casi siempre es a una sola marca); sin marca
-  // elegida todavía, busca en toda la unidad de negocio.
-  const searchableProducts = useMemo(
-    () => (brandId ? products.filter((p) => p.brand_id === brandId) : products),
-    [products, brandId]
-  );
 
   function updateLine(key: string, patch: Partial<DraftLine>) {
     setLines((prev) => prev.map((l) => (l.key === key ? { ...l, ...patch } : l)));
@@ -208,13 +200,23 @@ export default function NewPurchaseOrderModal({
           <div className="space-y-2">
             {lines.map((line) => {
               const needle = line.description.trim().toLowerCase();
+              // Busca en todos los productos (nunca se queda "mudo"
+              // si la marca elegida todavía no tiene productos
+              // cargados en Inventario); los de la misma marca
+              // aparecen primero para que un pedido típico (una sola
+              // marca) tenga menos ruido.
               const matches = needle
-                ? searchableProducts
+                ? products
                     .filter(
                       (p) =>
                         p.sku.toLowerCase().includes(needle) ||
                         p.description.toLowerCase().includes(needle)
                     )
+                    .sort((a, b) => {
+                      const aPriority = a.brand_id === brandId ? 0 : 1;
+                      const bPriority = b.brand_id === brandId ? 0 : 1;
+                      return aPriority - bPriority;
+                    })
                     .slice(0, 8)
                 : [];
 
