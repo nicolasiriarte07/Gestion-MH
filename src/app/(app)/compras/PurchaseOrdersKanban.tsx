@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import type { PurchaseOrderEstado } from "@/lib/types";
+import type { PurchaseOrder, PurchaseOrderEstado } from "@/lib/types";
 import type { PurchaseOrderRow } from "./purchaseOrderRow";
 import { COLUMN_HEADER_CLASSES, STAGE_LABELS, todayISO } from "./purchaseOrderStages";
 import { updatePurchaseOrder } from "./actions";
@@ -18,12 +17,15 @@ export default function PurchaseOrdersKanban({
   orders,
   brandName,
   onDeleted,
+  onEdit,
+  onUpdated,
 }: {
   orders: PurchaseOrderRow[];
   brandName: (id: string | null) => string;
   onDeleted: (orderId: string) => void;
+  onEdit: (order: PurchaseOrderRow) => void;
+  onUpdated: (order: PurchaseOrder) => void;
 }) {
-  const router = useRouter();
   const [dragOverStage, setDragOverStage] = useState<PurchaseOrderEstado | null>(null);
 
   function ordersByStage(stage: PurchaseOrderEstado): PurchaseOrderRow[] {
@@ -49,7 +51,7 @@ export default function PurchaseOrdersKanban({
       alert(result.error);
       return;
     }
-    router.refresh();
+    onUpdated(result.data as PurchaseOrder);
   }
 
   return (
@@ -86,6 +88,8 @@ export default function PurchaseOrdersKanban({
                   order={order}
                   brandName={brandName}
                   onDeleted={onDeleted}
+                  onEdit={onEdit}
+                  onUpdated={onUpdated}
                 />
               ))}
               {stageOrders.length === 0 && (

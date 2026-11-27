@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
+import type { PurchaseOrder } from "@/lib/types";
 import type { PurchaseOrderRow } from "./purchaseOrderRow";
 import { formatDateDMY, todayISO } from "./purchaseOrderStages";
 import { deletePurchaseOrder, updatePurchaseOrder } from "./actions";
@@ -15,12 +15,15 @@ export default function PurchaseOrderCard({
   order,
   brandName,
   onDeleted,
+  onEdit,
+  onUpdated,
 }: {
   order: PurchaseOrderRow;
   brandName: (id: string | null) => string;
   onDeleted: (orderId: string) => void;
+  onEdit: (order: PurchaseOrderRow) => void;
+  onUpdated: (order: PurchaseOrder) => void;
 }) {
-  const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -35,7 +38,7 @@ export default function PurchaseOrderCard({
       alert(result.error);
       return;
     }
-    router.refresh();
+    onUpdated(result.data as PurchaseOrder);
   }
 
   async function handleDelete() {
@@ -70,14 +73,23 @@ export default function PurchaseOrderCard({
             {[order.traveler, order.payment_type].filter(Boolean).join(" · ") || "—"}
           </p>
         </div>
-        <button
-          onClick={handleDelete}
-          disabled={deleting}
-          title="Eliminar pedido"
-          className="shrink-0 rounded-lg p-1 text-mh-ink-muted hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-        >
-          <Trash2 size={14} />
-        </button>
+        <div className="flex shrink-0 items-center gap-0.5">
+          <button
+            onClick={() => onEdit(order)}
+            title="Editar pedido"
+            className="rounded-lg p-1 text-mh-ink-muted hover:bg-mh-bg hover:text-mh-ink"
+          >
+            <Pencil size={14} />
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            title="Eliminar pedido"
+            className="rounded-lg p-1 text-mh-ink-muted hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
       </div>
 
       {order.items.length > 0 ? (

@@ -93,6 +93,51 @@ export async function updatePurchaseOrder(
   return { data: data as PurchaseOrder };
 }
 
+// Edita un pedido existente: pisa sus datos y reemplaza por completo
+// sus líneas de producto (se borran las viejas y se cargan las
+// nuevas) — más simple y confiable que tratar de "parchear" línea por
+// línea, dado que acá no hay otra tabla que referencie el id de cada
+// línea.
+export async function updatePurchaseOrderFull(
+  id: string,
+  orderFields: Omit<PurchaseOrderInput, "items">,
+  items: PurchaseOrderItemInput[]
+) {
+  const supabase = await createClient();
+
+  const { data: order, error } = await supabase
+    .from("purchase_orders")
+    .update(orderFields)
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error) return { error: error.message };
+
+  const { error: deleteError } = await supabase
+    .from("purchase_order_items")
+    .delete()
+    .eq("purchase_order_id", id);
+
+  if (deleteError) return { error: deleteError.message };
+
+  const itemRows = items.map((item) => ({ purchase_order_id: id, ...item }));
+  const { data: insertedItems, error: itemsError } = await supabase
+    .from("purchase_order_items")
+    .insert(itemRows)
+    .select("*");
+
+  if (itemsError) return { error: itemsError.message };
+
+  revalidatePath("/compras");
+  return {
+    data: {
+      order: order as PurchaseOrder,
+      items: insertedItems as PurchaseOrderItem[],
+    },
+  };
+}
+
 export async function deletePurchaseOrder(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("purchase_orders").delete().eq("id", id);

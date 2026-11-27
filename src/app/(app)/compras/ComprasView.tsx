@@ -10,7 +10,7 @@ import type {
   PurchaseOrderItem,
   PurchaseOrderStageEvent,
 } from "@/lib/types";
-import { buildPurchaseOrderRows } from "./purchaseOrderRow";
+import { buildPurchaseOrderRows, type PurchaseOrderRow } from "./purchaseOrderRow";
 import { todayISO } from "./purchaseOrderStages";
 import BusinessUnitSwitch from "./BusinessUnitSwitch";
 import PurchaseOrdersKanban from "./PurchaseOrdersKanban";
@@ -35,6 +35,7 @@ export default function ComprasView({
   const [items, setItems] = useState<PurchaseOrderItem[]>(initialItems);
   const [activeUnitId, setActiveUnitId] = useState<string | null>(businessUnits[0]?.id ?? null);
   const [creating, setCreating] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<PurchaseOrderRow | null>(null);
 
   const brandName = useMemo(() => {
     const map = new Map(brands.map((b) => [b.id, b.name]));
@@ -67,10 +68,19 @@ export default function ComprasView({
     [products, activeUnitId]
   );
 
-  function handleCreated(order: PurchaseOrder, newItems: PurchaseOrderItem[]) {
-    setOrders((prev) => [order, ...prev]);
-    setItems((prev) => [...prev, ...newItems]);
+  function handleSaved(order: PurchaseOrder, newItems: PurchaseOrderItem[]) {
+    setOrders((prev) =>
+      prev.some((o) => o.id === order.id)
+        ? prev.map((o) => (o.id === order.id ? order : o))
+        : [order, ...prev]
+    );
+    setItems((prev) => [...prev.filter((i) => i.purchase_order_id !== order.id), ...newItems]);
     setCreating(false);
+    setEditingOrder(null);
+  }
+
+  function handleUpdated(updated: PurchaseOrder) {
+    setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
   }
 
   function handleDeleted(orderId: string) {
@@ -111,15 +121,25 @@ export default function ComprasView({
         />
       </div>
 
-      <PurchaseOrdersKanban orders={kanbanRows} brandName={brandName} onDeleted={handleDeleted} />
+      <PurchaseOrdersKanban
+        orders={kanbanRows}
+        brandName={brandName}
+        onDeleted={handleDeleted}
+        onEdit={setEditingOrder}
+        onUpdated={handleUpdated}
+      />
 
-      {creating && (
+      {(creating || editingOrder) && (
         <NewPurchaseOrderModal
           businessUnitId={activeUnitId}
           brands={brands}
           products={activeProducts}
-          onClose={() => setCreating(false)}
-          onCreated={handleCreated}
+          editOrder={editingOrder}
+          onClose={() => {
+            setCreating(false);
+            setEditingOrder(null);
+          }}
+          onSaved={handleSaved}
         />
       )}
     </div>

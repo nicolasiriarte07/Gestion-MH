@@ -5,7 +5,8 @@ import { Plus, Trash2 } from "lucide-react";
 import Modal from "@/components/Modal";
 import { formatCurrency } from "@/lib/currency";
 import type { Brand, Product, PurchaseOrder, PurchaseOrderItem } from "@/lib/types";
-import { createPurchaseOrder } from "./actions";
+import type { PurchaseOrderRow } from "./purchaseOrderRow";
+import { createPurchaseOrder, updatePurchaseOrderFull } from "./actions";
 
 const inputClass =
   "w-full rounded-xl border border-mh-border px-3 py-2 text-sm focus:border-mh-pink focus:outline-none";
@@ -47,21 +48,37 @@ export default function NewPurchaseOrderModal({
   businessUnitId,
   brands,
   products,
+  editOrder,
   onClose,
-  onCreated,
+  onSaved,
 }: {
   businessUnitId: string;
   brands: Brand[];
   products: Product[];
+  // Si viene cargado, el modal edita ese pedido (y sus líneas) en vez
+  // de crear uno nuevo.
+  editOrder?: PurchaseOrderRow | null;
   onClose: () => void;
-  onCreated: (order: PurchaseOrder, items: PurchaseOrderItem[]) => void;
+  onSaved: (order: PurchaseOrder, items: PurchaseOrderItem[]) => void;
 }) {
-  const [orderDate, setOrderDate] = useState(todayISO());
-  const [brandId, setBrandId] = useState("");
-  const [traveler, setTraveler] = useState("");
-  const [paymentType, setPaymentType] = useState("");
-  const [arrivalDate, setArrivalDate] = useState("");
-  const [lines, setLines] = useState<DraftLine[]>([emptyLine()]);
+  const isEditing = !!editOrder;
+  const [orderDate, setOrderDate] = useState(editOrder?.order_date ?? todayISO());
+  const [brandId, setBrandId] = useState(editOrder?.brand_id ?? "");
+  const [traveler, setTraveler] = useState(editOrder?.traveler ?? "");
+  const [paymentType, setPaymentType] = useState(editOrder?.payment_type ?? "");
+  const [arrivalDate, setArrivalDate] = useState(editOrder?.arrival_date ?? "");
+  const [lines, setLines] = useState<DraftLine[]>(
+    editOrder && editOrder.items.length > 0
+      ? editOrder.items.map((i) => ({
+          key: i.id,
+          productId: i.product_id,
+          description: i.product_description,
+          quantity: String(i.quantity),
+          amount: String(i.amount),
+          showDropdown: false,
+        }))
+      : [emptyLine()]
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -99,9 +116,7 @@ export default function NewPurchaseOrderModal({
       return;
     }
 
-    setSaving(true);
-    setError(null);
-    const result = await createPurchaseOrder({
+    const orderFields = {
       business_unit_id: businessUnitId,
       order_date: orderDate,
       brand_id: brandId,
@@ -109,13 +124,19 @@ export default function NewPurchaseOrderModal({
       payment_type: paymentType.trim() || null,
       arrival_date: arrivalDate || null,
       notes: null,
-      items: validLines.map((l) => ({
-        product_id: l.productId,
-        product_description: l.description.trim(),
-        quantity: Number(l.quantity) || 0,
-        amount: Number(l.amount) || 0,
-      })),
-    });
+    };
+    const itemsPayload = validLines.map((l) => ({
+      product_id: l.productId,
+      product_description: l.description.trim(),
+      quantity: Number(l.quantity) || 0,
+      amount: Number(l.amount) || 0,
+    }));
+
+    setSaving(true);
+    setError(null);
+    const result = editOrder
+      ? await updatePurchaseOrderFull(editOrder.id, orderFields, itemsPayload)
+      : await createPurchaseOrder({ ...orderFields, items: itemsPayload });
     setSaving(false);
 
     if (result.error) {
@@ -123,11 +144,11 @@ export default function NewPurchaseOrderModal({
       return;
     }
     const { order, items } = result.data as { order: PurchaseOrder; items: PurchaseOrderItem[] };
-    onCreated(order, items);
+    onSaved(order, items);
   }
 
   return (
-    <Modal title="Nuevo pedido" onClose={onClose}>
+    <Modal title={isEditing ? "Editar pedido" : "Nuevo pedido"} onClose={onClose}>
       <form onSubmit={handleSubmit} className="font-inter space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -311,7 +332,7 @@ export default function NewPurchaseOrderModal({
             disabled={saving}
             className="rounded-xl bg-mh-pink px-4 py-2 text-sm font-semibold text-white hover:bg-mh-pink-dark disabled:opacity-50"
           >
-            {saving ? "Guardando..." : "Guardar"}
+            {saving ? "Guardando..." : isEditing ? "Guardar cambios" : "Guardar"}
           </button>
         </div>
       </form>
