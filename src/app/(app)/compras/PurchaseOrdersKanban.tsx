@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { History } from "lucide-react";
+import { formatCurrency } from "@/lib/currency";
 import type { PurchaseOrder, PurchaseOrderEstado } from "@/lib/types";
 import type { PurchaseOrderRow } from "./purchaseOrderRow";
-import { COLUMN_HEADER_CLASSES, STAGE_LABELS, todayISO } from "./purchaseOrderStages";
+import { COLUMN_HEADER_CLASSES, STAGE_LABELS, daysBetweenISO, todayISO } from "./purchaseOrderStages";
 import { updatePurchaseOrder } from "./actions";
 import PurchaseOrderCard from "./PurchaseOrderCard";
 
 const KANBAN_STAGES: PurchaseOrderEstado[] = ["pedido", "confirmado", "en_camino", "recibido"];
+const RECIBIDO_HISTORIAL_DIAS = 30;
 
 // Drag & drop nativo (misma técnica que el Kanban de Leads): cada
 // PurchaseOrderCard es "draggable" y pone su id en dataTransfer; cada
@@ -27,11 +30,19 @@ export default function PurchaseOrdersKanban({
   onUpdated: (order: PurchaseOrder) => void;
 }) {
   const [dragOverStage, setDragOverStage] = useState<PurchaseOrderEstado | null>(null);
+  const [showAllReceived, setShowAllReceived] = useState(false);
+  const today = todayISO();
 
   function ordersByStage(stage: PurchaseOrderEstado): PurchaseOrderRow[] {
-    return orders
+    const stageOrders = orders
       .filter((o) => o.estado === stage)
       .sort((a, b) => (b.order_date ?? "").localeCompare(a.order_date ?? ""));
+
+    if (stage !== "recibido" || showAllReceived) return stageOrders;
+
+    return stageOrders.filter(
+      (o) => !o.receivedAt || daysBetweenISO(o.receivedAt, today) <= RECIBIDO_HISTORIAL_DIAS
+    );
   }
 
   async function handleDrop(e: React.DragEvent, stage: PurchaseOrderEstado) {
@@ -54,10 +65,15 @@ export default function PurchaseOrdersKanban({
     onUpdated(result.data as PurchaseOrder);
   }
 
+  const totalReceivedCount = orders.filter((o) => o.estado === "recibido").length;
+
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
       {KANBAN_STAGES.map((stage) => {
         const stageOrders = ordersByStage(stage);
+        const columnTotal = stageOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+        const hiddenReceived =
+          stage === "recibido" && !showAllReceived ? totalReceivedCount - stageOrders.length : 0;
         return (
           <div
             key={stage}
@@ -74,12 +90,19 @@ export default function PurchaseOrdersKanban({
             }`}
           >
             <div
-              className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm font-bold ${COLUMN_HEADER_CLASSES[stage]}`}
+              className={`flex flex-col gap-1 rounded-xl px-3 py-2 text-sm font-bold ${COLUMN_HEADER_CLASSES[stage]}`}
             >
-              <span>{STAGE_LABELS[stage]}</span>
-              <span className="rounded-full bg-white/70 px-2 py-0.5 text-xs">
-                {stageOrders.length}
-              </span>
+              <div className="flex items-center justify-between">
+                <span>{STAGE_LABELS[stage]}</span>
+                <span className="rounded-full bg-white/70 px-2 py-0.5 text-xs">
+                  {stageOrders.length}
+                </span>
+              </div>
+              {columnTotal > 0 && (
+                <span className="tabular-nums-mh text-xs font-semibold opacity-80">
+                  {formatCurrency(columnTotal)}
+                </span>
+              )}
             </div>
             <div className="min-h-[80px] space-y-2">
               {stageOrders.map((order) => (
@@ -96,6 +119,23 @@ export default function PurchaseOrdersKanban({
                 <p className="px-2 py-6 text-center text-xs text-mh-ink-muted">
                   Sin pedidos en esta etapa.
                 </p>
+              )}
+              {stage === "recibido" && hiddenReceived > 0 && (
+                <button
+                  onClick={() => setShowAllReceived(true)}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-mh-border py-2 text-xs font-semibold text-mh-ink-muted hover:border-mh-pink hover:text-mh-pink"
+                >
+                  <History size={13} />
+                  Ver historial ({hiddenReceived} más)
+                </button>
+              )}
+              {stage === "recibido" && showAllReceived && totalReceivedCount > 0 && (
+                <button
+                  onClick={() => setShowAllReceived(false)}
+                  className="w-full rounded-xl py-1.5 text-center text-xs font-semibold text-mh-ink-muted hover:text-mh-pink"
+                >
+                  Mostrar solo últimos {RECIBIDO_HISTORIAL_DIAS} días
+                </button>
               )}
             </div>
           </div>

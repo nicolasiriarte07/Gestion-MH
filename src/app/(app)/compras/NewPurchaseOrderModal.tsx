@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import Modal from "@/components/Modal";
+import Input from "@/components/ds/Input";
+import Select from "@/components/ds/Select";
+import Button from "@/components/ds/Button";
 import { formatCurrency } from "@/lib/currency";
 import type { Brand, Product, PurchaseOrder, PurchaseOrderItem } from "@/lib/types";
 import type { PurchaseOrderRow } from "./purchaseOrderRow";
@@ -65,6 +68,7 @@ export default function NewPurchaseOrderModal({
   const [orderDate, setOrderDate] = useState(editOrder?.order_date ?? todayISO());
   const [brandId, setBrandId] = useState(editOrder?.brand_id ?? "");
   const [traveler, setTraveler] = useState(editOrder?.traveler ?? "");
+  const [travelerPhone, setTravelerPhone] = useState(editOrder?.traveler_phone ?? "");
   const [paymentType, setPaymentType] = useState(editOrder?.payment_type ?? "");
   const [arrivalDate, setArrivalDate] = useState(editOrder?.arrival_date ?? "");
   const [lines, setLines] = useState<DraftLine[]>(
@@ -121,6 +125,9 @@ export default function NewPurchaseOrderModal({
       order_date: orderDate,
       brand_id: brandId,
       traveler: traveler.trim() || null,
+      // Solo se manda si se completó: así no rompe para quien todavía
+      // no corrió la migración 0053 (agrega la columna traveler_phone).
+      ...(travelerPhone.trim() ? { traveler_phone: travelerPhone.trim() } : {}),
       payment_type: paymentType.trim() || null,
       arrival_date: arrivalDate || null,
       notes: null,
@@ -153,31 +160,38 @@ export default function NewPurchaseOrderModal({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={labelClass}>Fecha de pedido</label>
-            <input
-              type="date"
-              className={inputClass}
-              value={orderDate}
-              onChange={(e) => setOrderDate(e.target.value)}
-            />
+            <Input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} />
           </div>
           <div>
             <label className={labelClass}>Marca</label>
-            <select className={inputClass} value={brandId} onChange={(e) => setBrandId(e.target.value)}>
+            <Select value={brandId} onChange={(e) => setBrandId(e.target.value)}>
               <option value="">Elegir marca</option>
               {brands.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={labelClass}>Viajante</label>
-            <input className={inputClass} value={traveler} onChange={(e) => setTraveler(e.target.value)} />
+            <Input value={traveler} onChange={(e) => setTraveler(e.target.value)} />
           </div>
+          <div>
+            <label className={labelClass}>Teléfono del vendedor (opcional)</label>
+            <Input
+              type="tel"
+              placeholder="Ej: 291 415-2345"
+              value={travelerPhone}
+              onChange={(e) => setTravelerPhone(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={labelClass}>Tipo de pago</label>
             <input
@@ -192,16 +206,10 @@ export default function NewPurchaseOrderModal({
               ))}
             </datalist>
           </div>
-        </div>
-
-        <div>
-          <label className={labelClass}>Fecha de llegada estimada (opcional)</label>
-          <input
-            type="date"
-            className={inputClass}
-            value={arrivalDate}
-            onChange={(e) => setArrivalDate(e.target.value)}
-          />
+          <div>
+            <label className={labelClass}>Fecha de llegada estimada (opcional)</label>
+            <Input type="date" value={arrivalDate} onChange={(e) => setArrivalDate(e.target.value)} />
+          </div>
         </div>
 
         <div>
@@ -320,20 +328,12 @@ export default function NewPurchaseOrderModal({
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <div className="flex justify-end gap-2 border-t border-mh-border pt-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl px-4 py-2 text-sm font-semibold text-mh-ink-muted hover:bg-slate-50"
-          >
+          <Button type="button" variant="ghost" onClick={onClose}>
             Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-xl bg-mh-pink px-4 py-2 text-sm font-semibold text-white hover:bg-mh-pink-dark disabled:opacity-50"
-          >
+          </Button>
+          <Button type="submit" disabled={saving}>
             {saving ? "Guardando..." : isEditing ? "Guardar cambios" : "Guardar"}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

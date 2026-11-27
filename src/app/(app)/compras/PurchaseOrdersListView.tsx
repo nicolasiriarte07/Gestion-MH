@@ -2,6 +2,7 @@
 
 import { Download } from "lucide-react";
 import Card from "@/components/ds/Card";
+import Button from "@/components/ds/Button";
 import { formatCurrency } from "@/lib/currency";
 import type { PurchaseOrderRow } from "./purchaseOrderRow";
 import { STAGE_LABELS, formatDateDMY } from "./purchaseOrderStages";
@@ -57,13 +58,9 @@ export default function PurchaseOrdersListView({
   return (
     <div className="font-inter space-y-3">
       <div className="flex justify-end">
-        <button
-          onClick={() => exportCsv(rows, brandName)}
-          className="flex items-center gap-1.5 rounded-xl border border-mh-border bg-white px-3.5 py-2.5 text-sm font-semibold text-mh-ink shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-slate-50"
-        >
-          <Download size={16} />
+        <Button variant="secondary" icon={<Download size={16} />} onClick={() => exportCsv(rows, brandName)}>
           Exportar CSV
-        </button>
+        </Button>
       </div>
 
       <Card padding="none" className="overflow-hidden">
@@ -95,7 +92,7 @@ export default function PurchaseOrdersListView({
                         ? o.items.map((i) => `${i.product_description} x${i.quantity}`).join(", ")
                         : "Sin productos"}
                     </td>
-                    <td className="px-3 py-3 font-medium text-mh-ink">
+                    <td className="tabular-nums-mh px-3 py-3 font-medium text-mh-ink">
                       {formatCurrency(o.totalAmount)}
                     </td>
                     <td className="px-3 py-3 text-mh-ink-muted">

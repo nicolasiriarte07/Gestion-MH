@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
+import { motion } from "framer-motion";
 import type {
   Brand,
   BusinessUnit,
@@ -10,11 +11,21 @@ import type {
   PurchaseOrderItem,
   PurchaseOrderStageEvent,
 } from "@/lib/types";
+import Button from "@/components/ds/Button";
+import SegmentedTabs from "@/components/ds/SegmentedTabs";
 import { buildPurchaseOrderRows, type PurchaseOrderRow } from "./purchaseOrderRow";
-import { todayISO } from "./purchaseOrderStages";
+import { arrivalLight, todayISO } from "./purchaseOrderStages";
 import BusinessUnitSwitch from "./BusinessUnitSwitch";
+import PurchaseOrdersSummary from "./PurchaseOrdersSummary";
+import PurchaseOrdersFilterBar from "./PurchaseOrdersFilterBar";
 import PurchaseOrdersKanban from "./PurchaseOrdersKanban";
+import PurchaseOrdersListView from "./PurchaseOrdersListView";
 import NewPurchaseOrderModal from "./NewPurchaseOrderModal";
+
+const container = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } };
+const item = { hidden: { opacity: 0, y: 6 }, show: { opacity: 1, y: 0, transition: { duration: 0.16 } } };
+
+type ViewMode = "kanban" | "lista";
 
 export default function ComprasView({
   businessUnits,
@@ -36,6 +47,12 @@ export default function ComprasView({
   const [activeUnitId, setActiveUnitId] = useState<string | null>(businessUnits[0]?.id ?? null);
   const [creating, setCreating] = useState(false);
   const [editingOrder, setEditingOrder] = useState<PurchaseOrderRow | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
+
+  const [search, setSearch] = useState("");
+  const [brandId, setBrandId] = useState("");
+  const [paymentType, setPaymentType] = useState("");
+  const [onlyLate, setOnlyLate] = useState(false);
 
   const brandName = useMemo(() => {
     const map = new Map(brands.map((b) => [b.id, b.name]));
@@ -58,10 +75,29 @@ export default function ComprasView({
   }, [items]);
 
   const today = todayISO();
-  const kanbanRows = useMemo(
+  const allRows = useMemo(
     () => buildPurchaseOrderRows(filteredOrders, itemsByOrder, initialStageEvents, today),
     [filteredOrders, itemsByOrder, initialStageEvents, today]
   );
+
+  const paymentTypes = useMemo(
+    () => [...new Set(orders.map((o) => o.payment_type).filter((p): p is string => !!p))].sort(),
+    [orders]
+  );
+
+  const filteredRows = useMemo(() => {
+    let result = allRows;
+    if (search.trim()) {
+      const needle = search.trim().toLowerCase();
+      result = result.filter((o) =>
+        o.items.some((i) => i.product_description.toLowerCase().includes(needle))
+      );
+    }
+    if (brandId) result = result.filter((o) => o.brand_id === brandId);
+    if (paymentType) result = result.filter((o) => o.payment_type === paymentType);
+    if (onlyLate) result = result.filter((o) => arrivalLight(o, today) === "rojo");
+    return result;
+  }, [allRows, search, brandId, paymentType, onlyLate, today]);
 
   const activeProducts = useMemo(
     () => products.filter((p) => p.business_unit_id === activeUnitId),
@@ -104,13 +140,9 @@ export default function ComprasView({
           <h1 className="text-2xl font-extrabold text-mh-ink">Compras</h1>
           <p className="text-sm text-mh-ink-muted">Pedidos a marcas y proveedores.</p>
         </div>
-        <button
-          onClick={() => setCreating(true)}
-          className="flex items-center gap-1.5 rounded-xl bg-mh-pink px-4 py-2.5 text-sm font-semibold text-white hover:bg-mh-pink-dark"
-        >
-          <Plus size={16} />
+        <Button variant="primary" icon={<Plus size={16} />} onClick={() => setCreating(true)}>
           Nuevo pedido
-        </button>
+        </Button>
       </div>
 
       <div className="flex justify-center">
@@ -121,13 +153,55 @@ export default function ComprasView({
         />
       </div>
 
-      <PurchaseOrdersKanban
-        orders={kanbanRows}
-        brandName={brandName}
-        onDeleted={handleDeleted}
-        onEdit={setEditingOrder}
-        onUpdated={handleUpdated}
-      />
+      <motion.div variants={container} initial="hidden" animate="show">
+        <motion.div variants={item}>
+          <PurchaseOrdersSummary rows={allRows} today={today} />
+        </motion.div>
+      </motion.div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex-1">
+          <PurchaseOrdersFilterBar
+            search={search}
+            onSearchChange={setSearch}
+            brandId={brandId}
+            onBrandChange={setBrandId}
+            brands={brands}
+            paymentType={paymentType}
+            onPaymentTypeChange={setPaymentType}
+            paymentTypes={paymentTypes}
+            onlyLate={onlyLate}
+            onOnlyLateChange={setOnlyLate}
+            onClear={() => {
+              setSearch("");
+              setBrandId("");
+              setPaymentType("");
+              setOnlyLate(false);
+            }}
+          />
+        </div>
+        <SegmentedTabs
+          value={viewMode}
+          onChange={setViewMode}
+          size="sm"
+          options={[
+            { value: "kanban", label: "Kanban" },
+            { value: "lista", label: "Lista" },
+          ]}
+        />
+      </div>
+
+      {viewMode === "kanban" ? (
+        <PurchaseOrdersKanban
+          orders={filteredRows}
+          brandName={brandName}
+          onDeleted={handleDeleted}
+          onEdit={setEditingOrder}
+          onUpdated={handleUpdated}
+        />
+      ) : (
+        <PurchaseOrdersListView rows={filteredRows} brandName={brandName} />
+      )}
 
       {(creating || editingOrder) && (
         <NewPurchaseOrderModal
