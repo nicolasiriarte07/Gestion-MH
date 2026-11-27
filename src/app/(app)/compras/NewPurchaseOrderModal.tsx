@@ -106,7 +106,6 @@ export default function NewPurchaseOrderModal({
       order_date: orderDate,
       brand_id: brandId,
       traveler: traveler.trim() || null,
-      traveler_phone: null,
       payment_type: paymentType.trim() || null,
       arrival_date: arrivalDate || null,
       notes: null,

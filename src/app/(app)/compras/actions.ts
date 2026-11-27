@@ -16,7 +16,11 @@ export type PurchaseOrderInput = {
   order_date: string;
   brand_id: string | null;
   traveler: string | null;
-  traveler_phone: string | null;
+  // Opcional: todavía no hay un campo en el formulario para cargarlo
+  // (llega en la Etapa 6 del rediseño), y solo se manda si viene
+  // presente para no depender de que ya se haya corrido la migración
+  // 0053 (agrega la columna traveler_phone).
+  traveler_phone?: string | null;
   payment_type: string | null;
   arrival_date: string | null;
   notes: string | null;
