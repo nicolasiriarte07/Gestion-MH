@@ -43,7 +43,7 @@ export default function InicioTopCustomers({ rows }: { rows: TopCustomerRow[] })
                   />
                 </div>
               </div>
-              <span className="shrink-0 text-sm font-bold text-mh-ink">
+              <span className="tabular-nums-mh shrink-0 text-sm font-bold text-mh-ink">
                 {formatCurrency(row.total_ars)}
               </span>
             </div>

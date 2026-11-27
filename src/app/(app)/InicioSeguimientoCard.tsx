@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
-import { MapPin, MessageCircle } from "lucide-react";
+import { MapPin, MessageCircle, CheckCircle2 } from "lucide-react";
+import { motion } from "framer-motion";
 import Card from "@/components/ds/Card";
+import EmptyState from "@/components/ds/EmptyState";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import type { EquipamientoContact } from "@/lib/types";
 import {
@@ -9,6 +13,9 @@ import {
   formatDateDMY,
   suggestedWhatsAppMessage,
 } from "./crm-equipamientos/contactStages";
+
+const container = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } };
+const item = { hidden: { opacity: 0, y: 6 }, show: { opacity: 1, y: 0, transition: { duration: 0.16 } } };
 
 function displayName(c: EquipamientoContact): string {
   const name = c.name.trim();
@@ -41,13 +48,11 @@ export default function InicioSeguimientoCard({
       </div>
 
       {rows.length === 0 ? (
-        <p className="py-6 text-center text-sm text-mh-ink-muted">
-          Sin seguimientos vencidos. 🎉
-        </p>
+        <EmptyState icon={CheckCircle2} title="Sin seguimientos vencidos" />
       ) : (
-        <div className="space-y-2">
+        <motion.div variants={container} initial="hidden" animate="show" className="space-y-2">
           {rows.map((c) => (
-            <div key={c.id} className="rounded-xl border border-mh-border p-3">
+            <motion.div variants={item} key={c.id} className="rounded-xl border border-mh-border p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-mh-ink">{displayName(c)}</p>
@@ -84,9 +89,9 @@ export default function InicioSeguimientoCard({
                   </a>
                 )}
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
     </Card>
   );

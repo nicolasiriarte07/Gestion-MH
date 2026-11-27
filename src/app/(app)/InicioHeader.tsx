@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import DateRangePicker from "@/components/ds/DateRangePicker";
 import NotificationsBell from "@/components/ds/NotificationsBell";
+import { buttonClasses } from "@/components/ds/Button";
 
 // El nombre está fijo (no viene de un perfil de usuario real: la app es
 // de un solo usuario autenticado, ver README). Si en algún momento hay
@@ -21,10 +22,7 @@ export default function InicioHeader({ from, to }: { from: string; to: string })
       <div className="font-inter flex items-center gap-3">
         <DateRangePicker from={from} to={to} />
         <NotificationsBell />
-        <Link
-          href="/ventas/import"
-          className="flex items-center gap-1.5 rounded-xl bg-mh-pink px-4 py-2.5 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-mh-pink-dark"
-        >
+        <Link href="/ventas/import" className={buttonClasses("primary", "md", "shadow-mh-card")}>
           <Plus size={16} />
           Nueva venta
         </Link>

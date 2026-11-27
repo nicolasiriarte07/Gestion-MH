@@ -1,10 +1,18 @@
+"use client";
+
 import Link from "next/link";
+import { CalendarCheck2 } from "lucide-react";
+import { motion } from "framer-motion";
 import Card from "@/components/ds/Card";
 import Badge from "@/components/ds/Badge";
+import EmptyState from "@/components/ds/EmptyState";
 import type { MarketingPost } from "@/lib/types";
 import { formatDateDMY } from "./crm-equipamientos/contactStages";
 import { itemStatus, statusLabel, statusTone, type MarketingItem } from "./marketing/normalize";
 import { CONTENT_LABELS } from "./marketing/marketingLabels";
+
+const container = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } };
+const rowMotion = { hidden: { opacity: 0, y: 6 }, show: { opacity: 1, y: 0, transition: { duration: 0.16 } } };
 
 export default function InicioMarketingCard({
   rows,
@@ -33,16 +41,18 @@ export default function InicioMarketingCard({
       </div>
 
       {rows.length === 0 ? (
-        <p className="py-6 text-center text-sm text-mh-ink-muted">
-          Sin acciones pendientes. 🎉
-        </p>
+        <EmptyState icon={CalendarCheck2} title="Sin acciones pendientes" />
       ) : (
-        <div className="space-y-2">
+        <motion.div variants={container} initial="hidden" animate="show" className="space-y-2">
           {rows.map((post) => {
-            const item: MarketingItem = { kind: "post", data: post };
-            const status = itemStatus(item, todayISO);
+            const marketingItem: MarketingItem = { kind: "post", data: post };
+            const status = itemStatus(marketingItem, todayISO);
             return (
-              <div key={post.id} className="rounded-xl border border-mh-border p-3">
+              <motion.div
+                variants={rowMotion}
+                key={post.id}
+                className="rounded-xl border border-mh-border p-3"
+              >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-mh-ink">{post.concept}</p>
@@ -59,10 +69,10 @@ export default function InicioMarketingCard({
                     {CONTENT_LABELS[post.content_type]}
                   </p>
                 )}
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       )}
     </Card>
   );

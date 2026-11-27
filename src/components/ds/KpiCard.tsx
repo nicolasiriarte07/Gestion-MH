@@ -34,7 +34,7 @@ export default function KpiCard({
         <IconTile icon={icon} tone={tone} />
         <p className="text-sm font-medium text-mh-ink-muted">{label}</p>
       </div>
-      <p className="mt-4 text-[2rem] leading-none font-extrabold tracking-tight text-mh-ink">
+      <p className="tabular-nums-mh mt-4 text-[2rem] leading-none font-extrabold tracking-tight text-mh-ink">
         {value}
       </p>
       <div className="mt-3 flex items-center gap-1.5 text-sm">

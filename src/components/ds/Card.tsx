@@ -9,8 +9,8 @@ const PADDING_CLASSES = {
   md: "p-8",
 } as const;
 
-// Card base del sistema de diseño nuevo: blanco, borde #ECECEC, radio 16px
-// (rounded-2xl de Tailwind), sombra muy sutil.
+// Card base del sistema de diseño: blanco, borde mh-border, radio 12px
+// (token rounded-mh-card), sombra única (token shadow-mh-card).
 export default function Card({
   children,
   className = "",
@@ -25,7 +25,7 @@ export default function Card({
   return (
     <div
       title={title}
-      className={`min-w-0 rounded-2xl border border-mh-border bg-mh-surface shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${PADDING_CLASSES[padding]} ${className}`}
+      className={`min-w-0 rounded-mh-card border border-mh-border bg-mh-surface shadow-mh-card ${PADDING_CLASSES[padding]} ${className}`}
     >
       {children}
     </div>
