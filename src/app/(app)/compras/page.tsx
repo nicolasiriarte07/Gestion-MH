@@ -1,6 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { fetchAllRows } from "@/lib/supabase/fetchAll";
-import type { Brand, BusinessUnit, Product, PurchaseOrder, PurchaseOrderItem } from "@/lib/types";
+import type {
+  Brand,
+  BusinessUnit,
+  Product,
+  PurchaseOrder,
+  PurchaseOrderItem,
+  PurchaseOrderStageEvent,
+} from "@/lib/types";
 import ComprasView from "./ComprasView";
 
 // Solo las 2 unidades de negocio que el usuario maneja en Compras (no
@@ -16,6 +23,7 @@ export default async function ComprasPage() {
     { data: products },
     { data: orders },
     { data: items },
+    { data: stageEvents },
   ] = await Promise.all([
     supabase.from("business_units").select("id, name"),
     supabase.from("brands").select("id, name").order("name"),
@@ -31,6 +39,9 @@ export default async function ComprasPage() {
     ),
     fetchAllRows<PurchaseOrderItem>((from, to) =>
       supabase.from("purchase_order_items").select("*").range(from, to)
+    ),
+    fetchAllRows<PurchaseOrderStageEvent>((from, to) =>
+      supabase.from("purchase_order_stage_history").select("*").range(from, to)
     ),
   ]);
 
@@ -51,6 +62,7 @@ export default async function ComprasPage() {
       products={(products ?? []) as Product[]}
       initialOrders={orders ?? []}
       initialItems={items ?? []}
+      initialStageEvents={stageEvents ?? []}
     />
   );
 }

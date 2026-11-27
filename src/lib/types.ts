@@ -291,13 +291,23 @@ export type PurchaseOrder = {
   order_date: string;
   brand_id: string | null;
   traveler: string | null;
+  traveler_phone: string | null;
   payment_type: string | null;
   confirmed: boolean;
   estado: PurchaseOrderEstado;
   arrival_date: string | null;
+  amount_paid: number;
+  stock_loaded: boolean;
   notes: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type PurchaseOrderStageEvent = {
+  id: string;
+  purchase_order_id: string;
+  estado: PurchaseOrderEstado;
+  changed_at: string;
 };
 
 export type PurchaseOrderItem = {

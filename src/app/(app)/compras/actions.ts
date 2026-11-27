@@ -16,6 +16,7 @@ export type PurchaseOrderInput = {
   order_date: string;
   brand_id: string | null;
   traveler: string | null;
+  traveler_phone: string | null;
   payment_type: string | null;
   arrival_date: string | null;
   notes: string | null;
@@ -46,6 +47,10 @@ export async function createPurchaseOrder(input: PurchaseOrderInput) {
 
   if (itemsError) return { error: itemsError.message };
 
+  await supabase
+    .from("purchase_order_stage_history")
+    .insert({ purchase_order_id: order.id, estado: order.estado });
+
   revalidatePath("/compras");
   return {
     data: {
@@ -57,7 +62,12 @@ export async function createPurchaseOrder(input: PurchaseOrderInput) {
 
 export async function updatePurchaseOrder(
   id: string,
-  patch: Partial<Pick<PurchaseOrder, "estado" | "arrival_date">>
+  patch: Partial<
+    Pick<
+      PurchaseOrder,
+      "estado" | "arrival_date" | "amount_paid" | "traveler_phone" | "stock_loaded"
+    >
+  >
 ) {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -68,6 +78,12 @@ export async function updatePurchaseOrder(
     .single();
 
   if (error) return { error: error.message };
+
+  if (patch.estado) {
+    await supabase
+      .from("purchase_order_stage_history")
+      .insert({ purchase_order_id: id, estado: patch.estado });
+  }
 
   revalidatePath("/compras");
   return { data: data as PurchaseOrder };

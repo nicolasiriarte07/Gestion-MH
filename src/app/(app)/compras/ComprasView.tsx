@@ -2,8 +2,16 @@
 
 import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
-import type { Brand, BusinessUnit, Product, PurchaseOrder, PurchaseOrderItem } from "@/lib/types";
-import type { PurchaseOrderRow } from "./purchaseOrderRow";
+import type {
+  Brand,
+  BusinessUnit,
+  Product,
+  PurchaseOrder,
+  PurchaseOrderItem,
+  PurchaseOrderStageEvent,
+} from "@/lib/types";
+import { buildPurchaseOrderRows } from "./purchaseOrderRow";
+import { todayISO } from "./purchaseOrderStages";
 import BusinessUnitSwitch from "./BusinessUnitSwitch";
 import PurchaseOrdersKanban from "./PurchaseOrdersKanban";
 import NewPurchaseOrderModal from "./NewPurchaseOrderModal";
@@ -14,12 +22,14 @@ export default function ComprasView({
   products,
   initialOrders,
   initialItems,
+  initialStageEvents,
 }: {
   businessUnits: BusinessUnit[];
   brands: Brand[];
   products: Product[];
   initialOrders: PurchaseOrder[];
   initialItems: PurchaseOrderItem[];
+  initialStageEvents: PurchaseOrderStageEvent[];
 }) {
   const [orders, setOrders] = useState<PurchaseOrder[]>(initialOrders);
   const [items, setItems] = useState<PurchaseOrderItem[]>(initialItems);
@@ -46,18 +56,10 @@ export default function ComprasView({
     return map;
   }, [items]);
 
-  const kanbanRows: PurchaseOrderRow[] = useMemo(
-    () =>
-      filteredOrders.map((order) => {
-        const orderItems = itemsByOrder.get(order.id) ?? [];
-        return {
-          ...order,
-          items: orderItems,
-          totalAmount: orderItems.reduce((sum, i) => sum + i.amount, 0),
-          totalQuantity: orderItems.reduce((sum, i) => sum + i.quantity, 0),
-        };
-      }),
-    [filteredOrders, itemsByOrder]
+  const today = todayISO();
+  const kanbanRows = useMemo(
+    () => buildPurchaseOrderRows(filteredOrders, itemsByOrder, initialStageEvents, today),
+    [filteredOrders, itemsByOrder, initialStageEvents, today]
   );
 
   const activeProducts = useMemo(
